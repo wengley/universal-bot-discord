@@ -116,7 +116,8 @@ client.on('messageCreate', async message => {
     if (!command) return;
 
     try {
-        command.execute(message, args, client); // Passa o client também
+        // CORREÇÃO CRUCIAL: Passa o objeto 'db' para o comando, permitindo que daily.js e balance.js funcionem
+        command.execute(message, args, client, db); 
     } catch (error) {
         console.error(`Erro ao executar o comando ${commandName}:`, error);
         message.reply('❌ Ocorreu um erro ao tentar executar este comando!');
