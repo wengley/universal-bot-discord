@@ -21,7 +21,7 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-const prefix = '!';
+client.prefix = '!';
 
 // ===================================
 // 1. CARREGAMENTO DE COMANDOS
