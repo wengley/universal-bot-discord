@@ -5,29 +5,29 @@ const dotenv = require('dotenv');
 const { QuickDB } = require('quick.db'); 
 const db = new QuickDB(); 
 
-// Express necessário para o Render Web Service
+// Importa o Express para criar o Servidor Web (para o Render 24/7)
 const express = require('express');
 
+// Não precisa carregar o .env no Render, mas mantenha para testes locais
 dotenv.config(); 
 
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent, 
+        GatewayIntentBits.MessageContent, // Essencial para ler a mensagem e o prefixo
         GatewayIntentBits.GuildMembers, 
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
 client.commands = new Collection();
-client.prefix = '!';
+const prefix = '!'; // Prefixo dos comandos
 
 // ===================================
 // 1. CARREGAMENTO DE COMANDOS
 // ===================================
 const commandsPath = path.join(__dirname, 'commands');
-// Carrega todos os arquivos .js (o help.js corrigido não deve mais causar crash)
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js')); 
 
 
@@ -42,8 +42,8 @@ for (const file of commandFiles) {
             console.warn(`[AVISO] O comando em ${filePath} está faltando a propriedade "name" ou "execute" necessária.`);
         }
     } catch (error) {
-        // ESSENCIAL: Se um comando falhar ao carregar, o bot CONTINUA.
-        console.error(`[ERRO FATAL NO COMANDO] Não foi possível carregar ${file}:`, error);
+        // ESSENCIAL: Se um comando falhar ao carregar (como o help.js fazia), o bot CONTINUA.
+        console.error(`[ERRO NO COMANDO] Não foi possível carregar ${file}:`, error);
     }
 }
 
@@ -58,15 +58,14 @@ client.once('ready', () => {
 
 
 // ===================================
-// 3. EVENTO: MENSAGEM RECEBIDA (COMANDOS E AFK)
+// 3. EVENTO: MENSAGEM RECEBIDA (LÓGICA CORRIGIDA)
 // ===================================
 client.on('messageCreate', async message => {
     
     if (message.author.bot) return;
 
+    // --- VERIFICAÇÃO DE AFK (Retorno) ---
     const guildId = message.guild.id;
-
-    // --- VERIFICAÇÃO DE AFK ---
     const userAfkStatus = await db.get(`afk_${guildId}_${message.author.id}`); 
     
     if (userAfkStatus) {
@@ -87,20 +86,23 @@ client.on('messageCreate', async message => {
     }
     
     // --- TRATAMENTO DE COMANDOS ! ---
+    
+    if (!message.content.startsWith(prefix)) return; // Ignora se não começar com '!'
 
-    if (!message.content.startsWith(prefix)) return;
-
+    // Extrai argumentos e nome do comando
     const args = message.content.slice(prefix.length).trim().split(/ +/);
     const commandName = args.shift().toLowerCase();
 
+    // Busca o comando (pelo nome ou alias)
     const command = client.commands.get(commandName) || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
 
-    if (!command) return;
+    if (!command) return; // Comando não encontrado.
 
+    // Executa o comando
     try {
         command.execute(message, args, client, db); 
     } catch (error) {
-        console.error(`Erro ao executar o comando ${commandName}:`, error);
+        console.error(`[ERRO DE EXECUÇÃO] Comando ${commandName}:`, error);
         message.reply('❌ Ocorreu um erro ao tentar executar este comando!');
     }
 });
