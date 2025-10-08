@@ -28,7 +28,7 @@ const prefix = '!';
 // 1. CARREGAMENTO DE COMANDOS
 // ===================================
 const commandsPath = path.join(__dirname, 'commands');
-// CORREÇÃO FINAL: Removido o filtro. Agora o help.js (corrigido) será carregado.
+// ATENÇÃO: Carrega TODOS os comandos, incluindo o help.js (que está corrigido).
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
 
@@ -62,7 +62,7 @@ client.on('messageCreate', async message => {
 
     const guildId = message.guild.id;
 
-    // --- VERIFICAÇÃO DE AFK (Retorno) ---
+    // --- VERIFICAÇÃO DE AFK ---
     const userAfkStatus = await db.get(`afk_${guildId}_${message.author.id}`); 
     
     if (userAfkStatus) {

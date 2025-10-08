@@ -6,18 +6,17 @@ module.exports = {
     description: "Mostra a lista de comandos ou informações sobre um comando específico.",
     aliases: ["comandos", "ajuda"],
     
-    // Recebe o objeto 'db' (QuickDB) do index.js, mesmo que não use.
     async execute(message, args, client, db) {
         
-        const prefix = '!'; // Defina o prefixo aqui, se não estiver disponível.
+        const prefix = '!'; 
         
         // Se não houver argumentos (quer a lista geral)
         if (!args.length) {
             
             const comandos = client.commands;
             
-            // Filtra os comandos para a lista (ignorando comandos que você pode querer manter ocultos)
-            const comandosVisiveis = comandos.filter(cmd => !cmd.hidden); // Assume que você não tem comandos "hidden"
+            // Filtra os comandos e garante que todos os campos são strings válidas
+            const comandosVisiveis = comandos.filter(cmd => cmd.description && cmd.name); 
             
             // Constrói a lista de comandos (Ex: !daily - Recompensa diária)
             const lista = comandosVisiveis.map(command => 
@@ -31,11 +30,12 @@ module.exports = {
                     `Use \`${prefix}help [comando]\` para obter mais informações sobre um comando específico.\n\n` + 
                     '**Comandos Disponíveis:**'
                 )
-                .addFields({
-                    name: '\u200B', // Campo vazio
+                // Usando addFields para garantir que o formato está correto
+                .addFields([{
+                    name: '\u200B', 
                     value: lista || 'Nenhum comando encontrado.',
                     inline: false,
-                })
+                }])
                 .setFooter({ text: `Solicitado por ${message.author.username}` })
                 .setTimestamp();
             
