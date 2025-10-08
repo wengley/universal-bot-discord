@@ -21,7 +21,7 @@ module.exports = {
             return message.reply('Por favor, mencione um usuário ou forneça o ID para banir.');
         }
 
-        // 2. Verificação de Hierarquia
+        // 2. Verificação de Hierarquia (Importante para evitar crashes e abusos)
         if (member.id === message.author.id) {
             return message.reply('Você não pode se banir!');
         }
@@ -49,7 +49,6 @@ module.exports = {
                     { name: 'Moderador', value: message.author.tag, inline: true },
                     { name: 'Motivo', value: reason, inline: true }
                 )
-                .setFooter({ text: 'Se o usuário tentar voltar, ele terá que ser banido manualmente de novo.' })
                 .setTimestamp();
 
             message.channel.send({ embeds: [embed] });
