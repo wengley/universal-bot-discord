@@ -5,10 +5,9 @@ const dotenv = require('dotenv');
 const { QuickDB } = require('quick.db'); 
 const db = new QuickDB(); 
 
-// Importa o Express para criar o Servidor Web (para o Render)
+// Express necessário para o Render Web Service
 const express = require('express');
 
-// Não precisa carregar o .env no Render, mas mantenha para testes locais
 dotenv.config(); 
 
 const client = new Client({
@@ -28,18 +27,23 @@ const prefix = '!';
 // 1. CARREGAMENTO DE COMANDOS
 // ===================================
 const commandsPath = path.join(__dirname, 'commands');
-// ATENÇÃO: Carrega TODOS os comandos, incluindo o help.js (que está corrigido).
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+// Carrega todos os arquivos .js (o help.js corrigido não deve mais causar crash)
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js')); 
 
 
 for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
-    const command = require(filePath);
-    
-    if ('name' in command && 'execute' in command) {
-        client.commands.set(command.name, command);
-    } else {
-        console.warn(`[AVISO] O comando em ${filePath} está faltando a propriedade "name" ou "execute" necessária.`);
+    try {
+        const command = require(filePath);
+        
+        if ('name' in command && 'execute' in command) {
+            client.commands.set(command.name, command);
+        } else {
+            console.warn(`[AVISO] O comando em ${filePath} está faltando a propriedade "name" ou "execute" necessária.`);
+        }
+    } catch (error) {
+        // ESSENCIAL: Se um comando falhar ao carregar, o bot CONTINUA.
+        console.error(`[ERRO FATAL NO COMANDO] Não foi possível carregar ${file}:`, error);
     }
 }
 

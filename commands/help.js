@@ -15,25 +15,33 @@ module.exports = {
             
             const comandos = client.commands;
             
-            // Filtra os comandos e garante que todos os campos são strings válidas
+            // Filtra os comandos: APENAS comandos com nome e descrição definidos para evitar crash.
             const comandosVisiveis = comandos.filter(cmd => cmd.description && cmd.name); 
             
-            // Constrói a lista de comandos (Ex: !daily - Recompensa diária)
+            // Se, por algum motivo, não houver comandos visíveis, previna o crash.
+            if (comandosVisiveis.length === 0) {
+                 const embedErro = new EmbedBuilder()
+                    .setColor(0xFF0000)
+                    .setTitle('❌ Nenhum Comando Encontrado')
+                    .setDescription('Nenhum comando visível foi carregado. Verifique os logs se o bot está caindo.');
+                return message.channel.send({ embeds: [embedErro] }).catch(console.error);
+            }
+
+            // Constrói a lista de comandos
             const lista = comandosVisiveis.map(command => 
                 `\`${prefix}${command.name}\` - ${command.description || 'Sem descrição.'}`
             ).join('\n');
 
             const embed = new EmbedBuilder()
-                .setColor(0x0099FF) // Azul
+                .setColor(0x0099FF)
                 .setTitle('✨ Lista de Comandos')
                 .setDescription(
                     `Use \`${prefix}help [comando]\` para obter mais informações sobre um comando específico.\n\n` + 
                     '**Comandos Disponíveis:**'
                 )
-                // Usando addFields para garantir que o formato está correto
                 .addFields([{
                     name: '\u200B', 
-                    value: lista || 'Nenhum comando encontrado.',
+                    value: lista, // Lista agora é garantidamente preenchida ou evitada pelo IF acima
                     inline: false,
                 }])
                 .setFooter({ text: `Solicitado por ${message.author.username}` })
@@ -42,7 +50,7 @@ module.exports = {
             return message.channel.send({ embeds: [embed] }).catch(console.error);
             
         } else {
-            // Se houver argumentos (quer ajuda sobre um comando específico)
+            // ... (Ajuda de comando específico - a parte que não estava falhando)
             const nomeComando = args[0].toLowerCase();
             const comando = client.commands.get(nomeComando) || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(nomeComando));
 
@@ -51,7 +59,7 @@ module.exports = {
             }
 
             const embedDetalhe = new EmbedBuilder()
-                .setColor(0x00FF00) // Verde
+                .setColor(0x00FF00)
                 .setTitle(`Comando: ${comando.name}`)
                 .setDescription(comando.description || 'Sem descrição detalhada.')
                 .addFields(
