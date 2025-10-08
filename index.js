@@ -61,7 +61,31 @@ client.once('ready', () => {
 
 
 // ===================================
-// 3. EVENTO: MENSAGEM RECEBIDA (COMANDOS E AFK)
+// 3. EVENTO: MEMBRO ENTRA (AUTO-ROLE)
+// ===================================
+client.on('guildMemberAdd', async member => {
+    
+    // Pega o ID do cargo salvo no DB
+    const roleId = await db.get(`autorole_${member.guild.id}`);
+    
+    if (roleId) {
+        try {
+            const role = member.guild.roles.cache.get(roleId);
+            
+            // Garante que o bot pode dar o cargo
+            if (role && role.position < member.guild.members.me.roles.highest.position) {
+                await member.roles.add(role, 'Auto-Role configurado via Painel Web.');
+                console.log(`[AUTO-ROLE] Cargo ${role.name} dado a ${member.user.tag}.`);
+            }
+        } catch (error) {
+            console.error(`[ERRO AUTO-ROLE] Não foi possível dar o cargo ao membro ${member.user.tag}:`, error);
+        }
+    }
+});
+
+
+// ===================================
+// 4. EVENTO: MENSAGEM RECEBIDA (COMANDOS E AFK)
 // ===================================
 client.on('messageCreate', async message => {
     
@@ -109,14 +133,14 @@ client.on('messageCreate', async message => {
 
 
 // ===================================
-// 4. LOGIN DO BOT (Discord)
+// 5. LOGIN DO BOT (Discord)
 // ===================================
 
 client.login(process.env.TOKEN_BOT); 
 
 
 // ===================================
-// 5. SERVIDOR WEB PARA RENDER (Painel e Ping 24/7)
+// 6. SERVIDOR WEB PARA RENDER (Painel e Ping 24/7)
 // ===================================
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -125,9 +149,12 @@ const PORT = process.env.PORT || 3000;
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Middleware para processar dados JSON no POST
+app.use(express.json());
+
 // Configuração da Sessão
 app.use(session({
-    // Usa a variável de ambiente do Render, com um fallback seguro (que você pode editar no código, se quiser)
+    // Usa a variável de ambiente do Render, com um fallback seguro.
     secret: process.env.SESSION_SECRET || 'uma-chave-secreta-forte-e-aleatoria-criada-por-voce', 
     resave: false,
     saveUninitialized: false,
@@ -200,6 +227,73 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
         db: db,
         guilds: req.user.guilds 
     });
+});
+
+// Rota de Configuração por Servidor
+app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
+    const guildId = req.params.guildId;
+    
+    // 1. Verificar se o bot está no servidor
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) {
+        return res.status(404).send('Bot não está neste servidor ou servidor inválido.');
+    }
+    
+    // 2. Verificar se o usuário logado é administrador
+    const userGuild = req.user.guilds.find(g => g.id === guildId);
+    if (!userGuild || !((userGuild.permissions & 0x8) === 0x8 || (userGuild.permissions & 0x20) === 0x20)) {
+        return res.status(403).send('Você não tem permissão de Administrador/Gerenciar Servidor neste local.');
+    }
+
+    // 3. Obter dados do servidor
+    const roles = guild.roles.cache
+        .filter(r => r.id !== guild.id) // Remove o cargo @everyone
+        .sort((a, b) => b.position - a.position); // Ordena por posição
+
+    // 4. Obter a configuração atual do Auto-Role
+    const currentAutoroleId = await db.get(`autorole_${guildId}`);
+
+    res.render('guild_settings', { 
+        user: req.user,
+        guild: guild,
+        roles: roles,
+        currentAutoroleId: currentAutoroleId,
+        client: client
+    });
+});
+
+// Rota POST para Salvar Auto-Role
+app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
+    const guildId = req.params.guildId;
+    const { roleId } = req.body; // Pega o roleId enviado pelo site
+
+    // 1. Verificação de permissão (segurança no backend)
+    const userGuild = req.user.guilds.find(g => g.id === guildId);
+    if (!userGuild || !((userGuild.permissions & 0x8) === 0x8 || (userGuild.permissions & 0x20) === 0x20)) {
+        return res.status(403).json({ success: false, message: 'Permissão negada.' });
+    }
+
+    if (roleId === 'none') {
+        // Desativar Auto-Role
+        await db.delete(`autorole_${guildId}`);
+        return res.json({ success: true, message: 'Auto-Role desativado com sucesso.' });
+    }
+
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild || !guild.roles.cache.has(roleId)) {
+        return res.status(400).json({ success: false, message: 'Cargo inválido.' });
+    }
+    
+    // 2. Verificação de hierarquia do bot
+    const selectedRole = guild.roles.cache.get(roleId);
+    if (selectedRole.position >= guild.members.me.roles.highest.position) {
+         return res.status(400).json({ success: false, message: 'O cargo é superior ou igual ao meu. Não consigo atribuí-lo.' });
+    }
+
+    // 3. Salvar no QuickDB
+    await db.set(`autorole_${guildId}`, roleId);
+
+    res.json({ success: true, message: `Auto-Role definido para @${selectedRole.name}.` });
 });
 
 // Ouve na porta
