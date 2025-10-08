@@ -14,6 +14,7 @@ const DiscordStrategy = require('passport-discord').Strategy;
 
 dotenv.config(); 
 
+// Configuração do Bot Discord
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -45,7 +46,6 @@ for (const file of commandFiles) {
             console.warn(`[AVISO] O comando em ${filePath} está faltando a propriedade "name" ou "execute" necessária.`);
         }
     } catch (error) {
-        // ESSENCIAL: Garante que o bot não crasha se um comando falhar.
         console.error(`[ERRO NO COMANDO] Não foi possível carregar ${file}:`, error);
     }
 }
@@ -127,7 +127,8 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Configuração da Sessão
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'SEGREDO_SUPER_SEGURO_RENDER', // Use a variável do Render
+    // Usa a variável de ambiente do Render, com um fallback seguro (que você pode editar no código, se quiser)
+    secret: process.env.SESSION_SECRET || 'uma-chave-secreta-forte-e-aleatoria-criada-por-voce', 
     resave: false,
     saveUninitialized: false,
 }));
@@ -138,7 +139,7 @@ app.use(passport.session());
 
 // --- Configuração do Discord OAuth2 ---
 const CLIENT_ID = process.env.CLIENT_ID_BOT; 
-const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
+const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT; 
 const CALLBACK_URL = process.env.CALLBACK_URL; 
 
 passport.serializeUser((user, done) => done(null, user));
@@ -146,7 +147,7 @@ passport.deserializeUser((obj, done) => done(null, obj));
 
 passport.use(new DiscordStrategy({
     clientID: CLIENT_ID,
-    clientSecret: CLIENT_SECRET,
+    clientSecret: CLIENT_SECRET, 
     callbackURL: CALLBACK_URL,
     scope: ['identify', 'guilds']
 },
@@ -164,10 +165,10 @@ const isAuthenticated = (req, res, next) => {
     res.redirect('/login');
 };
 
-// Rota de Login (Redireciona para o Discord)
+// Rota de Login 
 app.get('/login', passport.authenticate('discord', { scope: ['identify', 'guilds'] }));
 
-// Rota de Callback (Após o Discord autorizar)
+// Rota de Callback 
 app.get('/callback', passport.authenticate('discord', {
     failureRedirect: '/'
 }), (req, res) => {
@@ -197,7 +198,6 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
         user: req.user,
         client: client,
         db: db,
-        // Passa as guildas (servidores) para o template
         guilds: req.user.guilds 
     });
 });
