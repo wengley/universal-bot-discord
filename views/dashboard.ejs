@@ -11,7 +11,49 @@
         .status-box { padding: 10px; border-radius: 5px; font-weight: bold; margin-bottom: 15px; display: inline-block; }
         .status-online { background-color: #2ecc71; }
         .status-offline { background-color: #e74c3c; }
-        .guild-card { background-color: #36393f; padding: 10px; border-radius: 5px; margin-bottom: 5px; }
+        
+        /* NOVO: Estilo para o Card do Servidor */
+        .guild-card { 
+            background-color: #36393f; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 10px;
+            display: flex; /* Para alinhar o ícone e o texto */
+            align-items: center;
+            justify-content: space-between; /* Para empurrar o botão para a direita */
+        }
+        .guild-info {
+            display: flex;
+            align-items: center;
+        }
+        .guild-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+        .guild-name-id h4 {
+            margin: 0;
+            color: #7289da;
+        }
+        .guild-name-id p {
+            margin: 0;
+            font-size: 0.8em;
+            opacity: 0.6;
+        }
+        .config-button {
+            padding: 8px 15px;
+            background-color: #7289da;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .config-button:hover {
+            background-color: #677bc4;
+        }
     </style>
 </head>
 <body>
@@ -41,14 +83,29 @@
         
         <h3>Servidores Que Você Pode Configurar:</h3>
         <% 
+            // Filtra servidores que o usuário pode gerenciar (Admin ou Manage Guild) E que o bot está.
             const managedGuilds = guilds.filter(g => (g.permissions & 0x8) === 0x8 || (g.permissions & 0x20) === 0x20)
                                       .filter(g => client.guilds.cache.has(g.id));
         %>
         
         <% if (managedGuilds.length > 0) { %>
-            <% managedGuilds.forEach(guild => { %>
+            <% managedGuilds.forEach(userGuild => { %>
+                <% 
+                    // Pega o objeto COMPLETO do servidor no cache do bot para obter o ícone
+                    const botGuild = client.guilds.cache.get(userGuild.id);
+                    // Pega a URL do ícone (o 'null' é um fallback caso não tenha ícone)
+                    const iconURL = botGuild ? botGuild.iconURL({ dynamic: true, size: 128 }) : 'https://cdn.discordapp.com/embed/avatars/0.png';
+                %>
+                
                 <div class="guild-card">
-                    **<%= guild.name %>** (ID: <%= guild.id %>) - <a href="/dashboard/<%= guild.id %>" style="color: #7289da;">Configurar</a>
+                    <div class="guild-info">
+                        <img src="<%= iconURL %>" alt="Ícone do Servidor" class="guild-icon">
+                        <div class="guild-name-id">
+                            <h4><%= userGuild.name %></h4>
+                            <p>ID: <code><%= userGuild.id %></code></p>
+                        </div>
+                    </div>
+                    <a href="/dashboard/<%= userGuild.id %>" class="config-button">Configurar</a>
                 </div>
             <% }); %>
         <% } else { %>
