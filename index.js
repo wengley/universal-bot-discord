@@ -1,7 +1,6 @@
 const { Client, GatewayIntentBits, Collection, Partials } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-// Mantenha o dotenv para carregar o .env localmente, se necessário.
 const dotenv = require('dotenv'); 
 const { QuickDB } = require('quick.db'); 
 const db = new QuickDB(); 
@@ -29,8 +28,8 @@ const prefix = '!';
 // 1. CARREGAMENTO DE COMANDOS
 // ===================================
 const commandsPath = path.join(__dirname, 'commands');
-// ATENÇÃO: Adicionado filtro para ignorar 'help.js' temporariamente, evitando o crash!
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js') && file !== 'help.js');
+// CORREÇÃO FINAL: Removido o filtro. Agora o help.js (corrigido) será carregado.
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
 
 for (const file of commandFiles) {
@@ -63,8 +62,7 @@ client.on('messageCreate', async message => {
 
     const guildId = message.guild.id;
 
-    // 3.1. VERIFICAÇÃO DE AFK (Retirado para simplificar, você deve recolocar se quiser)
-    // ... Seu código AFK aqui (usa db.get e db.delete) ...
+    // --- VERIFICAÇÃO DE AFK (Retorno) ---
     const userAfkStatus = await db.get(`afk_${guildId}_${message.author.id}`); 
     
     if (userAfkStatus) {
@@ -84,7 +82,7 @@ client.on('messageCreate', async message => {
         }).catch(console.error);
     }
     
-    // 3.2. TRATAMENTO DE COMANDOS !
+    // --- TRATAMENTO DE COMANDOS ! ---
 
     if (!message.content.startsWith(prefix)) return;
 
@@ -96,7 +94,6 @@ client.on('messageCreate', async message => {
     if (!command) return;
 
     try {
-        // CORREÇÃO CRUCIAL: Passa o objeto 'db' para o comando (daily.js e balance.js)
         command.execute(message, args, client, db); 
     } catch (error) {
         console.error(`Erro ao executar o comando ${commandName}:`, error);
@@ -109,7 +106,6 @@ client.on('messageCreate', async message => {
 // 4. LOGIN DO BOT
 // ===================================
 
-// O Render usará a variável TOKEN_BOT que você definiu.
 client.login(process.env.TOKEN_BOT); 
 
 
@@ -118,16 +114,12 @@ client.login(process.env.TOKEN_BOT);
 // ===================================
 const app = express();
 
-// O Render precisa que o servidor abra esta porta (usando a variável PORT que você definiu).
 const PORT = process.env.PORT || 3000;
 
-// Rota simples para que o UptimeRobot tenha algo para "pingar"
 app.get('/', (req, res) => {
-    // Retorna um status de sucesso se o bot estiver pronto
     if (client.isReady()) {
         res.status(200).send(`Bot Discord está online. Ping: ${client.ws.ping}ms`);
     } else {
-        // O bot ainda está inicializando
         res.status(503).send('Bot está iniciando...');
     }
 });
