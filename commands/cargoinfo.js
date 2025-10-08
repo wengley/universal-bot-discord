@@ -1,0 +1,48 @@
+// commands/cargoinfo.js
+const { EmbedBuilder } = require('discord.js');
+
+module.exports = {
+    name: 'cargoinfo',
+    description: 'Mostra informações detalhadas sobre um cargo mencionado ou pelo ID.',
+    aliases: ['roleinfo', 'rinfo'],
+    usage: '<@cargo | ID>',
+    
+    async execute(message, args, client, db) {
+        
+        const roleQuery = args.join(' ');
+        
+        if (!roleQuery) {
+            return message.reply('Por favor, mencione um cargo (@cargo) ou forneça o ID do cargo.');
+        }
+
+        // Tenta encontrar o cargo por menção, ID, ou nome
+        const role = message.mentions.roles.first() || 
+                     message.guild.roles.cache.get(roleQuery) ||
+                     message.guild.roles.cache.find(r => r.name.toLowerCase() === roleQuery.toLowerCase());
+
+        if (!role) {
+            return message.reply(`❌ Cargo não encontrado com o nome, menção ou ID: \`${roleQuery}\`.`);
+        }
+
+        // Formata as permissões em uma lista
+        const permissions = role.permissions.toArray().map(p => `\`${p}\``).join(', ') || 'Nenhuma permissão específica.';
+
+        const embed = new EmbedBuilder()
+            .setColor(role.hexColor === '#000000' ? 0xCCCCCC : role.hexColor) // Se for preto, usa um cinza claro.
+            .setTitle(`👑 Informações do Cargo: ${role.name}`)
+            .addFields(
+                { name: 'ID', value: `\`${role.id}\``, inline: true },
+                { name: 'Cor (Hex)', value: role.hexColor, inline: true },
+                { name: 'Posição', value: `${role.position}`, inline: true },
+                { name: 'Mencionável', value: role.mentionable ? 'Sim' : 'Não', inline: true },
+                { name: 'Separado', value: role.hoist ? 'Sim' : 'Não', inline: true },
+                { name: 'Membros', value: `${role.members.size}`, inline: true },
+                { name: 'Criado em', value: `<t:${Math.floor(role.createdAt.getTime() / 1000)}:f> (<t:${Math.floor(role.createdAt.getTime() / 1000)}:R>)`, inline: false },
+                { name: 'Permissões Principais', value: permissions.length > 1024 ? 'Lista muito longa para exibir.' : permissions, inline: false }
+            )
+            .setFooter({ text: `Solicitado por ${message.author.username}` })
+            .setTimestamp();
+
+        message.channel.send({ embeds: [embed] });
+    },
+};
