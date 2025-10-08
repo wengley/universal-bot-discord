@@ -8,11 +8,47 @@
         .container { background-color: #23272a; padding: 20px; border-radius: 8px; }
         .menu a { color: #ffffff; margin-right: 15px; text-decoration: none; }
         h1, h2 { color: #ffffff; }
+        
+        /* Abas */
+        .tabs { display: flex; margin-bottom: 15px; border-bottom: 2px solid #36393f; }
+        .tab-button { 
+            padding: 10px 15px; 
+            cursor: pointer; 
+            border: none; 
+            background-color: transparent; 
+            color: #ccc; 
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+        .tab-button:hover { color: #fff; }
+        .tab-button.active { 
+            color: #7289da; 
+            border-bottom: 3px solid #7289da; 
+            margin-bottom: -2px; 
+        }
+        .tab-content { padding-top: 15px; }
+
+        /* Configurações Comuns */
         .config-section { background-color: #36393f; padding: 15px; border-radius: 5px; margin-top: 15px; }
-        select, button { padding: 10px; margin-top: 10px; border-radius: 5px; border: none; }
-        button { background-color: #7289da; color: white; cursor: pointer; }
-        .current-role { font-weight: bold; color: #2ecc71; }
-        .alert { padding: 10px; margin-top: 10px; border-radius: 5px; background-color: #e74c3c; display: none; }
+        select, input[type="text"], textarea { 
+            width: 100%; 
+            padding: 10px; 
+            margin-top: 5px; 
+            margin-bottom: 15px;
+            border-radius: 5px; 
+            border: 1px solid #5a5a5a;
+            background-color: #2c2f33;
+            color: #ffffff;
+            box-sizing: border-box; 
+        }
+        .current-setting { font-weight: bold; color: #2ecc71; }
+        
+        /* Botões e Alertas */
+        button { padding: 10px 15px; margin-top: 10px; border-radius: 5px; border: none; background-color: #7289da; color: white; cursor: pointer; font-weight: bold; transition: background-color 0.2s; }
+        button:hover { background-color: #677bc4; }
+        .status-message { padding: 10px; margin-top: 10px; border-radius: 5px; color: white; display: none; }
+        .danger-button { background-color: #e74c3c; }
+        .danger-button:hover { background-color: #c0392b; }
     </style>
 </head>
 <body>
@@ -25,54 +61,205 @@
     </div>
 
     <div class="container">
-        <h2>🛠️ Auto-Role (Cargo Automático)</h2>
         
-        <div class="config-section">
-            <p>
-                Cargo atual: 
-                <% if (currentAutoroleId) { %>
-                    <span class="current-role">@<%= guild.roles.cache.get(currentAutoroleId).name %></span>
-                <% } else { %>
-                    Nenhum (Desativado)
-                <% } %>
-            </p>
-            
-            <form id="autorole-form">
-                <label for="autorole-select">Selecione o cargo que novos membros receberão:</label><br>
-                <select id="autorole-select" name="roleId">
-                    <option value="none">-- DESATIVAR Auto-Role --</option>
-                    <% roles.forEach(role => { %>
-                        <option value="<%= role.id %>" <%= role.id === currentAutoroleId ? 'selected' : '' %>>
-                            <%= role.name %>
-                        </option>
-                    <% }); %>
-                </select>
-                <button type="submit">Salvar Configuração</button>
-            </form>
-            
-            <div id="status-message" class="alert"></div>
+        <div class="tabs">
+            <button class="tab-button active" onclick="openTab(event, 'autorole')">Auto-Role</button>
+            <button class="tab-button" onclick="openTab(event, 'notifications')">Notificação de Entrar/Sair</button>
+            <button class="tab-button" onclick="openTab(event, 'logs')">Event Logs (Em Breve)</button>
+        </div>
+
+        <div id="autorole" class="tab-content">
+            <h2>🛠️ Auto-Role (Cargo Automático)</h2>
+            <div class="config-section">
+                <p>
+                    Cargo atual: 
+                    <% if (currentAutoroleId && guild.roles.cache.has(currentAutoroleId)) { %>
+                        <span class="current-setting">@<%= guild.roles.cache.get(currentAutoroleId).name %></span>
+                    <% } else { %>
+                        <span class="current-setting" style="color: yellow;">Nenhum (Desativado)</span>
+                    <% } %>
+                </p>
+                
+                <form id="autorole-form">
+                    <label for="autorole-select">Selecione o cargo que novos membros receberão:</label><br>
+                    <select id="autorole-select" name="roleId">
+                        <option value="none">-- DESATIVAR Auto-Role --</option>
+                        <% roles.forEach(role => { %>
+                            <option value="<%= role.id %>" <%= role.id === currentAutoroleId ? 'selected' : '' %>>
+                                <%= role.name %>
+                            </option>
+                        <% }); %>
+                    </select>
+                    <button type="submit">Salvar Auto-Role</button>
+                </form>
+                
+                <div id="autorole-status" class="status-message"></div>
+            </div>
+        </div>
+
+        <div id="notifications" class="tab-content" style="display: none;">
+            <h2>🔔 Notificação de Entrada/Saída</h2>
+            <div class="config-section">
+                
+                <p>
+                    Canal atual: 
+                    <% if (notifChannelId && guild.channels.cache.has(notifChannelId)) { %>
+                        <span class="current-setting">#<%= guild.channels.cache.get(notifChannelId).name %></span>
+                    <% } else { %>
+                        <span class="current-setting" style="color: yellow;">Nenhum (Desativado)</span>
+                    <% } %>
+                </p>
+                
+                <form id="notifications-form">
+                    <input type="hidden" name="toggle" value="true" id="notifications-toggle">
+
+                    <label for="channel-select">Canal de Texto para Enviar Notificações:</label><br>
+                    <select id="channel-select" name="channelId">
+                        <option value="none">-- Selecionar Canal --</option>
+                        <% textChannels.forEach(channel => { %>
+                            <option value="<%= channel.id %>" <%= channel.id === notifChannelId ? 'selected' : '' %>>
+                                #<%= channel.name %>
+                            </option>
+                        <% }); %>
+                    </select>
+
+                    <label for="join-msg">Mensagem de Boas-Vindas (Use {mention} ou {user}):</label><br>
+                    <textarea id="join-msg" name="joinMessage" rows="2"><%= joinMsg %></textarea>
+
+                    <label for="leave-msg">Mensagem de Despedida (Use {mention} ou {user}):</label><br>
+                    <textarea id="leave-msg" name="leaveMessage" rows="2"><%= leaveMsg %></textarea>
+                    
+                    <button type="submit">Salvar Notificações</button>
+                    <button type="button" class="danger-button" onclick="disableNotifications()">Desativar</button>
+                </form>
+                
+                <div id="notifications-status" class="status-message"></div>
+            </div>
+        </div>
+
+        <div id="logs" class="tab-content" style="display: none;">
+             <h2>📝 Event Logs</h2>
+             <p>Esta funcionalidade ainda será desenvolvida. Volte em breve!</p>
         </div>
     </div>
     
     <script>
-        document.getElementById('autorole-form').addEventListener('submit', async function(e) {
+        // Função para mudar de aba
+        function openTab(evt, tabName) {
+            const contents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < contents.length; i++) {
+                contents[i].style.display = "none";
+            }
+            
+            const buttons = document.getElementsByClassName("tab-button");
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].className = buttons[i].className.replace(" active", "");
+            }
+            
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+        
+        // --- FUNÇÃO DE ENVIO (AJAX) ---
+        async function submitForm(formId, endpoint, statusDivId, successCallback) {
+            const form = document.getElementById(formId);
+            const statusDiv = document.getElementById(statusDivId);
+            const formData = new FormData(form);
+            const jsonBody = {};
+            
+            formData.forEach((value, key) => {
+                jsonBody[key] = value;
+            });
+            
+            // Tratamento especial para o campo 'toggle' que pode ser um hidden field
+            if (formId === 'notifications-form' && !form.querySelector('input[name="toggle"]')) {
+                 jsonBody['toggle'] = true; // Valor padrão se não tiver o botão de desativar
+            }
+
+
+            statusDiv.style.display = 'none';
+            statusDiv.style.backgroundColor = '';
+
+            try {
+                const response = await fetch(`/dashboard/<%= guild.id %>/${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonBody)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    statusDiv.style.backgroundColor = '#2ecc71'; // Verde
+                    statusDiv.innerHTML = `✅ Sucesso! ${data.message}`;
+                    if (successCallback) successCallback(jsonBody);
+                } else {
+                    statusDiv.style.backgroundColor = '#e74c3c'; // Vermelho
+                    statusDiv.innerHTML = `❌ Erro: ${data.message}`;
+                }
+            } catch (error) {
+                statusDiv.style.backgroundColor = '#e74c3c'; // Vermelho
+                statusDiv.innerHTML = `❌ Erro de Conexão: Ocorreu um problema ao enviar dados.`;
+                console.error('Fetch error:', error);
+            }
+            
+            statusDiv.style.display = 'block';
+        }
+        
+        // --- LÓGICA AUTO-ROLE ---
+        document.getElementById('autorole-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitForm('autorole-form', 'autorole', 'autorole-status', (jsonBody) => {
+                const form = document.getElementById('autorole-form');
+                const currentRoleSpan = document.querySelector('#autorole .current-setting');
+                
+                if (jsonBody.roleId === 'none') {
+                    currentRoleSpan.innerHTML = 'Nenhum (Desativado)';
+                    currentRoleSpan.style.color = 'yellow';
+                } else {
+                    const selectedRoleText = form.elements.roleId.options[form.elements.roleId.selectedIndex].text;
+                    currentRoleSpan.innerHTML = `@${selectedRoleText.trim()}`;
+                    currentRoleSpan.style.color = '#2ecc71';
+                }
+            });
+        });
+
+        // --- LÓGICA NOTIFICAÇÕES ---
+        document.getElementById('notifications-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const form = e.target;
-            const roleId = form.elements.roleId.value;
-            const guildId = '<%= guild.id %>';
-            const statusDiv = document.getElementById('status-message');
-            
-            statusDiv.style.display = 'none';
-            
-            // Aqui, o fetch enviaria a configuração para uma nova rota POST (a ser criada)
-            // Por enquanto, vamos simular o envio.
-            
-            statusDiv.style.backgroundColor = '#2ecc71';
-            statusDiv.innerHTML = `Configuração salva! Novo cargo ID: **${roleId}**. (Falta criar a rota de salvamento no index.js!)`;
-            statusDiv.style.display = 'block';
+            // Garante que o toggle está em true ao salvar
+            document.getElementById('notifications-toggle').value = 'true'; 
 
-            // ATENÇÃO: A ROTA DE SALVAMENTO (POST) AINDA NÃO EXISTE!
+            submitForm('notifications-form', 'notifications', 'notifications-status', (jsonBody) => {
+                const form = document.getElementById('notifications-form');
+                const currentChannelSpan = document.querySelector('#notifications .current-setting');
+                const selectedChannelText = form.elements.channelId.options[form.elements.channelId.selectedIndex].text;
+
+                currentChannelSpan.innerHTML = selectedChannelText;
+                currentChannelSpan.style.color = '#2ecc71';
+            });
+        });
+
+        function disableNotifications() {
+            // Define o toggle para false e envia
+            document.getElementById('notifications-toggle').value = 'false'; 
+            
+            submitForm('notifications-form', 'notifications', 'notifications-status', (jsonBody) => {
+                const currentChannelSpan = document.querySelector('#notifications .current-setting');
+                currentChannelSpan.innerHTML = 'Nenhum (Desativado)';
+                currentChannelSpan.style.color = 'yellow';
+                // Resetar o toggle para o estado padrão
+                document.getElementById('notifications-toggle').value = 'true';
+            });
+        }
+        
+        // Abre a primeira aba ao carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            const firstButton = document.querySelector('.tab-button');
+            if (firstButton) {
+                firstButton.click();
+            }
         });
     </script>
 </body>
