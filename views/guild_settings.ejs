@@ -5,7 +5,18 @@
     <style>
         body { font-family: Arial, sans-serif; background-color: #2c2f33; color: #ffffff; padding: 20px; }
         .header { background-color: #7289da; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        .container { background-color: #23272a; padding: 20px; border-radius: 8px; }
+        
+        /* NOVO: Estilos para o Layout e Sidebar */
+        .dashboard-layout { display: flex; gap: 20px; }
+        .sidebar { width: 250px; background-color: #23272a; padding: 20px; border-radius: 8px; height: fit-content; }
+        .main-content { flex-grow: 1; background-color: #23272a; padding: 20px; border-radius: 8px; }
+
+        /* Perfil na Sidebar */
+        .profile-box { text-align: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #36393f; }
+        .profile-box img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
+        .profile-box h4 { margin: 0; color: #7289da; }
+        .profile-box p { margin: 5px 0 0 0; font-size: 0.8em; opacity: 0.7; }
+
         .menu a { color: #ffffff; margin-right: 15px; text-decoration: none; }
         h1, h2 { color: #ffffff; }
         
@@ -47,103 +58,127 @@
         button { padding: 10px 15px; margin-top: 10px; border-radius: 5px; border: none; background-color: #7289da; color: white; cursor: pointer; font-weight: bold; transition: background-color 0.2s; }
         button:hover { background-color: #677bc4; }
         .status-message { padding: 10px; margin-top: 10px; border-radius: 5px; color: white; display: none; }
-        .danger-button { background-color: #e74c3c; }
+        .danger-button { background-color: #e74c3c; margin-left: 10px; }
         .danger-button:hover { background-color: #c0392b; }
+        .test-button { background-color: #f39c12; margin-left: 10px; }
+        .test-button:hover { background-color: #e67e22; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Configuração: <%= guild.name %></h1>
-        <div class="menu">
-            <a href="/dashboard">← Voltar para Servidores</a>
-            <a href="/logout">Logout</a>
-        </div>
     </div>
 
-    <div class="container">
+    <div class="dashboard-layout">
         
-        <div class="tabs">
-            <button class="tab-button active" onclick="openTab(event, 'autorole')">Auto-Role</button>
-            <button class="tab-button" onclick="openTab(event, 'notifications')">Notificação de Entrar/Sair</button>
-            <button class="tab-button" onclick="openTab(event, 'logs')">Event Logs (Em Breve)</button>
-        </div>
+        <div class="sidebar">
+            <div class="profile-box">
+                <% 
+                    const avatarId = user.avatar;
+                    const avatarURL = avatarId 
+                        ? `https://cdn.discordapp.com/avatars/${user.id}/${avatarId}.${avatarId.startsWith('a_') ? 'gif' : 'png'}?size=128` 
+                        : `https://cdn.discordapp.com/embed/avatars/${user.discriminator % 5}.png`;
+                %>
+                <img src="<%= avatarURL %>" alt="Avatar" class="profile-avatar">
+                <h4><%= user.username %></h4>
+                <p>ID: <code><%= user.id %></code></p>
+            </div>
 
-        <div id="autorole" class="tab-content">
-            <h2>🛠️ Auto-Role (Cargo Automático)</h2>
-            <div class="config-section">
-                <p>
-                    Cargo atual: 
-                    <% if (currentAutoroleId && guild.roles.cache.has(currentAutoroleId)) { %>
-                        <span class="current-setting">@<%= guild.roles.cache.get(currentAutoroleId).name %></span>
-                    <% } else { %>
-                        <span class="current-setting" style="color: yellow;">Nenhum (Desativado)</span>
-                    <% } %>
-                </p>
-                
-                <form id="autorole-form">
-                    <label for="autorole-select">Selecione o cargo que novos membros receberão:</label><br>
-                    <select id="autorole-select" name="roleId">
-                        <option value="none">-- DESATIVAR Auto-Role --</option>
-                        <% roles.forEach(role => { %>
-                            <option value="<%= role.id %>" <%= role.id === currentAutoroleId ? 'selected' : '' %>>
-                                <%= role.name %>
-                            </option>
-                        <% }); %>
-                    </select>
-                    <button type="submit">Salvar Auto-Role</button>
-                </form>
-                
-                <div id="autorole-status" class="status-message"></div>
+            <div class="menu-items">
+                 <a href="/dashboard" style="display: block; margin-bottom: 10px; text-decoration: none; color: #7289da;">🏠 Painel Inicial</a>
+                 <a href="/logout" style="display: block; text-decoration: none; color: #e74c3c;">🚪 Sair (Logout)</a>
             </div>
         </div>
 
-        <div id="notifications" class="tab-content" style="display: none;">
-            <h2>🔔 Notificação de Entrada/Saída</h2>
-            <div class="config-section">
-                
-                <p>
-                    Canal atual: 
-                    <% if (notifChannelId && guild.channels.cache.has(notifChannelId)) { %>
-                        <span class="current-setting">#<%= guild.channels.cache.get(notifChannelId).name %></span>
-                    <% } else { %>
-                        <span class="current-setting" style="color: yellow;">Nenhum (Desativado)</span>
-                    <% } %>
-                </p>
-                
-                <form id="notifications-form">
-                    <input type="hidden" name="toggle" value="true" id="notifications-toggle">
+        <div class="main-content">
+            
+            <div class="tabs">
+                <button class="tab-button active" onclick="openTab(event, 'autorole')">Auto-Role</button>
+                <button class="tab-button" onclick="openTab(event, 'notifications')">Notificação de Entrar/Sair</button>
+                <button class="tab-button" onclick="openTab(event, 'logs')">Event Logs (Em Breve)</button>
+            </div>
 
-                    <label for="channel-select">Canal de Texto para Enviar Notificações:</label><br>
-                    <select id="channel-select" name="channelId">
-                        <option value="none">-- Selecionar Canal --</option>
-                        <% textChannels.forEach(channel => { %>
-                            <option value="<%= channel.id %>" <%= channel.id === notifChannelId ? 'selected' : '' %>>
-                                #<%= channel.name %>
-                            </option>
-                        <% }); %>
-                    </select>
-
-                    <label for="join-msg">Mensagem de Boas-Vindas (Use {mention} ou {user}):</label><br>
-                    <textarea id="join-msg" name="joinMessage" rows="2"><%= joinMsg %></textarea>
-
-                    <label for="leave-msg">Mensagem de Despedida (Use {mention} ou {user}):</label><br>
-                    <textarea id="leave-msg" name="leaveMessage" rows="2"><%= leaveMsg %></textarea>
+            <div id="autorole" class="tab-content">
+                <h2>🛠️ Auto-Role (Cargo Automático)</h2>
+                <div class="config-section">
+                    <p>
+                        Cargo atual: 
+                        <% if (currentAutoroleId && guild.roles.cache.has(currentAutoroleId)) { %>
+                            <span class="current-setting">@<%= guild.roles.cache.get(currentAutoroleId).name %></span>
+                        <% } else { %>
+                            <span class="current-setting" style="color: yellow;">Nenhum (Desativado)</span>
+                        <% } %>
+                    </p>
                     
-                    <button type="submit">Salvar Notificações</button>
-                    <button type="button" class="danger-button" onclick="disableNotifications()">Desativar</button>
-                </form>
-                
-                <div id="notifications-status" class="status-message"></div>
+                    <form id="autorole-form">
+                        <label for="autorole-select">Selecione o cargo que novos membros receberão:</label><br>
+                        <select id="autorole-select" name="roleId">
+                            <option value="none">-- DESATIVAR Auto-Role --</option>
+                            <% roles.forEach(role => { %>
+                                <option value="<%= role.id %>" <%= role.id === currentAutoroleId ? 'selected' : '' %>>
+                                    <%= role.name %>
+                                </option>
+                            <% }); %>
+                        </select>
+                        <button type="submit">Salvar Auto-Role</button>
+                    </form>
+                    
+                    <div id="autorole-status" class="status-message"></div>
+                </div>
+            </div>
+
+            <div id="notifications" class="tab-content" style="display: none;">
+                <h2>🔔 Notificação de Entrada/Saída</h2>
+                <div class="config-section">
+                    
+                    <p>
+                        Canal atual: 
+                        <% if (notifChannelId && guild.channels.cache.has(notifChannelId)) { %>
+                            <span class="current-setting">#<%= guild.channels.cache.get(notifChannelId).name %></span>
+                        <% } else { %>
+                            <span class="current-setting" style="color: yellow;">Nenhum (Desativado)</span>
+                        <% } %>
+                    </p>
+                    
+                    <form id="notifications-form">
+                        <input type="hidden" name="toggle" value="true" id="notifications-toggle">
+
+                        <label for="channel-select">Canal de Texto para Enviar Notificações:</label><br>
+                        <select id="channel-select" name="channelId">
+                            <option value="none">-- Selecionar Canal --</option>
+                            <% textChannels.forEach(channel => { %>
+                                <option value="<%= channel.id %>" <%= channel.id === notifChannelId ? 'selected' : '' %>>
+                                    #<%= channel.name %>
+                                </option>
+                            <% }); %>
+                        </select>
+
+                        <label for="join-msg">Mensagem de Boas-Vindas (Use {mention} ou {user}):</label><br>
+                        <textarea id="join-msg" name="joinMessage" rows="2"><%= joinMsg %></textarea>
+                        <button type="button" class="test-button" onclick="testJoinMessage()">Testar Entrada</button>
+
+                        <label for="leave-msg">Mensagem de Despedida (Use {mention} ou {user}):</label><br>
+                        <textarea id="leave-msg" name="leaveMessage" rows="2"><%= leaveMsg %></textarea>
+                        
+                        <button type="submit">Salvar Notificações</button>
+                        <button type="button" class="danger-button" onclick="disableNotifications()">Desativar</button>
+                    </form>
+                    
+                    <div id="notifications-status" class="status-message"></div>
+                    
+                    <p style="margin-top: 20px; font-size: 0.9em; opacity: 0.7;">
+                        **Observação:** O botão 'Testar Entrada' usa a mensagem de boas-vindas. Mensagens de saída não são testáveis (pois exigiria a saída de um membro real).
+                    </p>
+                </div>
+            </div>
+
+            <div id="logs" class="tab-content" style="display: none;">
+                <h2>📝 Event Logs</h2>
+                <p>Esta funcionalidade ainda será desenvolvida. Volte em breve!</p>
             </div>
         </div>
-
-        <div id="logs" class="tab-content" style="display: none;">
-             <h2>📝 Event Logs</h2>
-             <p>Esta funcionalidade ainda será desenvolvida. Volte em breve!</p>
-        </div>
-    </div>
-    
-    <script>
+        
+    </div> <script>
         // Função para mudar de aba
         function openTab(evt, tabName) {
             const contents = document.getElementsByClassName("tab-content");
@@ -161,21 +196,8 @@
         }
         
         // --- FUNÇÃO DE ENVIO (AJAX) ---
-        async function submitForm(formId, endpoint, statusDivId, successCallback) {
-            const form = document.getElementById(formId);
+        async function submitForm(endpoint, jsonBody, statusDivId, successCallback) {
             const statusDiv = document.getElementById(statusDivId);
-            const formData = new FormData(form);
-            const jsonBody = {};
-            
-            formData.forEach((value, key) => {
-                jsonBody[key] = value;
-            });
-            
-            // Tratamento especial para o campo 'toggle' que pode ser um hidden field
-            if (formId === 'notifications-form' && !form.querySelector('input[name="toggle"]')) {
-                 jsonBody['toggle'] = true; // Valor padrão se não tiver o botão de desativar
-            }
-
 
             statusDiv.style.display = 'none';
             statusDiv.style.backgroundColor = '';
@@ -209,8 +231,10 @@
         // --- LÓGICA AUTO-ROLE ---
         document.getElementById('autorole-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            submitForm('autorole-form', 'autorole', 'autorole-status', (jsonBody) => {
-                const form = document.getElementById('autorole-form');
+            const form = e.target;
+            const jsonBody = { roleId: form.elements.roleId.value };
+            
+            submitForm('autorole', jsonBody, 'autorole-status', (jsonBody) => {
                 const currentRoleSpan = document.querySelector('#autorole .current-setting');
                 
                 if (jsonBody.roleId === 'none') {
@@ -227,12 +251,17 @@
         // --- LÓGICA NOTIFICAÇÕES ---
         document.getElementById('notifications-form').addEventListener('submit', function(e) {
             e.preventDefault();
+            const form = e.target;
             
-            // Garante que o toggle está em true ao salvar
-            document.getElementById('notifications-toggle').value = 'true'; 
-
-            submitForm('notifications-form', 'notifications', 'notifications-status', (jsonBody) => {
-                const form = document.getElementById('notifications-form');
+            // Reúne dados do formulário
+            const jsonBody = { 
+                channelId: form.elements.channelId.value,
+                joinMessage: form.elements.joinMessage.value,
+                leaveMessage: form.elements.leaveMessage.value,
+                toggle: 'true' // Sempre true ao salvar
+            };
+            
+            submitForm('notifications', jsonBody, 'notifications-status', (jsonBody) => {
                 const currentChannelSpan = document.querySelector('#notifications .current-setting');
                 const selectedChannelText = form.elements.channelId.options[form.elements.channelId.selectedIndex].text;
 
@@ -242,16 +271,36 @@
         });
 
         function disableNotifications() {
-            // Define o toggle para false e envia
-            document.getElementById('notifications-toggle').value = 'false'; 
+            const form = document.getElementById('notifications-form');
             
-            submitForm('notifications-form', 'notifications', 'notifications-status', (jsonBody) => {
+            // Envia apenas o toggle para false
+            const jsonBody = { toggle: 'false' };
+            
+            submitForm('notifications', jsonBody, 'notifications-status', () => {
                 const currentChannelSpan = document.querySelector('#notifications .current-setting');
                 currentChannelSpan.innerHTML = 'Nenhum (Desativado)';
                 currentChannelSpan.style.color = 'yellow';
-                // Resetar o toggle para o estado padrão
-                document.getElementById('notifications-toggle').value = 'true';
+                // Resetar o dropdown visualmente
+                form.elements.channelId.value = 'none';
             });
+        }
+        
+        // --- TESTE DE MENSAGEM ---
+        function testJoinMessage() {
+            const channelId = document.getElementById('channel-select').value;
+            const joinMessage = document.getElementById('join-msg').value;
+            const statusDiv = document.getElementById('notifications-status');
+            
+            if (channelId === 'none') {
+                 statusDiv.style.backgroundColor = '#e74c3c'; // Vermelho
+                 statusDiv.innerHTML = `❌ Erro: Selecione um canal antes de testar.`;
+                 statusDiv.style.display = 'block';
+                 return;
+            }
+
+            const jsonBody = { channelId: channelId, joinMessage: joinMessage };
+
+            submitForm('test_join_message', jsonBody, 'notifications-status');
         }
         
         // Abre a primeira aba ao carregar

@@ -346,7 +346,7 @@ app.post('/dashboard/:guildId/notifications', isAuthenticated, async (req, res) 
         return res.status(403).json({ success: false, message: 'Permissão negada.' });
     }
 
-    if (toggle === 'false') { // O valor vem como string 'false' ou 'true'
+    if (toggle === 'false') {
         await db.delete(`join_msg_${guildId}`);
         await db.delete(`leave_msg_${guildId}`);
         await db.delete(`notif_channel_${guildId}`);
@@ -366,6 +366,44 @@ app.post('/dashboard/:guildId/notifications', isAuthenticated, async (req, res) 
 
     res.json({ success: true, message: `Notificações salvas. Canal: #${guild.channels.cache.get(channelId).name}` });
 });
+
+// Rota POST para TESTAR Notificação de Entrada
+app.post('/dashboard/:guildId/test_join_message', isAuthenticated, async (req, res) => {
+    const guildId = req.params.guildId;
+    const { channelId, joinMessage } = req.body; 
+
+    const userGuild = req.user.guilds.find(g => g.id === guildId);
+    if (!userGuild || !((userGuild.permissions & 0x8) === 0x8 || (userGuild.permissions & 0x20) === 0x20)) {
+        return res.status(403).json({ success: false, message: 'Permissão negada.' });
+    }
+
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) {
+        return res.status(400).json({ success: false, message: 'Servidor inválido.' });
+    }
+    
+    const channel = guild.channels.cache.get(channelId);
+    if (!channel || channel.type !== 0) {
+        return res.status(400).json({ success: false, message: 'Canal de texto inválido.' });
+    }
+
+    // --- CONSTRUÇÃO E ENVIO DA MENSAGEM DE TESTE ---
+    const user = req.user;
+    
+    let message = (joinMessage || 'Boas-vindas, {mention}!');
+    message = message.replace(/{user}/g, user.username).replace(/{mention}/g, `<@${user.id}>`);
+    
+    const testMessage = `[TESTE DO PAINEL WEB] - Mensagem de Entrada:\n${message}`;
+
+    try {
+        await channel.send(testMessage);
+        return res.json({ success: true, message: `Mensagem de teste enviada com sucesso para #${channel.name}.` });
+    } catch (error) {
+        console.error(`Erro ao enviar mensagem de teste em ${guild.name}:`, error);
+        return res.status(500).json({ success: false, message: 'Erro ao enviar mensagem: O bot pode não ter permissão de escrita no canal.' });
+    }
+});
+
 
 // Ouve na porta
 app.listen(PORT, () => {

@@ -5,22 +5,33 @@
     <style>
         body { font-family: Arial, sans-serif; background-color: #2c2f33; color: #ffffff; padding: 20px; }
         .header { background-color: #7289da; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        .container { background-color: #23272a; padding: 20px; border-radius: 8px; }
-        .menu a { color: #ffffff; margin-right: 15px; text-decoration: none; }
-        h1, h2 { color: #ffffff; }
+        
+        /* NOVO: Estilos para o Layout e Sidebar */
+        .dashboard-layout { display: flex; gap: 20px; }
+        .sidebar { width: 250px; background-color: #23272a; padding: 20px; border-radius: 8px; height: fit-content; }
+        .main-content { flex-grow: 1; background-color: #23272a; padding: 20px; border-radius: 8px; }
+
+        /* Perfil na Sidebar */
+        .profile-box { text-align: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #36393f; }
+        .profile-box img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
+        .profile-box h4 { margin: 0; color: #7289da; }
+        .profile-box p { margin: 5px 0 0 0; font-size: 0.8em; opacity: 0.7; }
+        .menu-items a { display: block; margin-bottom: 10px; text-decoration: none; color: #7289da; }
+
+
         .status-box { padding: 10px; border-radius: 5px; font-weight: bold; margin-bottom: 15px; display: inline-block; }
         .status-online { background-color: #2ecc71; }
         .status-offline { background-color: #e74c3c; }
         
-        /* NOVO: Estilo para o Card do Servidor */
+        /* Estilo para o Card do Servidor */
         .guild-card { 
             background-color: #36393f; 
             padding: 15px; 
             border-radius: 8px; 
             margin-bottom: 10px;
-            display: flex; /* Para alinhar o ícone e o texto */
+            display: flex;
             align-items: center;
-            justify-content: space-between; /* Para empurrar o botão para a direita */
+            justify-content: space-between;
         }
         .guild-info {
             display: flex;
@@ -35,7 +46,7 @@
         }
         .guild-name-id h4 {
             margin: 0;
-            color: #7289da;
+            color: #ffffff; /* Cor branca para destaque do nome */
         }
         .guild-name-id p {
             margin: 0;
@@ -59,69 +70,86 @@
 <body>
     <div class="header">
         <h1>Painel de Controle - Universal Bot</h1>
-        <div class="menu">
-            <a href="/dashboard">Início</a>
-            <a href="/logout">Logout</a>
-        </div>
     </div>
 
-    <div class="container">
-        <% if (client.isReady()) { %>
-            <div class="status-box status-online">
-                ✅ STATUS: Bot Online! (Ping: <%= client.ws.ping %>ms)
-            </div>
-        <% } else { %>
-            <div class="status-box status-offline">
-                ❌ STATUS: Bot Offline ou Iniciando.
-            </div>
-        <% } %>
-
-        <h2>👋 Bem-vindo(a), <%= user.username %>!</h2>
-        <p>Você está logado(a) como administrador. Seu ID de usuário: <code><%= user.id %></code></p>
+    <div class="dashboard-layout">
         
-        <hr>
-        
-        <h3>Servidores Que Você Pode Configurar:</h3>
-        <% 
-            // Filtra servidores que o usuário pode gerenciar (Admin ou Manage Guild) E que o bot está.
-            const managedGuilds = guilds.filter(g => (g.permissions & 0x8) === 0x8 || (g.permissions & 0x20) === 0x20)
-                                      .filter(g => client.guilds.cache.has(g.id));
-        %>
-        
-        <% if (managedGuilds.length > 0) { %>
-            <% managedGuilds.forEach(userGuild => { %>
+        <div class="sidebar">
+            <div class="profile-box">
                 <% 
-                    // Pega o objeto COMPLETO do servidor no cache do bot para obter o ícone
-                    const botGuild = client.guilds.cache.get(userGuild.id);
-                    // Pega a URL do ícone (o 'null' é um fallback caso não tenha ícone)
-                    const iconURL = botGuild ? botGuild.iconURL({ dynamic: true, size: 128 }) : 'https://cdn.discordapp.com/embed/avatars/0.png';
+                    const avatarId = user.avatar;
+                    const avatarURL = avatarId 
+                        ? `https://cdn.discordapp.com/avatars/${user.id}/${avatarId}.${avatarId.startsWith('a_') ? 'gif' : 'png'}?size=128` 
+                        : `https://cdn.discordapp.com/embed/avatars/${user.discriminator % 5}.png`;
                 %>
-                
-                <div class="guild-card">
-                    <div class="guild-info">
-                        <img src="<%= iconURL %>" alt="Ícone do Servidor" class="guild-icon">
-                        <div class="guild-name-id">
-                            <h4><%= userGuild.name %></h4>
-                            <p>ID: <code><%= userGuild.id %></code></p>
-                        </div>
-                    </div>
-                    <a href="/dashboard/<%= userGuild.id %>" class="config-button">Configurar</a>
+                <img src="<%= avatarURL %>" alt="Avatar" class="profile-avatar">
+                <h4><%= user.username %></h4>
+                <p>ID: <code><%= user.id %></code></p>
+            </div>
+
+            <div class="menu-items">
+                 <a href="/dashboard">🏠 Painel Inicial</a>
+                 <a href="/logout" style="color: #e74c3c;">🚪 Sair (Logout)</a>
+            </div>
+        </div>
+        
+        <div class="main-content">
+
+            <% if (client.isReady()) { %>
+                <div class="status-box status-online">
+                    ✅ STATUS: Bot Online! (Ping: <%= client.ws.ping %>ms)
                 </div>
-            <% }); %>
-        <% } else { %>
-            <p>Nenhum servidor para configurar. Certifique-se de que o bot esteja no servidor e você tenha permissões de Administrador.</p>
-        <% } %>
+            <% } else { %>
+                <div class="status-box status-offline">
+                    ❌ STATUS: Bot Offline ou Iniciando.
+                </div>
+            <% } %>
+
+            <h2>👋 Bem-vindo(a), <%= user.username %>!</h2>
+            <p>Você está logado(a) como administrador.</p>
+            
+            <hr>
+            
+            <h3>Servidores Que Você Pode Configurar:</h3>
+            <% 
+                // Filtra servidores que o usuário pode gerenciar (Admin ou Manage Guild) E que o bot está.
+                const managedGuilds = guilds.filter(g => (g.permissions & 0x8) === 0x8 || (g.permissions & 0x20) === 0x20)
+                                          .filter(g => client.guilds.cache.has(g.id));
+            %>
+            
+            <% if (managedGuilds.length > 0) { %>
+                <% managedGuilds.forEach(userGuild => { %>
+                    <% 
+                        const botGuild = client.guilds.cache.get(userGuild.id);
+                        const iconURL = botGuild ? botGuild.iconURL({ dynamic: true, size: 128 }) : `https://cdn.discordapp.com/embed/avatars/${user.discriminator % 5}.png`;
+                    %>
+                    
+                    <div class="guild-card">
+                        <div class="guild-info">
+                            <img src="<%= iconURL %>" alt="Ícone do Servidor" class="guild-icon">
+                            <div class="guild-name-id">
+                                <h4><%= userGuild.name %></h4>
+                                <p>ID: <code><%= userGuild.id %></code></p>
+                            </div>
+                        </div>
+                        <a href="/dashboard/<%= userGuild.id %>" class="config-button">Configurar</a>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <p>Nenhum servidor para configurar. Certifique-se de que o bot esteja no servidor e você tenha permissões de Administrador.</p>
+            <% } %>
+            
+            <hr>
+            
+            <h3>Próximas Configurações</h3>
+            <ul>
+                <li>Configurações Gerais</li>
+                <li>Notificação de entrar/sair (Pronto)</li>
+                <li>Event logs</li>
+                <li>Autorole (Pronto)</li>
+                <li>Contador de membros</li>
+            </ul>
+        </div>
         
-        <hr>
-        
-        <h3>Próximas Configurações</h3>
-        <ul>
-            <li>Configurações Gerais</li>
-            <li>Notificação de entrar/sair</li>
-            <li>Event logs</li>
-            <li>**Autorole (Próximo foco!)**</li>
-            <li>Contador de membros</li>
-        </ul>
-    </div>
-</body>
+    </div> </body>
 </html>
