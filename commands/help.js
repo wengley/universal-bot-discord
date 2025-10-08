@@ -1,48 +1,67 @@
+// help.js
 const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
-    name: 'help',
-    description: 'Lista todos os comandos disponíveis do bot.',
-    aliases: ['comandos', 'ajuda'],
+    name: "help",
+    description: "Mostra a lista de comandos ou informações sobre um comando específico.",
+    aliases: ["comandos", "ajuda"],
     
-    async execute(message, args) {
-        // Pega todos os comandos que o cliente carregou (do handler no index.js)
-        const commands = message.client.commands;
-        const commandList = [];
+    // Recebe o objeto 'db' (QuickDB) do index.js, mesmo que não use.
+    async execute(message, args, client, db) {
+        
+        const prefix = '!'; // Defina o prefixo aqui, se não estiver disponível.
+        
+        // Se não houver argumentos (quer a lista geral)
+        if (!args.length) {
+            
+            const comandos = client.commands;
+            
+            // Filtra os comandos para a lista (ignorando comandos que você pode querer manter ocultos)
+            const comandosVisiveis = comandos.filter(cmd => !cmd.hidden); // Assume que você não tem comandos "hidden"
+            
+            // Constrói a lista de comandos (Ex: !daily - Recompensa diária)
+            const lista = comandosVisiveis.map(command => 
+                `\`${prefix}${command.name}\` - ${command.description || 'Sem descrição.'}`
+            ).join('\n');
 
-        // Filtra e prepara a lista
-        for (const command of commands.values()) {
-            // Ignora comandos que você não quer que apareça no help (ex: comandos internos)
-            if (command.name === 'adv') continue; 
+            const embed = new EmbedBuilder()
+                .setColor(0x0099FF) // Azul
+                .setTitle('✨ Lista de Comandos')
+                .setDescription(
+                    `Use \`${prefix}help [comando]\` para obter mais informações sobre um comando específico.\n\n` + 
+                    '**Comandos Disponíveis:**'
+                )
+                .addFields({
+                    name: '\u200B', // Campo vazio
+                    value: lista || 'Nenhum comando encontrado.',
+                    inline: false,
+                })
+                .setFooter({ text: `Solicitado por ${message.author.username}` })
+                .setTimestamp();
+            
+            return message.channel.send({ embeds: [embed] }).catch(console.error);
+            
+        } else {
+            // Se houver argumentos (quer ajuda sobre um comando específico)
+            const nomeComando = args[0].toLowerCase();
+            const comando = client.commands.get(nomeComando) || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(nomeComando));
 
-            commandList.push({
-                name: `!${command.name}`,
-                value: command.description,
-                inline: false, // Força a quebra de linha
-            });
+            if (!comando) {
+                return message.reply(`❌ Não consegui encontrar o comando \`${nomeComando}\`.`);
+            }
+
+            const embedDetalhe = new EmbedBuilder()
+                .setColor(0x00FF00) // Verde
+                .setTitle(`Comando: ${comando.name}`)
+                .setDescription(comando.description || 'Sem descrição detalhada.')
+                .addFields(
+                    { name: 'Uso', value: `\`${prefix}${comando.name} ${comando.usage || ''}\``, inline: false },
+                    { name: 'Aliases', value: comando.aliases ? comando.aliases.join(', ') : 'Nenhuma', inline: true }
+                )
+                .setFooter({ text: 'Informações detalhadas do comando.' })
+                .setTimestamp();
+
+            return message.channel.send({ embeds: [embedDetalhe] }).catch(console.error);
         }
-
-        // Divide a lista em seções (Moderação, Interação, Utilitário)
-        const modCommands = commandList.filter(c => ['!ban', '!kick', '!unban', '!clear', '!adv', '!embedcreate'].includes(c.name));
-        const funCommands = commandList.filter(c => ['!ppt', '!beijar', '!ship'].includes(c.name));
-        const utilCommands = commandList.filter(c => !modCommands.some(m => m.name === c.name) && !funCommands.some(f => f.name === c.name));
-
-
-        const helpEmbed = new EmbedBuilder()
-            .setColor(0x0099ff)
-            .setTitle('📚 Central de Ajuda do Universal Bot')
-            .setDescription('Use `!` seguido pelo comando. Ex: `!kick @usuario`')
-            .addFields(
-                { name: '\u200B', value: '\u200B' }, // Espaçador
-                { name: '🛠️ Comandos de Moderação e Admin', value: modCommands.map(c => `**${c.name}**: ${c.value}`).join('\n') || 'Nenhum.', inline: false },
-                { name: '\u200B', value: '\u200B' }, // Espaçador
-                { name: '🎲 Comandos de Interação e Diversão', value: funCommands.map(c => `**${c.name}**: ${c.value}`).join('\n') || 'Nenhum.', inline: false },
-                { name: '\u200B', value: '\u200B' }, // Espaçador
-                { name: '✨ Comandos Utilitários', value: utilCommands.map(c => `**${c.name}**: ${c.value}`).join('\n') || 'Nenhum.', inline: false },
-            )
-            .setFooter({ text: `Total de ${commandList.length} comandos carregados.` })
-            .setTimestamp();
-
-        message.channel.send({ embeds: [helpEmbed] });
     },
 };
