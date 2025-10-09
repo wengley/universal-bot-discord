@@ -61,7 +61,7 @@ client.once('ready', () => {
 
 
 // ===================================
-// FUNÇÕES AUXILIARES DE NOTIFICAÇÃO (MANTIDAS)
+// FUNÇÕES AUXILIARES DE NOTIFICAÇÃO
 // ===================================
 
 const replacePlaceholders = (text, member) => {
@@ -78,12 +78,10 @@ const buildEmbed = (embedData, member) => {
 
     const embed = new EmbedBuilder();
     
-    // Processa cada campo do embed, aplicando placeholders
     if (embedData.color) {
         embed.setColor(parseInt(embedData.color.replace('#', '0x'), 16)); 
     }
     
-    // Configura os campos
     if (embedData.authorName) embed.setAuthor({ 
         name: replacePlaceholders(embedData.authorName, member), 
         iconURL: embedData.authorIconUrl || member.user.displayAvatarURL()
@@ -347,7 +345,7 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
 });
 
 // ===============================================
-// 🆕 Rota de Configurações (Comandos)
+// Rota de Configurações (Comandos)
 // ===============================================
 app.get('/dashboard/:guildId/config', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
@@ -367,12 +365,13 @@ app.get('/dashboard/:guildId/config', isAuthenticated, async (req, res) => {
     res.render('guild_config', { 
         user: req.user,
         guild: guild,
-        commands: commandsList
+        commands: commandsList,
+        activePage: 'config' // ATIVAR MENU
     });
 });
 
 // ===============================================
-// 🆕 Rota de Event Logs (Simples)
+// Rota de Event Logs (Simples)
 // ===============================================
 app.get('/dashboard/:guildId/events', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
@@ -382,16 +381,17 @@ app.get('/dashboard/:guildId/events', isAuthenticated, async (req, res) => {
         return res.status(404).send('Bot não está neste servidor ou servidor inválido.');
     }
     
-    // Aqui você buscará dados de logs do seu DB. Por enquanto, é um placeholder.
+    // Placeholders para logs. No futuro, você buscará isso no DB.
     const recentLogs = [
         { type: 'INFO', message: 'Nenhuma lógica de logs implementada no DB.', timestamp: new Date() },
-        { type: 'WARNING', message: 'Você precisa armazenar logs de eventos no QuickDB para exibi-los aqui.', timestamp: new Date() },
+        { type: 'WARNING', message: 'Você precisa armazenar logs de eventos (ex: mensagens editadas/apagadas) no QuickDB para exibi-los aqui.', timestamp: new Date() },
     ];
 
     res.render('guild_events', { 
         user: req.user,
         guild: guild,
-        logs: recentLogs
+        logs: recentLogs,
+        activePage: 'events' // ATIVAR MENU
     });
 });
 // ===============================================
@@ -458,7 +458,8 @@ app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
         joinNotif: joinNotif,
         leaveNotif: leaveNotif,
         dmNotif: dmNotif,
-        client: client
+        client: client,
+        activePage: 'settings' // ATIVAR MENU
     });
 });
 

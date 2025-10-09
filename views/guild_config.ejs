@@ -1,0 +1,62 @@
+<%- include('header', { user: user, guild: guild }) %>
+
+<div class="sidebar">
+    <h3><%= guild.name %></h3>
+    <p style="padding: 0 15px; margin-top: -10px; font-size: 0.8em; color: #7289da;">Painel de Configuração</p>
+    
+    <nav class="sidebar-nav">
+        <ul>
+            <li><a href="/dashboard/<%= guild.id %>" class="<%= activePage === 'settings' ? 'active' : '' %>">⚙️ Boas-vindas/Auto-Role</a></li>
+            <li><a href="/dashboard/<%= guild.id %>/config" class="<%= activePage === 'config' ? 'active' : '' %>">💻 Configurações Gerais</a></li>
+            <li><a href="/dashboard/<%= guild.id %>/events" class="<%= activePage === 'events' ? 'active' : '' %>">📄 Logs de Eventos</a></li>
+        </ul>
+    </nav>
+</div>
+
+<div class="main-content">
+    <div class="dashboard-content">
+        <h2>💻 Configurações Gerais: Comandos do Bot</h2>
+        <p>Aqui você pode ver uma lista de todos os comandos disponíveis no bot, como se fosse o **!help**.</p>
+        
+        <div class="card-list">
+            <% commands.forEach(command => { %>
+                <div class="card">
+                    <h3><%= command.name %></h3>
+                    <p><strong>Descrição:</strong> <%= command.description %></p>
+                    <p><strong>Uso:</strong> <code><%= command.usage %></code></p>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+</div>
+
+<style>
+.card-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.card {
+    background-color: #2f3136;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.card h3 {
+    margin-top: 0;
+    color: #7289da;
+    font-size: 1.2em;
+}
+
+.card code {
+    background-color: #202225;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+</style>
+
+<%- include('footer') %>

@@ -1,581 +1,350 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Configurar <%= guild.name %></title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #2c2f33; color: #ffffff; padding: 20px; }
-        .header { background-color: #7289da; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        
-        /* NOVO: Estilos para o Layout e Sidebar */
-        .dashboard-layout { display: flex; gap: 20px; }
-        .sidebar { width: 250px; background-color: #23272a; padding: 20px; border-radius: 8px; height: fit-content; }
-        .main-content { flex-grow: 1; background-color: #23272a; padding: 20px; border-radius: 8px; }
+<%- include('header', { user: user, guild: guild }) %>
 
-        /* Perfil na Sidebar */
-        .profile-box { text-align: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #36393f; }
-        .profile-box img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
-        .profile-box h4 { margin: 0; color: #7289da; }
-        .profile-box p { margin: 5px 0 0 0; font-size: 0.8em; opacity: 0.7; }
-
-        .menu a { color: #ffffff; margin-right: 15px; text-decoration: none; }
-        h1, h2, h3 { color: #ffffff; }
-        
-        /* Abas */
-        .tabs { display: flex; margin-bottom: 15px; border-bottom: 2px solid #36393f; }
-        .tab-button { 
-            padding: 10px 15px; 
-            cursor: pointer; 
-            border: none; 
-            background-color: transparent; 
-            color: #ccc; 
-            font-weight: bold;
-            transition: color 0.2s;
-        }
-        .tab-button:hover { color: #fff; }
-        .tab-button.active { 
-            color: #7289da; 
-            border-bottom: 3px solid #7289da; 
-            margin-bottom: -2px; 
-        }
-        .tab-content { padding-top: 15px; }
-
-        /* Configurações Comuns */
-        .config-section { background-color: #36393f; padding: 15px; border-radius: 5px; margin-top: 15px; }
-        select, input[type="text"], textarea, input[type="color"] { 
-            width: 100%; 
-            padding: 10px; 
-            margin-top: 5px; 
-            margin-bottom: 15px;
-            border-radius: 5px; 
-            border: 1px solid #5a5a5a;
-            background-color: #2c2f33;
-            color: #ffffff;
-            box-sizing: border-box; 
-        }
-        .current-setting { font-weight: bold; color: #2ecc71; }
-        
-        /* Botões e Alertas */
-        button { padding: 10px 15px; margin-top: 10px; border-radius: 5px; border: none; background-color: #7289da; color: white; cursor: pointer; font-weight: bold; transition: background-color 0.2s; }
-        button:hover { background-color: #677bc4; }
-        .status-message { padding: 10px; margin-top: 10px; border-radius: 5px; color: white; display: none; }
-        .test-button { background-color: #f39c12; margin-left: 10px; }
-        .test-button:hover { background-color: #e67e22; }
-
-        /* Embed e Variáveis */
-        .embed-toggle-area { margin-top: 10px; margin-bottom: 15px; padding: 10px; background-color: #2c2f33; border-radius: 5px; }
-        .embed-fields { border-left: 3px solid var(--embed-color, #7289da); padding-left: 10px; margin-top: 10px; }
-        .embed-field-group { display: flex; gap: 10px; }
-        .embed-field-group label { flex-basis: 50%; }
-        .embed-field-group input, .embed-field-group textarea { width: 100%; }
-        .embed-color-container { display: flex; align-items: center; }
-        .embed-color-container label { flex-basis: 150px; }
-        .embed-color-container input[type="color"] { flex-grow: 1; height: 40px; }
-        
-        /* Variáveis (Spoiler) */
-        .spoiler-title { background-color: #4a4d51; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
-        .spoiler-content { display: none; padding: 10px 0; border-top: 1px solid #5a5a5a; }
-        .placeholder-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
-        .placeholder-list li { background-color: #7289da; padding: 5px 10px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
-
-        .form-action-buttons { margin-top: 15px; text-align: right; }
-        .form-action-buttons button { margin-left: 10px; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Configuração: <%= guild.name %></h1>
-    </div>
-
-    <div class="dashboard-layout">
-        
-        <div class="sidebar">
-            <div class="profile-box">
-                <% 
-                    const avatarId = user.avatar;
-                    const avatarURL = avatarId 
-                        ? `https://cdn.discordapp.com/avatars/${user.id}/${avatarId}.${avatarId.startsWith('a_') ? 'gif' : 'png'}?size=128` 
-                        : `https://cdn.discordapp.com/embed/avatars/${user.discriminator % 5}.png`;
-                %>
-                <img src="<%= avatarURL %>" alt="Avatar" class="profile-avatar">
-                <h4><%= user.username %></h4>
-                <p>ID: <code><%= user.id %></code></p>
-            </div>
-
-            <div class="menu-items">
-                 <a href="/dashboard">🏠 Painel Inicial</a>
-                 <a href="/logout" style="color: #e74c3c;">🚪 Sair (Logout)</a>
-            </div>
-        </div>
-
-        <div class="main-content">
+<div class="sidebar">
+    <h3><%= guild.name %></h3>
+    <p style="padding: 0 15px; margin-top: -10px; font-size: 0.8em; color: #7289da;">Painel de Configuração</p>
+    
+    <nav class="sidebar-nav">
+        <ul>
+            <li>
+                <a href="/dashboard/<%= guild.id %>" class="<%= activePage === 'settings' ? 'active' : '' %>">
+                    ⚙️ Boas-vindas/Auto-Role
+                </a>
+            </li>
             
-            <div class="tabs">
-                <button class="tab-button active" onclick="openTab(event, 'autorole')">Auto-Role</button>
-                <button class="tab-button" onclick="openTab(event, 'notifications')">Notificações</button>
-                <button class="tab-button" onclick="openTab(event, 'logs')">Event Logs (Em Breve)</button>
-            </div>
-
-            <div id="autorole" class="tab-content">
-                <h2>🛠️ Auto-Role (Cargo Automático)</h2>
-                <div class="config-section">
-                    <p>
-                        Cargo atual: 
-                        <% if (currentAutoroleId && guild.roles.cache.has(currentAutoroleId)) { %>
-                            <span class="current-setting">@<%= guild.roles.cache.get(currentAutoroleId).name %></span>
-                        <% } else { %>
-                            <span class="current-setting" style="color: yellow;">Nenhum (Desativado)</span>
-                        <% } %>
-                    </p>
-                    
-                    <form id="autorole-form">
-                        <label for="autorole-select">Selecione o cargo que novos membros receberão:</label><br>
-                        <select id="autorole-select" name="roleId">
-                            <option value="none">-- DESATIVAR Auto-Role --</option>
-                            <% roles.forEach(role => { %>
-                                <option value="<%= role.id %>" <%= role.id === currentAutoroleId ? 'selected' : '' %>>
-                                    <%= role.name %>
-                                </option>
-                            <% }); %>
-                        </select>
-                        <button type="submit">Salvar Auto-Role</button>
-                    </form>
-                    
-                    <div id="autorole-status" class="status-message"></div>
-                </div>
-            </div>
-
-            <div id="notifications" class="tab-content" style="display: none;">
-                <h2>🔔 Notificações (Entrada, Saída e DM)</h2>
-
-                <div class="spoiler-title" onclick="toggleSpoiler('placeholder-spoiler')">
-                    Clique para ver as **Variáveis/Placeholders**
-                </div>
-                <div id="placeholder-spoiler" class="spoiler-content">
-                    <ul class="placeholder-list">
-                        <li>`{mention}`</li>
-                        <li>`{user}`</li>
-                        <li>`{guild}`</li>
-                        <li>`{count}`</li>
-                    </ul>
-                </div>
-                
-                <hr style="border-color: #5a5a5a; margin-top: 20px;">
-                
-                <div class="config-section">
-                    <h3>🟢 Mensagens quando alguém entrar</h3>
-                    
-                    <p>
-                        Status: 
-                        <% 
-                            const joinChannelName = joinNotif.channelId && guild.channels.cache.has(joinNotif.channelId) ? `#${guild.channels.cache.get(joinNotif.channelId).name}` : 'N/A';
-                            const joinStatusText = joinNotif.channelId !== 'none' ? `${joinChannelName} (${joinNotif.embed.enabled ? 'Embed' : 'Texto'})` : 'Desativado';
-                            const joinStatusColor = joinNotif.channelId !== 'none' ? '#2ecc71' : 'yellow';
-                        %>
-                        <span class="current-setting" id="join-status-display" style="color: <%= joinStatusColor %>;"><%= joinStatusText %></span>
-                    </p>
-
-                    <form id="join-form">
-                        <label for="join-channel-select">Canal de Texto para Boas-Vindas:</label>
-                        <select id="join-channel-select" name="channelId">
-                            <option value="none">-- DESATIVAR Notificação de Entrada --</option>
-                            <% textChannels.forEach(channel => { %>
-                                <option value="<%= channel.id %>" <%= channel.id === joinNotif.channelId ? 'selected' : '' %>>
-                                    #<%= channel.name %>
-                                </option>
-                            <% }); %>
-                        </select>
-
-                        <label for="join-text">Conteúdo da Mensagem (Texto Normal - Opcional):</label>
-                        <textarea id="join-text" name="text" rows="2"><%= joinNotif.text || '' %></textarea>
-
-                        <div class="embed-toggle-area">
-                            <label>
-                                <input type="checkbox" name="embed-enabled" data-section="join" onchange="toggleEmbedFields('join'); updateEmbedBorder('join')" <%= joinNotif.embed.enabled ? 'checked' : '' %>> **Ativar Embed**
-                            </label>
-
-                            <div id="join-embed-fields" class="embed-fields" style="display: <%= joinNotif.embed.enabled ? 'block' : 'none' %>; --embed-color: <%= joinNotif.embed.color || '#7289da' %>;">
-                                <div class="embed-color-container">
-                                    <label for="join-color">COR:</label>
-                                    <input type="color" id="join-color" name="embed-color" value="<%= joinNotif.embed.color || '#7289da' %>" oninput="updateEmbedBorder('join')">
-                                </div>
-                                
-                                <label for="join-author-name">Nome do Autor:</label>
-                                <input type="text" id="join-author-name" name="embed-authorName" value="<%= joinNotif.embed.authorName || '' %>">
-
-                                <label for="join-author-icon">URL do Ícone do Autor:</label>
-                                <input type="text" id="join-author-icon" name="embed-authorIconUrl" value="<%= joinNotif.embed.authorIconUrl || '' %>">
-
-                                <label for="join-title">Título:</label>
-                                <input type="text" id="join-title" name="embed-title" value="<%= joinNotif.embed.title || '' %>">
-
-                                <label for="join-description">Descrição:</label>
-                                <textarea id="join-description" name="embed-description" rows="3"><%= joinNotif.embed.description || '' %></textarea>
-
-                                <label for="join-image">URL da Imagem:</label>
-                                <input type="text" id="join-image" name="embed-imageUrl" value="<%= joinNotif.embed.imageUrl || '' %>">
-
-                                <label for="join-thumbnail">URL da Thumbnail:</label>
-                                <input type="text" id="join-thumbnail" name="embed-thumbnailUrl" value="<%= joinNotif.embed.thumbnailUrl || '' %>">
-
-                                <label for="join-footer-text">Texto do Rodapé:</label>
-                                <input type="text" id="join-footer-text" name="embed-footerText" value="<%= joinNotif.embed.footerText || '' %>">
-
-                                <label for="join-footer-icon">URL do Ícone do Rodapé:</label>
-                                <input type="text" id="join-footer-icon" name="embed-footerIconUrl" value="<%= joinNotif.embed.footerIconUrl || '' %>">
-                            </div>
-                        </div>
-
-                        <div class="form-action-buttons">
-                            <button type="submit">Salvar Entrada</button>
-                            <button type="button" class="test-button" onclick="testMessage('join')">Testar Mensagem</button>
-                        </div>
-                    </form>
-                    <div id="join-status" class="status-message"></div>
-                </div>
-
-                <hr style="border-color: #5a5a5a; margin-top: 20px;">
-
-                <div class="config-section">
-                    <h3>🔴 Mensagens quando alguém sair</h3>
-                    
-                    <p>
-                        Status: 
-                        <% 
-                            const leaveChannelName = leaveNotif.channelId && guild.channels.cache.has(leaveNotif.channelId) ? `#${guild.channels.cache.get(leaveNotif.channelId).name}` : 'N/A';
-                            const leaveStatusText = leaveNotif.channelId !== 'none' ? `${leaveChannelName} (${leaveNotif.embed.enabled ? 'Embed' : 'Texto'})` : 'Desativado';
-                            const leaveStatusColor = leaveNotif.channelId !== 'none' ? '#2ecc71' : 'yellow';
-                        %>
-                        <span class="current-setting" id="leave-status-display" style="color: <%= leaveStatusColor %>;"><%= leaveStatusText %></span>
-                    </p>
-
-                    <form id="leave-form">
-                        <label for="leave-channel-select">Canal de Texto para Despedidas:</label>
-                        <select id="leave-channel-select" name="channelId">
-                            <option value="none">-- DESATIVAR Notificação de Saída --</option>
-                            <% textChannels.forEach(channel => { %>
-                                <option value="<%= channel.id %>" <%= channel.id === leaveNotif.channelId ? 'selected' : '' %>>
-                                    #<%= channel.name %>
-                                </option>
-                            <% }); %>
-                        </select>
-
-                        <label for="leave-text">Conteúdo da Mensagem (Texto Normal - Opcional):</label>
-                        <textarea id="leave-text" name="text" rows="2"><%= leaveNotif.text || '' %></textarea>
-
-                        <div class="embed-toggle-area">
-                            <label>
-                                <input type="checkbox" name="embed-enabled" data-section="leave" onchange="toggleEmbedFields('leave'); updateEmbedBorder('leave')" <%= leaveNotif.embed.enabled ? 'checked' : '' %>> **Ativar Embed**
-                            </label>
-
-                            <div id="leave-embed-fields" class="embed-fields" style="display: <%= leaveNotif.embed.enabled ? 'block' : 'none' %>; --embed-color: <%= leaveNotif.embed.color || '#e74c3c' %>;">
-                                <div class="embed-color-container">
-                                    <label for="leave-color">COR:</label>
-                                    <input type="color" id="leave-color" name="embed-color" value="<%= leaveNotif.embed.color || '#e74c3c' %>" oninput="updateEmbedBorder('leave')">
-                                </div>
-                                
-                                <label for="leave-author-name">Nome do Autor:</label>
-                                <input type="text" id="leave-author-name" name="embed-authorName" value="<%= leaveNotif.embed.authorName || '' %>">
-
-                                <label for="leave-author-icon">URL do Ícone do Autor:</label>
-                                <input type="text" id="leave-author-icon" name="embed-authorIconUrl" value="<%= leaveNotif.embed.authorIconUrl || '' %>">
-
-                                <label for="leave-title">Título:</label>
-                                <input type="text" id="leave-title" name="embed-title" value="<%= leaveNotif.embed.title || '' %>">
-
-                                <label for="leave-description">Descrição:</label>
-                                <textarea id="leave-description" name="embed-description" rows="3"><%= leaveNotif.embed.description || '' %></textarea>
-
-                                <label for="leave-image">URL da Imagem:</label>
-                                <input type="text" id="leave-image" name="embed-imageUrl" value="<%= leaveNotif.embed.imageUrl || '' %>">
-
-                                <label for="leave-thumbnail">URL da Thumbnail:</label>
-                                <input type="text" id="leave-thumbnail" name="embed-thumbnailUrl" value="<%= leaveNotif.embed.thumbnailUrl || '' %>">
-
-                                <label for="leave-footer-text">Texto do Rodapé:</label>
-                                <input type="text" id="leave-footer-text" name="embed-footerText" value="<%= leaveNotif.embed.footerText || '' %>">
-
-                                <label for="leave-footer-icon">URL do Ícone do Rodapé:</label>
-                                <input type="text" id="leave-footer-icon" name="embed-footerIconUrl" value="<%= leaveNotif.embed.footerIconUrl || '' %>">
-                            </div>
-                        </div>
-
-                        <div class="form-action-buttons">
-                            <button type="submit">Salvar Saída</button>
-                            </div>
-                    </form>
-                    <div id="leave-status" class="status-message"></div>
-                </div>
-
-                <hr style="border-color: #5a5a5a; margin-top: 20px;">
-
-                <div class="config-section">
-                    <h3>✉️ Mensagens para a DM do usuário</h3>
-                    
-                    <p>
-                        Status: 
-                        <% 
-                            const dmStatusText = dmNotif.text || (dmNotif.embed && dmNotif.embed.enabled) ? 'Ativado' : 'Desativado';
-                            const dmStatusColor = dmNotif.text || (dmNotif.embed && dmNotif.embed.enabled) ? '#2ecc71' : 'yellow';
-                        %>
-                        <span class="current-setting" id="dm-status-display" style="color: <%= dmStatusColor %>;"><%= dmStatusText %></span>
-                    </p>
-
-                    <form id="dm-form">
-                        <label for="dm-text">Conteúdo da Mensagem (Texto Normal - Opcional):</label>
-                        <textarea id="dm-text" name="text" rows="2"><%= dmNotif.text || '' %></textarea>
-
-                        <div class="embed-toggle-area">
-                            <label>
-                                <input type="checkbox" name="embed-enabled" data-section="dm" onchange="toggleEmbedFields('dm'); updateEmbedBorder('dm')" <%= dmNotif.embed.enabled ? 'checked' : '' %>> **Ativar Embed**
-                            </label>
-
-                            <div id="dm-embed-fields" class="embed-fields" style="display: <%= dmNotif.embed.enabled ? 'block' : 'none' %>; --embed-color: <%= dmNotif.embed.color || '#2ecc71' %>;">
-                                <div class="embed-color-container">
-                                    <label for="dm-color">COR:</label>
-                                    <input type="color" id="dm-color" name="embed-color" value="<%= dmNotif.embed.color || '#2ecc71' %>" oninput="updateEmbedBorder('dm')">
-                                </div>
-                                
-                                <label for="dm-author-name">Nome do Autor:</label>
-                                <input type="text" id="dm-author-name" name="embed-authorName" value="<%= dmNotif.embed.authorName || '' %>">
-
-                                <label for="dm-author-icon">URL do Ícone do Autor:</label>
-                                <input type="text" id="dm-author-icon" name="embed-authorIconUrl" value="<%= dmNotif.embed.authorIconUrl || '' %>">
-
-                                <label for="dm-title">Título:</label>
-                                <input type="text" id="dm-title" name="embed-title" value="<%= dmNotif.embed.title || '' %>">
-
-                                <label for="dm-description">Descrição:</label>
-                                <textarea id="dm-description" name="embed-description" rows="3"><%= dmNotif.embed.description || '' %></textarea>
-
-                                <label for="dm-image">URL da Imagem:</label>
-                                <input type="text" id="dm-image" name="embed-imageUrl" value="<%= dmNotif.embed.imageUrl || '' %>">
-
-                                <label for="dm-thumbnail">URL da Thumbnail:</label>
-                                <input type="text" id="dm-thumbnail" name="embed-thumbnailUrl" value="<%= dmNotif.embed.thumbnailUrl || '' %>">
-
-                                <label for="dm-footer-text">Texto do Rodapé:</label>
-                                <input type="text" id="dm-footer-text" name="embed-footerText" value="<%= dmNotif.embed.footerText || '' %>">
-
-                                <label for="dm-footer-icon">URL do Ícone do Rodapé:</label>
-                                <input type="text" id="dm-footer-icon" name="embed-footerIconUrl" value="<%= dmNotif.embed.footerIconUrl || '' %>">
-                            </div>
-                        </div>
-
-                        <div class="form-action-buttons">
-                            <button type="submit">Salvar Mensagem DM</button>
-                            <button type="button" class="test-button" onclick="testMessage('dm')">Testar Mensagem DM</button>
-                        </div>
-                    </form>
-                    <div id="dm-status" class="status-message"></div>
-                </div>
-            </div>
-
-            <div id="logs" class="tab-content" style="display: none;">
-                <h2>📝 Event Logs</h2>
-                <p>Esta funcionalidade ainda será desenvolvida. Volte em breve!</p>
-            </div>
-        </div>
-        
-    </div> <script>
-        // Função para mudar de aba
-        function openTab(evt, tabName) {
-            const contents = document.getElementsByClassName("tab-content");
-            for (let i = 0; i < contents.length; i++) {
-                contents[i].style.display = "none";
-            }
+            <li>
+                <a href="/dashboard/<%= guild.id %>/config" class="<%= activePage === 'config' ? 'active' : '' %>">
+                    💻 Configurações Gerais
+                </a>
+            </li>
             
-            const buttons = document.getElementsByClassName("tab-button");
-            for (let i = 0; i < buttons.length; i++) {
-                buttons[i].className = buttons[i].className.replace(" active", "");
-            }
-            
-            document.getElementById(tabName).style.display = "block";
-            evt.currentTarget.className += " active";
-        }
+            <li>
+                <a href="/dashboard/<%= guild.id %>/events" class="<%= activePage === 'events' ? 'active' : '' %>">
+                    📄 Logs de Eventos
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+<div class="main-content">
+    <div class="dashboard-content">
+        <h2>⚙️ Configurações de Boas-Vindas e Auto-Role</h2>
 
-        // Função para toggle do spoiler de variáveis
-        function toggleSpoiler(id) {
-            const content = document.getElementById(id);
-            if (content.style.display === "none" || content.style.display === "") {
-                content.style.display = "block";
-            } else {
-                content.style.display = "none";
-            }
-        }
-        
-        // Função para toggle dos campos do Embed
-        function toggleEmbedFields(section) {
-            const fieldsDiv = document.getElementById(section + '-embed-fields');
-            const checkbox = document.querySelector(`#${section}-form input[name="embed-enabled"]`);
-            fieldsDiv.style.display = checkbox.checked ? 'block' : 'none';
-        }
+        <script>
+        async function submitForm(url) {
+            const form = document.getElementById('settingsForm');
+            const data = new FormData(form);
+            const body = {};
 
-        // Função para atualizar a borda do Embed com a cor selecionada (Visual)
-        function updateEmbedBorder(section) {
-            const colorInput = document.getElementById(section + '-color');
-            const fieldsDiv = document.getElementById(section + '-embed-fields');
-            if (fieldsDiv) {
-                fieldsDiv.style.setProperty('--embed-color', colorInput.value);
-            }
-        }
+            // Mapeia os dados simples do formulário
+            data.forEach((value, key) => {
+                if (key.includes('embed_')) return; // Ignora temporariamente os embeds
 
-        // --- FUNÇÃO AUXILIAR PARA PEGAR DADOS DO FORMULÁRIO ---
-        function getFormData(formId, isNotification) {
-            const form = document.getElementById(formId);
-            
-            const data = {};
-            if (isNotification) { 
-                data.channelId = form.querySelector('[name="channelId"]').value;
-            }
-            // Garante que o texto seja sempre enviado (mesmo se vazio)
-            const textElement = form.querySelector('[name="text"]');
-            data.text = textElement ? textElement.value.trim() : ''; 
+                // Se o campo for o Canal de Saída, garante que seja 'none' se for a opção de desativar
+                if (key === 'channelId' && value === 'none') {
+                    body.channelId = 'none';
+                } else if (key === 'channelId') {
+                    body.channelId = value;
+                } else if (key === 'roleId') {
+                    body.roleId = value;
+                } else if (key === 'text') {
+                    body.text = value;
+                }
+            });
 
-            const embedEnabled = form.querySelector('[name="embed-enabled"]').checked;
-            data.embed = {
-                enabled: embedEnabled,
-                color: form.querySelector('[name="embed-color"]').value,
-                authorName: form.querySelector('[name="embed-authorName"]').value.trim(),
-                authorIconUrl: form.querySelector('[name="embed-authorIconUrl"]').value.trim(),
-                title: form.querySelector('[name="embed-title"]').value.trim(),
-                description: form.querySelector('[name="embed-description"]').value.trim(),
-                imageUrl: form.querySelector('[name="embed-imageUrl"]').value.trim(),
-                thumbnailUrl: form.querySelector('[name="embed-thumbnailUrl"]').value.trim(),
-                footerText: form.querySelector('[name="embed-footerText"]').value.trim(),
-                footerIconUrl: form.querySelector('[name="embed-footerIconUrl"]').value.trim()
+            // Lógica de Embeds (para salvar o estado de ativação)
+            const getEmbedData = (prefix) => {
+                const embedData = { enabled: false };
+                if (document.getElementById(prefix + '_enabled').checked) {
+                    embedData.enabled = true;
+                    // Mapeia todos os campos do Embed
+                    data.forEach((value, key) => {
+                        if (key.startsWith(prefix)) {
+                            const cleanKey = key.replace(prefix + '_', '');
+                            embedData[cleanKey] = value;
+                        }
+                    });
+                }
+                return embedData;
             };
 
-            return data;
-        }
+            if (url.includes('join')) {
+                body.embed = getEmbedData('embed_join');
+                // Se for rota de entrada, garantimos que o canal de entrada seja o correto
+                body.channelId = document.getElementById('join_channelId').value;
+                body.text = document.getElementById('join_text').value;
 
-        // --- FUNÇÃO DE ENVIO (AJAX) ---
-        async function submitForm(endpoint, jsonBody, statusDivId, successCallback) {
-            const statusDiv = document.getElementById(statusDivId);
+            } else if (url.includes('leave')) {
+                body.embed = getEmbedData('embed_leave');
+                // Se for rota de saída, garantimos que o canal de saída seja o correto
+                body.channelId = document.getElementById('leave_channelId').value;
+                body.text = document.getElementById('leave_text').value;
 
-            statusDiv.style.display = 'none';
-            statusDiv.style.backgroundColor = '';
-
-            try {
-                const response = await fetch(`/dashboard/<%= guild.id %>/${endpoint}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(jsonBody)
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    statusDiv.style.backgroundColor = '#2ecc71'; 
-                    statusDiv.innerHTML = `✅ Sucesso! ${data.message}`;
-                    if (successCallback) successCallback(jsonBody);
-                } else {
-                    statusDiv.style.backgroundColor = '#e74c3c'; 
-                    statusDiv.innerHTML = `❌ Erro: ${data.message}`;
-                }
-            } catch (error) {
-                statusDiv.style.backgroundColor = '#e74c3c'; 
-                statusDiv.innerHTML = `❌ Erro de Conexão: Ocorreu um problema ao enviar dados.`;
-                console.error('Fetch error:', error);
+            } else if (url.includes('dm')) {
+                body.embed = getEmbedData('embed_dm');
+                // Se for DM, não tem channelId
+                delete body.channelId;
+            } else if (url.includes('autorole')) {
+                body.roleId = document.getElementById('autorole_roleId').value;
+                // Deletar o que não é usado
+                delete body.channelId;
+                delete body.text;
+                delete body.embed;
             }
-            
-            statusDiv.style.display = 'block';
+
+            const isTest = url.includes('test_');
+            const targetUrl = url;
+
+            const response = await fetch(targetUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
+
+            const result = await response.json();
+
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = result.message;
+
+            if (result.success) {
+                messageBox.style.backgroundColor = '#43b581'; // Verde sucesso
+            } else {
+                messageBox.style.backgroundColor = '#e74c3c'; // Vermelho erro
+            }
+
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 5000);
         }
         
-        // --- LÓGICA AUTO-ROLE ---
-        document.getElementById('autorole-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const form = e.target;
-            const jsonBody = { roleId: form.elements.roleId.value };
-            
-            submitForm('autorole', jsonBody, 'autorole-status', (jsonBody) => {
-                const currentRoleSpan = document.querySelector('#autorole .current-setting');
-                
-                if (jsonBody.roleId === 'none') {
-                    currentRoleSpan.innerHTML = 'Nenhum (Desativado)';
-                    currentRoleSpan.style.color = 'yellow';
-                } else {
-                    const selectedRoleText = form.elements.roleId.options[form.elements.roleId.selectedIndex].text;
-                    currentRoleSpan.innerHTML = `@${selectedRoleText.trim()}`;
-                    currentRoleSpan.style.color = '#2ecc71';
-                }
+        // Função para alternar o estado do Embed
+        function toggleEmbed(prefix) {
+            const isEnabled = document.getElementById(prefix + '_enabled').checked;
+            const fields = document.querySelectorAll(`[data-embed-id='${prefix}']`);
+            fields.forEach(field => {
+                field.style.display = isEnabled ? 'block' : 'none';
             });
-        });
-
-        // --- FUNÇÃO DE SALVAMENTO DE NOTIFICAÇÕES ---
-        const saveNotification = (section) => {
-            const endpoint = `save_${section}`;
-            const formId = `${section}-form`;
-            const statusDivId = `${section}-status`;
-            
-            const jsonBody = getFormData(formId, section !== 'dm');
-
-            submitForm(endpoint, jsonBody, statusDivId, (jsonBody) => {
-                const statusSpan = document.getElementById(`${section}-status-display`);
-                
-                let isEnabled = jsonBody.text.length > 0 || jsonBody.embed.enabled;
-                let statusText = 'Desativado';
-                let statusColor = 'yellow';
-                
-                if (section !== 'dm') {
-                    if (jsonBody.channelId !== 'none' && isEnabled) {
-                        const selectedChannelText = document.getElementById(`${section}-channel-select`).options[document.getElementById(`${section}-channel-select`).selectedIndex].text;
-                        statusText = `${selectedChannelText} (${jsonBody.embed.enabled ? 'Embed' : 'Texto'})`;
-                        statusColor = '#2ecc71';
-                    } else if (jsonBody.channelId !== 'none' && !isEnabled) {
-                         statusText = `${document.getElementById(`${section}-channel-select`).options[document.getElementById(`${section}-channel-select`).selectedIndex].text} (Vazio)`;
-                         statusColor = 'yellow';
-                    } else if (jsonBody.channelId === 'none' && isEnabled) {
-                         statusText = `Canal não selecionado (Erro!)`;
-                         statusColor = '#e74c3c';
-                    }
-                } else if (isEnabled) {
-                    statusText = 'Ativado';
-                    statusColor = '#2ecc71';
-                }
-                
-                statusSpan.innerHTML = statusText;
-                statusSpan.style.color = statusColor;
-            });
-        };
-
-        // Event Listeners para os formulários
-        document.getElementById('join-form').addEventListener('submit', (e) => { e.preventDefault(); saveNotification('join'); });
-        document.getElementById('leave-form').addEventListener('submit', (e) => { e.preventDefault(); saveNotification('leave'); });
-        document.getElementById('dm-form').addEventListener('submit', (e) => { e.preventDefault(); saveNotification('dm'); });
-
-        // --- LÓGICA TESTAR MENSAGEM ---
-        function testMessage(section) {
-            const formId = section + '-form';
-            const endpoint = section === 'dm' ? 'test_dm' : 'test_join'; 
-            const jsonBody = getFormData(formId, section !== 'dm');
-            const statusDiv = document.getElementById(section + '-status');
-
-            if (section !== 'dm' && jsonBody.channelId === 'none') {
-                 statusDiv.style.backgroundColor = '#e74c3c'; 
-                 statusDiv.innerHTML = `❌ Erro: Selecione um canal antes de testar.`;
-                 statusDiv.style.display = 'block';
-                 return;
-            }
-            if (!jsonBody.text && !jsonBody.embed.enabled) {
-                 statusDiv.style.backgroundColor = '#e74c3c'; 
-                 statusDiv.innerHTML = `❌ Erro: Mensagem ou Embed deve ser configurado para teste.`;
-                 statusDiv.style.display = 'block';
-                 return;
-            }
-
-            submitForm(endpoint, jsonBody, section + '-status');
         }
         
-        // Abre a primeira aba ao carregar e aplica a cor da borda do embed
+        // Inicializar o estado dos embeds ao carregar a página
         document.addEventListener('DOMContentLoaded', () => {
-            const firstButton = document.querySelector('.tab-button');
-            if (firstButton) {
-                firstButton.click();
-            }
-            updateEmbedBorder('join');
-            updateEmbedBorder('leave');
-            updateEmbedBorder('dm');
+            toggleEmbed('embed_join');
+            toggleEmbed('embed_leave');
+            toggleEmbed('embed_dm');
         });
-    </script>
-</body>
-</html>
+
+        </script>
+        
+        <div id="messageBox" style="display: none; padding: 10px; border-radius: 5px; margin-bottom: 20px; color: white;"></div>
+
+
+        <form id="settingsForm">
+            
+            <div class="card">
+                <h3>👑 Auto-Role (Cargo Automático)</h3>
+                <p>Selecione o cargo que será automaticamente dado aos novos membros.</p>
+                <div class="form-group">
+                    <label for="autorole_roleId">Cargo:</label>
+                    <select id="autorole_roleId" name="autorole_roleId" class="form-control">
+                        <option value="none">Desativar Auto-Role</option>
+                        <% roles.forEach(role => { %>
+                            <option value="<%= role.id %>" <%= currentAutoroleId === role.id ? 'selected' : '' %>>
+                                <%= role.name %>
+                            </option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="submitForm('/dashboard/<%= guild.id %>/autorole')">Salvar Auto-Role</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🟢 Mensagens quando alguém entrar</h3>
+                <p>Configure a mensagem de boas-vindas. Use **{mention}** para mencionar o usuário e **{count}** para o número de membros.</p>
+                
+                <div class="form-group">
+                    <label for="join_channelId">Canal de Entrada:</label>
+                    <select id="join_channelId" name="join_channelId" class="form-control">
+                        <option value="none" <%= joinNotif.channelId === 'none' ? 'selected' : '' %>>Desativar Notificação</option>
+                        <% textChannels.forEach(channel => { %>
+                            <option value="<%= channel.id %>" <%= joinNotif.channelId === channel.id ? 'selected' : '' %>>
+                                #<%= channel.name %>
+                            </option>
+                        <% }); %>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="join_text">Mensagem de Texto:</label>
+                    <textarea id="join_text" name="join_text" class="form-control" rows="2" placeholder="Ex: Olá {mention}, seja bem-vindo!"><%= joinNotif.text %></textarea>
+                </div>
+
+                <div class="embed-toggle">
+                    <input type="checkbox" id="embed_join_enabled" name="embed_join_enabled" onclick="toggleEmbed('embed_join')" <%= joinNotif.embed.enabled ? 'checked' : '' %>>
+                    <label for="embed_join_enabled">Ativar Mensagem Embed (Personalizada)</label>
+                </div>
+                <div class="embed-fields" data-embed-id="embed_join">
+                    <div class="form-group"><label for="embed_join_title">Título:</label><input type="text" id="embed_join_title" name="embed_join_title" class="form-control" value="<%= joinNotif.embed.title || '' %>"></div>
+                    <div class="form-group"><label for="embed_join_description">Descrição (Suporta {mention} e {count}):</label><textarea id="embed_join_description" name="embed_join_description" class="form-control" rows="3"><%= joinNotif.embed.description || '' %></textarea></div>
+                    <div class="form-group"><label for="embed_join_color">Cor Hex:</label><input type="color" id="embed_join_color" name="embed_join_color" value="<%= joinNotif.embed.color || '#7289da' %>"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-testar" onclick="submitForm('/dashboard/<%= guild.id %>/test_join')">Testar Mensagem</button>
+                    <button type="button" onclick="submitForm('/dashboard/<%= guild.id %>/save_join')">Salvar Entrada</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🔴 Mensagens quando alguém sair</h3>
+                <p>Configure a mensagem de despedida. Use **{user}** para o nome de usuário.</p>
+                
+                <div class="form-group">
+                    <label for="leave_channelId">Canal de Saída:</label>
+                    <select id="leave_channelId" name="leave_channelId" class="form-control">
+                        <option value="none" <%= leaveNotif.channelId === 'none' ? 'selected' : '' %>>Desativar Notificação</option>
+                        <% textChannels.forEach(channel => { %>
+                            <option value="<%= channel.id %>" <%= leaveNotif.channelId === channel.id ? 'selected' : '' %>>
+                                #<%= channel.name %>
+                            </option>
+                        <% }); %>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="leave_text">Mensagem de Texto:</label>
+                    <textarea id="leave_text" name="leave_text" class="form-control" rows="2" placeholder="Ex: {user} saiu do servidor."><%= leaveNotif.text %></textarea>
+                </div>
+
+                <div class="embed-toggle">
+                    <input type="checkbox" id="embed_leave_enabled" name="embed_leave_enabled" onclick="toggleEmbed('embed_leave')" <%= leaveNotif.embed.enabled ? 'checked' : '' %>>
+                    <label for="embed_leave_enabled">Ativar Mensagem Embed</label>
+                </div>
+                <div class="embed-fields" data-embed-id="embed_leave">
+                    <div class="form-group"><label for="embed_leave_title">Título:</label><input type="text" id="embed_leave_title" name="embed_leave_title" class="form-control" value="<%= leaveNotif.embed.title || '' %>"></div>
+                    <div class="form-group"><label for="embed_leave_description">Descrição (Suporta {user}):</label><textarea id="embed_leave_description" name="embed_leave_description" class="form-control" rows="3"><%= leaveNotif.embed.description || '' %></textarea></div>
+                    <div class="form-group"><label for="embed_leave_color">Cor Hex:</label><input type="color" id="embed_leave_color" name="embed_leave_color" value="<%= leaveNotif.embed.color || '#e74c3c' %>"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-testar" onclick="submitForm('/dashboard/<%= guild.id %>/test_leave')">Testar Mensagem</button>
+                    <button type="button" onclick="submitForm('/dashboard/<%= guild.id %>/save_leave')">Salvar Saída</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>✉️ Mensagens para a DM do usuário</h3>
+                <p>Mensagem privada enviada ao usuário assim que ele entra. Use **{guild}** para o nome do servidor.</p>
+                
+                <div class="form-group">
+                    <label for="dm_text">Mensagem de Texto:</label>
+                    <textarea id="dm_text" name="dm_text" class="form-control" rows="2" placeholder="Ex: Olá, obrigado por entrar em {guild}!"><%= dmNotif.text %></textarea>
+                </div>
+
+                <div class="embed-toggle">
+                    <input type="checkbox" id="embed_dm_enabled" name="embed_dm_enabled" onclick="toggleEmbed('embed_dm')" <%= dmNotif.embed.enabled ? 'checked' : '' %>>
+                    <label for="embed_dm_enabled">Ativar Mensagem Embed</label>
+                </div>
+                <div class="embed-fields" data-embed-id="embed_dm">
+                    <div class="form-group"><label for="embed_dm_title">Título:</label><input type="text" id="embed_dm_title" name="embed_dm_title" class="form-control" value="<%= dmNotif.embed.title || '' %>"></div>
+                    <div class="form-group"><label for="embed_dm_description">Descrição (Suporta {guild}):</label><textarea id="embed_dm_description" name="embed_dm_description" class="form-control" rows="3"><%= dmNotif.embed.description || '' %></textarea></div>
+                    <div class="form-group"><label for="embed_dm_color">Cor Hex:</label><input type="color" id="embed_dm_color" name="embed_dm_color" value="<%= dmNotif.embed.color || '#2ecc71' %>"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-testar" onclick="submitForm('/dashboard/<%= guild.id %>/test_dm')">Testar Mensagem</button>
+                    <button type="button" onclick="submitForm('/dashboard/<%= guild.id %>/save_dm')">Salvar DM</button>
+                </div>
+            </div>
+            
+        </form>
+    </div>
+</div>
+
+<style>
+/* Estilos específicos do Formulário/Cards */
+.card {
+    background-color: #2f3136;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.card h3 {
+    margin-top: 0;
+    color: #7289da;
+    border-bottom: 1px solid #40444b;
+    padding-bottom: 10px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-control, select {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #40444b;
+    color: #dcddde;
+    box-sizing: border-box;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    background-color: #7289da;
+    color: white;
+}
+
+button:hover {
+    background-color: #677bc4;
+}
+
+.btn-testar {
+    background-color: #f1c40f; /* Amarelo */
+    color: #202225;
+}
+
+.btn-testar:hover {
+    background-color: #e6b30f;
+}
+
+.embed-toggle {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.embed-fields {
+    border: 1px dashed #40444b;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+</style>
+
+<%- include('footer') %>
