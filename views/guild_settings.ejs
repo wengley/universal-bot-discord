@@ -524,6 +524,9 @@
                     } else if (jsonBody.channelId !== 'none' && !isEnabled) {
                          statusText = `${document.getElementById(`${section}-channel-select`).options[document.getElementById(`${section}-channel-select`).selectedIndex].text} (Vazio)`;
                          statusColor = 'yellow';
+                    } else if (jsonBody.channelId === 'none' && isEnabled) {
+                         statusText = `Canal não selecionado (Erro!)`;
+                         statusColor = '#e74c3c';
                     }
                 } else if (isEnabled) {
                     statusText = 'Ativado';
