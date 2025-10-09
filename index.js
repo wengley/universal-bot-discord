@@ -33,16 +33,6 @@ const prefix = '!';
 // ===================================
 // Adicione comandos de exemplo aqui para evitar erros de leitura se a pasta commands estiver vazia
 // Ex: Se você não tiver uma pasta 'commands', crie uma e coloque pelo menos um arquivo, como 'help.js'
-// Exemplo de como seria um help.js: 
-/* module.exports = {
-    name: 'help',
-    description: 'Mostra todos os comandos disponíveis.',
-    usage: '!help',
-    execute(message, args, client, db) {
-        message.reply('Comandos disponíveis: !help, !afk');
-    },
-};
-*/
 const commandsPath = path.join(__dirname, 'commands');
 let commandFiles = [];
 try {
@@ -275,6 +265,7 @@ const PORT = process.env.PORT || 3000;
 // Configuração do EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.engine('ejs', require('ejs').__express); // <--- LINHA DE CORREÇÃO CRÍTICA
 
 // Middleware para processar dados JSON no POST (CORREÇÃO DE ROTA)
 app.use(express.json());
