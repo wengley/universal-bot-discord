@@ -61,7 +61,7 @@ client.once('ready', () => {
 
 
 // ===================================
-// FUNÇÕES AUXILIARES DE NOTIFICAÇÃO
+// FUNÇÕES AUXILIARES DE NOTIFICAÇÃO (MANTIDAS)
 // ===================================
 
 const replacePlaceholders = (text, member) => {
@@ -80,14 +80,13 @@ const buildEmbed = (embedData, member) => {
     
     // Processa cada campo do embed, aplicando placeholders
     if (embedData.color) {
-        // Converte a cor HEX (e.g., #7289da) para um número inteiro (0x7289da) que o Discord.js usa
         embed.setColor(parseInt(embedData.color.replace('#', '0x'), 16)); 
     }
     
     // Configura os campos
     if (embedData.authorName) embed.setAuthor({ 
         name: replacePlaceholders(embedData.authorName, member), 
-        iconURL: embedData.authorIconUrl || member.user.displayAvatarURL() // Usa URL padrão se ícone não for fornecido
+        iconURL: embedData.authorIconUrl || member.user.displayAvatarURL()
     });
     if (embedData.title) embed.setTitle(replacePlaceholders(embedData.title, member));
     if (embedData.description) embed.setDescription(replacePlaceholders(embedData.description, member));
@@ -95,17 +94,16 @@ const buildEmbed = (embedData, member) => {
     if (embedData.thumbnailUrl) embed.setThumbnail(embedData.thumbnailUrl);
     if (embedData.footerText) embed.setFooter({ 
         text: replacePlaceholders(embedData.footerText, member), 
-        iconURL: embedData.footerIconUrl || member.guild.iconURL() // Usa URL padrão se ícone não for fornecido
+        iconURL: embedData.footerIconUrl || member.guild.iconURL()
     });
     
-    embed.setTimestamp(); // Adiciona timestamp padrão
+    embed.setTimestamp();
     
     return embed;
 };
 
 // Envia a mensagem (Texto, Embed, ou Ambos)
 const sendMessage = async (target, text, embed) => {
-    // O target pode ser Channel ou User
     const payload = {};
 
     if (text) {
@@ -264,7 +262,6 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Middleware para processar dados JSON no POST (CORREÇÃO DE ROTA)
-// Adicionei o urlencoded para melhor compatibilidade com formulários, se necessário
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -349,6 +346,57 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
     });
 });
 
+// ===============================================
+// 🆕 Rota de Configurações (Comandos)
+// ===============================================
+app.get('/dashboard/:guildId/config', isAuthenticated, async (req, res) => {
+    const guildId = req.params.guildId;
+    const guild = client.guilds.cache.get(guildId);
+
+    if (!guild) {
+        return res.status(404).send('Bot não está neste servidor ou servidor inválido.');
+    }
+    
+    // Filtra apenas comandos que queremos mostrar
+    const commandsList = client.commands.map(cmd => ({
+        name: `${prefix}${cmd.name}`,
+        description: cmd.description || 'Nenhuma descrição fornecida.',
+        usage: cmd.usage || `${prefix}${cmd.name}` 
+    }));
+
+    res.render('guild_config', { 
+        user: req.user,
+        guild: guild,
+        commands: commandsList
+    });
+});
+
+// ===============================================
+// 🆕 Rota de Event Logs (Simples)
+// ===============================================
+app.get('/dashboard/:guildId/events', isAuthenticated, async (req, res) => {
+    const guildId = req.params.guildId;
+    const guild = client.guilds.cache.get(guildId);
+
+    if (!guild) {
+        return res.status(404).send('Bot não está neste servidor ou servidor inválido.');
+    }
+    
+    // Aqui você buscará dados de logs do seu DB. Por enquanto, é um placeholder.
+    const recentLogs = [
+        { type: 'INFO', message: 'Nenhuma lógica de logs implementada no DB.', timestamp: new Date() },
+        { type: 'WARNING', message: 'Você precisa armazenar logs de eventos no QuickDB para exibi-los aqui.', timestamp: new Date() },
+    ];
+
+    res.render('guild_events', { 
+        user: req.user,
+        guild: guild,
+        logs: recentLogs
+    });
+});
+// ===============================================
+
+
 // Rota de Configuração por Servidor
 app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
@@ -415,10 +463,10 @@ app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
 });
 
 // ===================================
-// ROTAS POST: SALVAR E TESTAR (AS CORRIGIDAS)
+// ROTAS POST: SALVAR E TESTAR
 // ===================================
 
-// Rota POST para Salvar Auto-Role (JÁ EXISTIA, MANTIVE)
+// Rota POST para Salvar Auto-Role
 app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
     const { roleId } = req.body;
@@ -448,7 +496,7 @@ app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     res.json({ success: true, message: `Auto-Role definido para @${selectedRole.name}.` });
 });
 
-// Rota POST para Salvar Notificação de Entrada (JÁ EXISTIA, MANTIVE)
+// Rota POST para Salvar Notificação de Entrada
 app.post('/dashboard/:guildId/save_join', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
     const { channelId, text, embed } = req.body; 
@@ -479,7 +527,7 @@ app.post('/dashboard/:guildId/save_join', isAuthenticated, async (req, res) => {
     res.json({ success: true, message: `Notificação de Entrada salva com sucesso no canal: ${channelName}` });
 });
 
-// Rota POST para Salvar Notificação de Saída (JÁ EXISTIA, MANTIVE)
+// Rota POST para Salvar Notificação de Saída
 app.post('/dashboard/:guildId/save_leave', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
     const { channelId, text, embed } = req.body; 
@@ -510,7 +558,7 @@ app.post('/dashboard/:guildId/save_leave', isAuthenticated, async (req, res) => 
     res.json({ success: true, message: `Notificação de Saída salva com sucesso no canal: ${channelName}` });
 });
 
-// Rota POST para Salvar Mensagem de DM (JÁ EXISTIA, MANTIVE)
+// Rota POST para Salvar Mensagem de DM
 app.post('/dashboard/:guildId/save_dm', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
     const { text, embed } = req.body; 
@@ -531,7 +579,7 @@ app.post('/dashboard/:guildId/save_dm', isAuthenticated, async (req, res) => {
 });
 
 
-// Rota POST para TESTAR Notificação de Entrada (NOVA/AJUSTADA)
+// Rota POST para TESTAR Notificação de Entrada
 app.post('/dashboard/:guildId/test_join', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
     const { channelId, text, embed } = req.body; 
@@ -576,8 +624,53 @@ app.post('/dashboard/:guildId/test_join', isAuthenticated, async (req, res) => {
     }
 });
 
+// Rota POST para TESTAR Notificação de SAÍDA (A ROTA CORRETA)
+app.post('/dashboard/:guildId/test_leave', isAuthenticated, async (req, res) => {
+    const guildId = req.params.guildId;
+    const { channelId, text, embed } = req.body; 
+    
+    const userGuild = req.user.guilds.find(g => g.id === guildId);
+    if (!userGuild || !((userGuild.permissions & 0x8) === 0x8 || (userGuild.permissions & 0x20) === 0x20)) {
+        return res.status(403).json({ success: false, message: 'Permissão negada.' });
+    }
 
-// Rota POST para TESTAR Mensagem de DM (NOVA/AJUSTADA)
+    if (channelId === 'none') {
+        return res.status(400).json({ success: false, message: 'Selecione um canal para testar a mensagem de saída.' });
+    }
+
+    const guild = client.guilds.cache.get(guildId);
+    const channel = guild.channels.cache.get(channelId);
+    
+    if (!channel || channel.type !== 0) {
+        return res.status(400).json({ success: false, message: 'Canal de texto inválido.' });
+    }
+
+    // Cria um objeto de Membro "Mock" usando o usuário logado para simular o placeholder
+    const user = req.user;
+    const member = { 
+        user: { id: user.id, tag: `${user.username}#${user.discriminator}` || user.username, displayAvatarURL: () => `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` }, 
+        id: user.id, 
+        guild: guild 
+    };
+    
+    const finalEmbed = buildEmbed(embed, member);
+    const finalText = text ? `[TESTE DE SAÍDA DO PAINEL WEB] - ${replacePlaceholders(text, member)}` : null;
+
+    if (!finalText && !finalEmbed) {
+        return res.status(400).json({ success: false, message: 'Nenhuma mensagem ou Embed configurado para teste.' });
+    }
+
+    try {
+        await sendMessage(channel, finalText, finalEmbed);
+        return res.json({ success: true, message: `Mensagem de teste de Saída enviada com sucesso para #${channel.name}.` });
+    } catch (error) {
+        console.error(`Erro ao enviar mensagem de teste (test_leave):`, error);
+        return res.status(500).json({ success: false, message: 'Erro ao enviar mensagem: O bot pode não ter permissão de escrita no canal.' });
+    }
+});
+
+
+// Rota POST para TESTAR Mensagem de DM
 app.post('/dashboard/:guildId/test_dm', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
     const { text, embed } = req.body; 
