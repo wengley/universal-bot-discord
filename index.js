@@ -31,8 +31,25 @@ const prefix = '!';
 // ===================================
 // 1. CARREGAMENTO DE COMANDOS
 // ===================================
+// Adicione comandos de exemplo aqui para evitar erros de leitura se a pasta commands estiver vazia
+// Ex: Se você não tiver uma pasta 'commands', crie uma e coloque pelo menos um arquivo, como 'help.js'
+// Exemplo de como seria um help.js: 
+/* module.exports = {
+    name: 'help',
+    description: 'Mostra todos os comandos disponíveis.',
+    usage: '!help',
+    execute(message, args, client, db) {
+        message.reply('Comandos disponíveis: !help, !afk');
+    },
+};
+*/
 const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js')); 
+let commandFiles = [];
+try {
+    commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+} catch (error) {
+    console.warn(`[AVISO] Pasta 'commands' não encontrada ou erro de leitura: ${error.message}. As rotas de comandos podem falhar.`);
+}
 
 
 for (const file of commandFiles) {
@@ -355,12 +372,21 @@ app.get('/dashboard/:guildId/config', isAuthenticated, async (req, res) => {
         return res.status(404).send('Bot não está neste servidor ou servidor inválido.');
     }
     
-    // Filtra apenas comandos que queremos mostrar
+    // Mapeia comandos para o EJS
     const commandsList = client.commands.map(cmd => ({
         name: `${prefix}${cmd.name}`,
         description: cmd.description || 'Nenhuma descrição fornecida.',
         usage: cmd.usage || `${prefix}${cmd.name}` 
     }));
+    
+    // Se não houver comandos carregados, mostra um placeholder
+    if (commandsList.length === 0) {
+        commandsList.push({
+            name: '!help (Exemplo)',
+            description: 'Nenhum comando foi carregado da pasta /commands. Certifique-se de que os arquivos .js estão lá.',
+            usage: '!help'
+        });
+    }
 
     res.render('guild_config', { 
         user: req.user,
@@ -381,7 +407,7 @@ app.get('/dashboard/:guildId/events', isAuthenticated, async (req, res) => {
         return res.status(404).send('Bot não está neste servidor ou servidor inválido.');
     }
     
-    // Placeholders para logs. No futuro, você buscará isso no DB.
+    // Placeholders para logs. 
     const recentLogs = [
         { type: 'INFO', message: 'Nenhuma lógica de logs implementada no DB.', timestamp: new Date() },
         { type: 'WARNING', message: 'Você precisa armazenar logs de eventos (ex: mensagens editadas/apagadas) no QuickDB para exibi-los aqui.', timestamp: new Date() },

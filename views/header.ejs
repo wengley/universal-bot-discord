@@ -12,7 +12,7 @@
             color: #dcddde; /* Cor do texto */
             margin: 0;
             padding: 0;
-            display: flex; /* Habilita layout flexível */
+            display: flex; 
             min-height: 100vh;
         }
 
@@ -58,16 +58,16 @@
 
         .user-dropdown {
             position: absolute;
-            top: 100%; /* Começa abaixo do nome do usuário */
+            top: 100%; 
             right: 0;
             background-color: #36393f; 
             border: 1px solid #202225;
             border-top: none;
             border-radius: 0 0 5px 5px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
-            min-width: 180px; /* Maior para não ficar espremido */
+            min-width: 180px; 
             z-index: 1000;
-            display: none; /* Escondido por padrão */
+            display: none; 
         }
 
         .user-dropdown.show {
@@ -103,12 +103,12 @@
         /* --- Barra Lateral (Sidebar) --- */
         .sidebar {
             width: 200px;
-            background-color: #2f3136; /* Fundo mais escuro para o menu */
+            background-color: #2f3136; 
             min-height: calc(100vh - 60px); 
             padding-top: 20px;
             position: fixed;
             left: 0;
-            top: 60px; /* Abaixo da top-bar */
+            top: 60px; 
         }
 
         .sidebar h3 {
@@ -140,25 +140,24 @@
         }
 
         .sidebar-nav a.active {
-            background-color: #7289da; /* Cor principal do Discord */
+            background-color: #7289da; 
             color: white;
             font-weight: bold;
         }
 
         /* --- Conteúdo Principal --- */
         .main-content {
-            margin-left: 200px; /* Espaço para a sidebar */
+            margin-left: <%= guild ? '200px' : '0' %>; /* Espaço para a sidebar SE estiver em uma página de guild */
             padding: 20px;
             width: 100%;
             box-sizing: border-box;
         }
         
-        /* Estilos de Botão e Formulário */
+        /* Estilos de Botão e Formulário - Coloque aqui estilos que usará em várias páginas */
         .dashboard-content h2 {
             color: #ffffff;
             margin-bottom: 20px;
         }
-        /* ... outros estilos de formulário e botões ... */
         
     </style>
 </head>
@@ -201,9 +200,7 @@
 
 ---
 
-## 3. 📁 `views/footer.ejs` (Novo Arquivo)
-
-Crie este arquivo. Ele apenas fecha as tags HTML abertas.
+## 3. 📁 `views/footer.ejs` (CRIAR)
 
 **(Crie este arquivo na pasta `views/`)**
 
