@@ -1,6 +1,21 @@
 <%- include('header', { user: user, guild: guild, activePage: 'events' }) %>
-    <div class="main-content">
-        <h2>Logs de Eventos Recentes</h2>
-        <p>Histórico de mensagens apagadas ou editadas</p>
+
+<div class="main-content">
+    <h1>Logs Recentes de <%= guild.name %></h1>
+    
+    <div class="log-info-box">
+        <p>A exibição de logs (mensagens editadas/apagadas, etc.) requer que você configure o bot para armazenar esses dados no QuickDB. Abaixo estão logs de placeholder.</p>
     </div>
+    
+    <div class="log-list">
+        <% logs.forEach(log => { %>
+            <div class="log-item log-<%= log.type.toLowerCase() %>">
+                <span class="log-type">[<%= log.type %>]</span>
+                <span class="log-message"><%= log.message %></span>
+                <span class="log-time"><%= log.timestamp.toLocaleString() %></span>
+            </div>
+        <% }); %>
+    </div>
+</div>
+
 <%- include('footer') %>

@@ -3,209 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel - <%= guild ? guild.name : 'Início' %></title>
-    <style>
-        /* Estilos base do Discord */
-        body {
-            font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #36393f; /* Fundo do Discord */
-            color: #dcddde; /* Cor do texto */
-            margin: 0;
-            padding: 0;
-            display: flex; 
-            min-height: 100vh;
-        }
-
-        /* --- Barra Superior (Header) --- */
-        .top-bar {
-            background-color: #202225;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 40px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 100;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .bot-name {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #ffffff;
-            text-decoration: none;
-        }
-
-        /* --- Melhoria do Menu de Usuário (Perfil/Logout) --- */
-        .user-info {
-            position: relative;
-            padding: 5px 10px;
-            cursor: pointer;
-            display: flex; 
-            align-items: center;
-            gap: 10px; 
-            border-radius: 5px;
-            transition: background-color 0.2s;
-        }
-        
-        /* Efeito de hover para o perfil */
-        .user-info:hover {
-            background-color: #40444b;
-        }
-
-        .user-dropdown {
-            position: absolute;
-            top: 100%; 
-            right: 0;
-            background-color: #36393f; 
-            border: 1px solid #202225;
-            border-top: none;
-            border-radius: 0 0 5px 5px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
-            min-width: 180px; 
-            z-index: 1000;
-            display: none; 
-        }
-
-        .user-dropdown.show {
-            display: block;
-        }
-
-        .user-dropdown a {
-            display: block;
-            padding: 10px 15px;
-            text-decoration: none;
-            color: #ffffff; 
-            transition: background-color 0.2s;
-            font-size: 14px;
-        }
-
-        .user-dropdown a:hover {
-            background-color: #40444b;
-        }
-
-        .user-avatar {
-            width: 30px; 
-            height: 30px;
-            border-radius: 50%;
-        }
-
-        /* --- Layout de Página --- */
-        .container {
-            display: flex;
-            width: 100%;
-            padding-top: 60px; /* Espaço para a top-bar fixa */
-        }
-
-        /* --- Barra Lateral (Sidebar) --- */
-        .sidebar {
-            width: 200px;
-            background-color: #2f3136; 
-            min-height: calc(100vh - 60px); 
-            padding-top: 20px;
-            position: fixed;
-            left: 0;
-            top: 60px; 
-        }
-
-        .sidebar h3 {
-            color: #99aab5;
-            text-transform: uppercase;
-            font-size: 0.8em;
-            padding: 0 15px;
-            margin-top: 0;
-        }
-        
-        /* Navegação da Sidebar */
-        .sidebar-nav ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .sidebar-nav a {
-            display: block;
-            padding: 10px 15px;
-            color: #dcddde;
-            text-decoration: none;
-            transition: background-color 0.2s;
-            font-size: 0.95em;
-        }
-        
-        .sidebar-nav a:hover {
-            background-color: #36393f;
-        }
-
-        .sidebar-nav a.active {
-            background-color: #7289da; 
-            color: white;
-            font-weight: bold;
-        }
-
-        /* --- Conteúdo Principal --- */
-        .main-content {
-            margin-left: <%= guild ? '200px' : '0' %>; /* Espaço para a sidebar SE estiver em uma página de guild */
-            padding: 20px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        
-        /* Estilos de Botão e Formulário - Coloque aqui estilos que usará em várias páginas */
-        .dashboard-content h2 {
-            color: #ffffff;
-            margin-bottom: 20px;
-        }
-        
-    </style>
-</head>
+    <title><%= guild ? `${guild.name} - Painel` : 'Painel de Controle' %></title>
+    <link rel="stylesheet" href="/css/styles.css">
+    </head>
 <body>
-    
-    <div class="top-bar">
-        <a href="/dashboard" class="bot-name">🤖 Painel do Bot</a>
-        
-        <div class="user-info" onclick="toggleDropdown(event)">
-            <img class="user-avatar" src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="Avatar">
-            <span><%= user.username %>#<%= user.discriminator %></span>
-            <div class="user-dropdown" id="userDropdown">
-                <a href="/dashboard">🏠 Painel Inicial</a>
-                <a href="/logout">🚪 Sair (Logout)</a>
+    <div id="wrapper">
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h3>Discord Bot</h3>
             </div>
-        </div>
-    </div>
-    
-    <script>
-        function toggleDropdown(event) {
-            // Impedir que o clique no perfil feche imediatamente
-            event.stopPropagation(); 
-            document.getElementById("userDropdown").classList.toggle("show");
-        }
-    
-        // Fecha o dropdown se o usuário clicar fora
-        window.onclick = function(event) {
-            if (!event.target.matches('.user-info') && !event.target.closest('.user-info')) {
-                var dropdown = document.getElementById("userDropdown");
-                if (dropdown && dropdown.classList.contains('show')) {
-                    dropdown.classList.remove('show');
-                }
-            }
-        }
-    </script>
+            <ul class="list-unstyled components">
+                <li>
+                    <a href="/dashboard">Início</a>
+                </li>
+                
+                <% if (guild) { %>
+                <li class="<%= activePage === 'settings' ? 'active' : '' %>">
+                    <a href="/dashboard/<%= guild.id %>">Configurações Gerais</a>
+                </li>
+                <li class="<%= activePage === 'config' ? 'active' : '' %>">
+                    <a href="/dashboard/<%= guild.id %>/config">Comandos</a>
+                </li>
+                <li class="<%= activePage === 'events' ? 'active' : '' %>">
+                    <a href="/dashboard/<%= guild.id %>/events">Logs de Eventos</a>
+                </li>
+                <% } %>
+                </ul>
+        </nav>
+        
+        <div id="content">
+            <div class="user-info-bar">
+                <div class="user-details-group">
+                    <img src="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : '/images/default-avatar.png' %>" width="40" height="40" alt="Avatar" class="user-avatar">
+                    <span class="user-tag"><%= user.username %>#<%= user.discriminator %></span>
+                </div>
+                <a href="/logout" class="btn btn-logout">Sair</a>
+            </div>
+            ```
 
-    <div class="container">
-    
-    ```
+### `views/footer.ejs` (Simples e Essencial)
 
----
-
-## 3. 📁 `views/footer.ejs` (CRIAR)
-
-**(Crie este arquivo na pasta `views/`)**
-
-```html
-</div> 
-    </div>
-</body>
+```ejs
+        </div> </div> </body>
 </html>

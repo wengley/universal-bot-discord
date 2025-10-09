@@ -1,80 +1,32 @@
-<%- include('header', { user: user, guild: null }) %>
+<%- include('header', { user: user, guild: null, activePage: 'home' }) %>
+
+<div class="main-content">
+    <h1>Bem-vindo(a), <%= user.username %>!</h1>
+    <p>Selecione um servidor para configurar o bot:</p>
     
-    <div class="main-content">
-        <h2>Seus Servidores</h2>
-        <p>Selecione um servidor para configurar seu bot. Você só verá servidores onde é Administrador ou tem a permissão "Gerenciar Servidor".</p>
-        
-        <div class="guild-list">
+    <div class="guild-list">
+        <% guilds.forEach(guild => { %>
             <% 
-            // Filtra servidores que o bot está e onde o usuário é admin/manager
-            const manageableGuilds = guilds.filter(g => {
-                const isManaged = (g.permissions & 0x8) === 0x8 || (g.permissions & 0x20) === 0x20;
-                return isManaged && client.guilds.cache.has(g.id);
-            });
+                // Verifica se o usuário tem permissão de Administrador (8) ou Gerenciar Servidor (20)
+                const isAdmin = (guild.permissions & 0x8) === 0x8;
+                const canManage = (guild.permissions & 0x20) === 0x20;
             %>
-
-            <% if (manageableGuilds.length > 0) { %>
-                <% manageableGuilds.forEach(guild => { %>
-                    <a href="/dashboard/<%= guild.id %>" class="guild-card">
-                        <img src="<%= guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png' %>" alt="<%= guild.name %> Icon">
-                        <h3><%= guild.name %></h3>
-                        <p>ID: <%= guild.id %></p>
-                        <p class="status">✅ Gerenciar</p>
-                    </a>
-                <% }); %>
+            
+            <% if (isAdmin || canManage) { %>
+                <a href="/dashboard/<%= guild.id %>" class="guild-item">
+                    <img src="<%= guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128` : '/images/default-guild.png' %>" alt="Icone" class="guild-icon">
+                    <span class="guild-name"><%= guild.name %></span>
+                    <span class="status-badge ready">Configurar</span>
+                </a>
             <% } else { %>
-                <p>Nenhum servidor gerenciável encontrado onde o bot esteja. Certifique-se de que o bot foi adicionado com as permissões corretas.</p>
+                <div class="guild-item disabled">
+                    <img src="<%= guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128` : '/images/default-guild.png' %>" alt="Icone" class="guild-icon">
+                    <span class="guild-name"><%= guild.name %></span>
+                    <span class="status-badge denied">Permissão Negada</span>
+                </div>
             <% } %>
-        </div>
+        <% }); %>
     </div>
-    
-<style>
-/* Estilos específicos para a página do Dashboard */
-.guild-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.guild-card {
-    background-color: #2f3136;
-    border-radius: 8px;
-    padding: 20px;
-    width: 250px;
-    text-align: center;
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-}
-
-.guild-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4);
-}
-
-.guild-card img {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    margin-bottom: 10px;
-}
-
-.guild-card h3 {
-    margin: 5px 0;
-    color: #7289da;
-}
-
-.guild-card p {
-    font-size: 0.9em;
-    color: #99aab5;
-}
-
-.guild-card .status {
-    font-weight: bold;
-    color: #43b581; /* Verde */
-}
-</style>
+</div>
 
 <%- include('footer') %>
