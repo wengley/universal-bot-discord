@@ -18,7 +18,7 @@
         .profile-box p { margin: 5px 0 0 0; font-size: 0.8em; opacity: 0.7; }
 
         .menu a { color: #ffffff; margin-right: 15px; text-decoration: none; }
-        h1, h2 { color: #ffffff; }
+        h1, h2, h3 { color: #ffffff; }
         
         /* Abas */
         .tabs { display: flex; margin-bottom: 15px; border-bottom: 2px solid #36393f; }
@@ -41,7 +41,7 @@
 
         /* Configurações Comuns */
         .config-section { background-color: #36393f; padding: 15px; border-radius: 5px; margin-top: 15px; }
-        select, input[type="text"], textarea { 
+        select, input[type="text"], textarea, input[type="color"] { 
             width: 100%; 
             padding: 10px; 
             margin-top: 5px; 
@@ -58,10 +58,27 @@
         button { padding: 10px 15px; margin-top: 10px; border-radius: 5px; border: none; background-color: #7289da; color: white; cursor: pointer; font-weight: bold; transition: background-color 0.2s; }
         button:hover { background-color: #677bc4; }
         .status-message { padding: 10px; margin-top: 10px; border-radius: 5px; color: white; display: none; }
-        .danger-button { background-color: #e74c3c; margin-left: 10px; }
-        .danger-button:hover { background-color: #c0392b; }
         .test-button { background-color: #f39c12; margin-left: 10px; }
         .test-button:hover { background-color: #e67e22; }
+
+        /* Embed e Variáveis */
+        .embed-toggle-area { margin-top: 10px; margin-bottom: 15px; padding: 10px; background-color: #2c2f33; border-radius: 5px; }
+        .embed-fields { border-left: 3px solid var(--embed-color, #7289da); padding-left: 10px; margin-top: 10px; }
+        .embed-field-group { display: flex; gap: 10px; }
+        .embed-field-group label { flex-basis: 50%; }
+        .embed-field-group input, .embed-field-group textarea { width: 100%; }
+        .embed-color-container { display: flex; align-items: center; }
+        .embed-color-container label { flex-basis: 150px; }
+        .embed-color-container input[type="color"] { flex-grow: 1; height: 40px; }
+        
+        /* Variáveis (Spoiler) */
+        .spoiler-title { background-color: #4a4d51; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
+        .spoiler-content { display: none; padding: 10px 0; border-top: 1px solid #5a5a5a; }
+        .placeholder-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+        .placeholder-list li { background-color: #7289da; padding: 5px 10px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+
+        .form-action-buttons { margin-top: 15px; text-align: right; }
+        .form-action-buttons button { margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -94,7 +111,7 @@
             
             <div class="tabs">
                 <button class="tab-button active" onclick="openTab(event, 'autorole')">Auto-Role</button>
-                <button class="tab-button" onclick="openTab(event, 'notifications')">Notificação de Entrar/Sair</button>
+                <button class="tab-button" onclick="openTab(event, 'notifications')">Notificações</button>
                 <button class="tab-button" onclick="openTab(event, 'logs')">Event Logs (Em Breve)</button>
             </div>
 
@@ -128,79 +145,228 @@
             </div>
 
             <div id="notifications" class="tab-content" style="display: none;">
-                <h2>🔔 Notificação de Entrada/Saída</h2>
+                <h2>🔔 Notificações (Entrada, Saída e DM)</h2>
+
+                <div class="spoiler-title" onclick="toggleSpoiler('placeholder-spoiler')">
+                    Clique para ver as **Variáveis/Placeholders**
+                </div>
+                <div id="placeholder-spoiler" class="spoiler-content">
+                    <ul class="placeholder-list">
+                        <li>`{mention}`</li>
+                        <li>`{user}`</li>
+                        <li>`{guild}`</li>
+                        <li>`{count}`</li>
+                    </ul>
+                </div>
+                
+                <hr style="border-color: #5a5a5a; margin-top: 20px;">
+                
                 <div class="config-section">
+                    <h3>🟢 Mensagens quando alguém entrar</h3>
                     
                     <p>
-                        Entrada (Join): 
-                        <% if (joinChannelId && guild.channels.cache.has(joinChannelId)) { %>
-                            <span class="current-setting">#<%= guild.channels.cache.get(joinChannelId).name %> (<%= joinEmbed ? 'Embed' : 'Texto' %>)</span>
-                        <% } else { %>
-                            <span class="current-setting" style="color: yellow;">Desativado</span>
-                        <% } %>
-                    </p>
-                    <p>
-                        Saída (Leave): 
-                        <% if (leaveChannelId && guild.channels.cache.has(leaveChannelId)) { %>
-                            <span class="current-setting">#<%= guild.channels.cache.get(leaveChannelId).name %> (<%= leaveEmbed ? 'Embed' : 'Texto' %>)</span>
-                        <% } else { %>
-                            <span class="current-setting" style="color: yellow;">Desativado</span>
-                        <% } %>
+                        Status: 
+                        <% 
+                            const joinChannelName = joinNotif.channelId && guild.channels.cache.has(joinNotif.channelId) ? `#${guild.channels.cache.get(joinNotif.channelId).name}` : 'N/A';
+                            const joinStatusText = joinNotif.channelId !== 'none' ? `${joinChannelName} (${joinNotif.embed.enabled ? 'Embed' : 'Texto'})` : 'Desativado';
+                            const joinStatusColor = joinNotif.channelId !== 'none' ? '#2ecc71' : 'yellow';
+                        %>
+                        <span class="current-setting" id="join-status-display" style="color: <%= joinStatusColor %>;"><%= joinStatusText %></span>
                     </p>
 
-                    <form id="notifications-form">
-                        <hr style="border-color: #5a5a5a;">
-                        <h3>Configuração de Entrada (Join)</h3>
-                        <label for="join-channel-select">Canal de Texto para Boas-Vindas:</label><br>
-                        <select id="join-channel-select" name="joinChannelId">
+                    <form id="join-form">
+                        <label for="join-channel-select">Canal de Texto para Boas-Vindas:</label>
+                        <select id="join-channel-select" name="channelId">
                             <option value="none">-- DESATIVAR Notificação de Entrada --</option>
                             <% textChannels.forEach(channel => { %>
-                                <option value="<%= channel.id %>" <%= channel.id === joinChannelId ? 'selected' : '' %>>
+                                <option value="<%= channel.id %>" <%= channel.id === joinNotif.channelId ? 'selected' : '' %>>
                                     #<%= channel.name %>
                                 </option>
                             <% }); %>
                         </select>
 
-                        <label for="join-msg">Mensagem de Boas-Vindas (Use {mention}, {user}, {guild}, {count}):</label><br>
-                        <textarea id="join-msg" name="joinMessage" rows="3"><%= joinMsg %></textarea>
-                        
-                        <label style="margin-right: 15px;">
-                            <input type="checkbox" name="joinEmbed" value="true" <%= joinEmbed ? 'checked' : '' %>> Enviar como **Embed**
-                        </label>
-                        <button type="button" class="test-button" onclick="testJoinMessage()">Testar Entrada</button>
+                        <label for="join-text">Conteúdo da Mensagem (Texto Normal - Opcional):</label>
+                        <textarea id="join-text" name="text" rows="2"><%= joinNotif.text || '' %></textarea>
 
-                        <hr style="border-color: #5a5a5a; margin-top: 20px;">
-                        <h3>Configuração de Saída (Leave)</h3>
-                        <label for="leave-channel-select">Canal de Texto para Despedidas:</label><br>
-                        <select id="leave-channel-select" name="leaveChannelId">
+                        <div class="embed-toggle-area">
+                            <label>
+                                <input type="checkbox" name="embed-enabled" data-section="join" onchange="toggleEmbedFields('join'); updateEmbedBorder('join')" <%= joinNotif.embed.enabled ? 'checked' : '' %>> **Ativar Embed**
+                            </label>
+
+                            <div id="join-embed-fields" class="embed-fields" style="display: <%= joinNotif.embed.enabled ? 'block' : 'none' %>; --embed-color: <%= joinNotif.embed.color || '#7289da' %>;">
+                                <div class="embed-color-container">
+                                    <label for="join-color">COR:</label>
+                                    <input type="color" id="join-color" name="embed-color" value="<%= joinNotif.embed.color || '#7289da' %>" oninput="updateEmbedBorder('join')">
+                                </div>
+                                
+                                <label for="join-author-name">Nome do Autor:</label>
+                                <input type="text" id="join-author-name" name="embed-authorName" value="<%= joinNotif.embed.authorName || '' %>">
+
+                                <label for="join-author-icon">URL do Ícone do Autor:</label>
+                                <input type="text" id="join-author-icon" name="embed-authorIconUrl" value="<%= joinNotif.embed.authorIconUrl || '' %>">
+
+                                <label for="join-title">Título:</label>
+                                <input type="text" id="join-title" name="embed-title" value="<%= joinNotif.embed.title || '' %>">
+
+                                <label for="join-description">Descrição:</label>
+                                <textarea id="join-description" name="embed-description" rows="3"><%= joinNotif.embed.description || '' %></textarea>
+
+                                <label for="join-image">URL da Imagem:</label>
+                                <input type="text" id="join-image" name="embed-imageUrl" value="<%= joinNotif.embed.imageUrl || '' %>">
+
+                                <label for="join-thumbnail">URL da Thumbnail:</label>
+                                <input type="text" id="join-thumbnail" name="embed-thumbnailUrl" value="<%= joinNotif.embed.thumbnailUrl || '' %>">
+
+                                <label for="join-footer-text">Texto do Rodapé:</label>
+                                <input type="text" id="join-footer-text" name="embed-footerText" value="<%= joinNotif.embed.footerText || '' %>">
+
+                                <label for="join-footer-icon">URL do Ícone do Rodapé:</label>
+                                <input type="text" id="join-footer-icon" name="embed-footerIconUrl" value="<%= joinNotif.embed.footerIconUrl || '' %>">
+                            </div>
+                        </div>
+
+                        <div class="form-action-buttons">
+                            <button type="submit">Salvar Entrada</button>
+                            <button type="button" class="test-button" onclick="testMessage('join')">Testar Mensagem</button>
+                        </div>
+                    </form>
+                    <div id="join-status" class="status-message"></div>
+                </div>
+
+                <hr style="border-color: #5a5a5a; margin-top: 20px;">
+
+                <div class="config-section">
+                    <h3>🔴 Mensagens quando alguém sair</h3>
+                    
+                    <p>
+                        Status: 
+                        <% 
+                            const leaveChannelName = leaveNotif.channelId && guild.channels.cache.has(leaveNotif.channelId) ? `#${guild.channels.cache.get(leaveNotif.channelId).name}` : 'N/A';
+                            const leaveStatusText = leaveNotif.channelId !== 'none' ? `${leaveChannelName} (${leaveNotif.embed.enabled ? 'Embed' : 'Texto'})` : 'Desativado';
+                            const leaveStatusColor = leaveNotif.channelId !== 'none' ? '#2ecc71' : 'yellow';
+                        %>
+                        <span class="current-setting" id="leave-status-display" style="color: <%= leaveStatusColor %>;"><%= leaveStatusText %></span>
+                    </p>
+
+                    <form id="leave-form">
+                        <label for="leave-channel-select">Canal de Texto para Despedidas:</label>
+                        <select id="leave-channel-select" name="channelId">
                             <option value="none">-- DESATIVAR Notificação de Saída --</option>
                             <% textChannels.forEach(channel => { %>
-                                <option value="<%= channel.id %>" <%= channel.id === leaveChannelId ? 'selected' : '' %>>
+                                <option value="<%= channel.id %>" <%= channel.id === leaveNotif.channelId ? 'selected' : '' %>>
                                     #<%= channel.name %>
                                 </option>
                             <% }); %>
                         </select>
 
-                        <label for="leave-msg">Mensagem de Despedida (Use {user}, {guild}, {count}):</label><br>
-                        <textarea id="leave-msg" name="leaveMessage" rows="3"><%= leaveMsg %></textarea>
-                        
-                        <label>
-                            <input type="checkbox" name="leaveEmbed" value="true" <%= leaveEmbed ? 'checked' : '' %>> Enviar como **Embed**
-                        </label>
-                        
-                        <button type="submit" style="margin-top: 20px;">Salvar TODAS as Notificações</button>
+                        <label for="leave-text">Conteúdo da Mensagem (Texto Normal - Opcional):</label>
+                        <textarea id="leave-text" name="text" rows="2"><%= leaveNotif.text || '' %></textarea>
+
+                        <div class="embed-toggle-area">
+                            <label>
+                                <input type="checkbox" name="embed-enabled" data-section="leave" onchange="toggleEmbedFields('leave'); updateEmbedBorder('leave')" <%= leaveNotif.embed.enabled ? 'checked' : '' %>> **Ativar Embed**
+                            </label>
+
+                            <div id="leave-embed-fields" class="embed-fields" style="display: <%= leaveNotif.embed.enabled ? 'block' : 'none' %>; --embed-color: <%= leaveNotif.embed.color || '#e74c3c' %>;">
+                                <div class="embed-color-container">
+                                    <label for="leave-color">COR:</label>
+                                    <input type="color" id="leave-color" name="embed-color" value="<%= leaveNotif.embed.color || '#e74c3c' %>" oninput="updateEmbedBorder('leave')">
+                                </div>
+                                
+                                <label for="leave-author-name">Nome do Autor:</label>
+                                <input type="text" id="leave-author-name" name="embed-authorName" value="<%= leaveNotif.embed.authorName || '' %>">
+
+                                <label for="leave-author-icon">URL do Ícone do Autor:</label>
+                                <input type="text" id="leave-author-icon" name="embed-authorIconUrl" value="<%= leaveNotif.embed.authorIconUrl || '' %>">
+
+                                <label for="leave-title">Título:</label>
+                                <input type="text" id="leave-title" name="embed-title" value="<%= leaveNotif.embed.title || '' %>">
+
+                                <label for="leave-description">Descrição:</label>
+                                <textarea id="leave-description" name="embed-description" rows="3"><%= leaveNotif.embed.description || '' %></textarea>
+
+                                <label for="leave-image">URL da Imagem:</label>
+                                <input type="text" id="leave-image" name="embed-imageUrl" value="<%= leaveNotif.embed.imageUrl || '' %>">
+
+                                <label for="leave-thumbnail">URL da Thumbnail:</label>
+                                <input type="text" id="leave-thumbnail" name="embed-thumbnailUrl" value="<%= leaveNotif.embed.thumbnailUrl || '' %>">
+
+                                <label for="leave-footer-text">Texto do Rodapé:</label>
+                                <input type="text" id="leave-footer-text" name="embed-footerText" value="<%= leaveNotif.embed.footerText || '' %>">
+
+                                <label for="leave-footer-icon">URL do Ícone do Rodapé:</label>
+                                <input type="text" id="leave-footer-icon" name="embed-footerIconUrl" value="<%= leaveNotif.embed.footerIconUrl || '' %>">
+                            </div>
+                        </div>
+
+                        <div class="form-action-buttons">
+                            <button type="submit">Salvar Saída</button>
+                            </div>
                     </form>
+                    <div id="leave-status" class="status-message"></div>
+                </div>
+
+                <hr style="border-color: #5a5a5a; margin-top: 20px;">
+
+                <div class="config-section">
+                    <h3>✉️ Mensagens para a DM do usuário</h3>
                     
-                    <div id="notifications-status" class="status-message"></div>
-                    
-                    <p style="margin-top: 20px; font-size: 0.9em; opacity: 0.7;">
-                        **Variáveis disponíveis:** <ul>
-                            <li>`{mention}`: Menciona o usuário (Entrada apenas)</li>
-                            <li>`{user}`: Nome de usuário (Ex: wengleeyy\_tr)</li>
-                            <li>`{guild}`: Nome do servidor</li>
-                            <li>`{count}`: Número total de membros</li>
-                        </ul>
+                    <p>
+                        Status: 
+                        <% 
+                            const dmStatusText = dmNotif.text || (dmNotif.embed && dmNotif.embed.enabled) ? 'Ativado' : 'Desativado';
+                            const dmStatusColor = dmNotif.text || (dmNotif.embed && dmNotif.embed.enabled) ? '#2ecc71' : 'yellow';
+                        %>
+                        <span class="current-setting" id="dm-status-display" style="color: <%= dmStatusColor %>;"><%= dmStatusText %></span>
                     </p>
+
+                    <form id="dm-form">
+                        <label for="dm-text">Conteúdo da Mensagem (Texto Normal - Opcional):</label>
+                        <textarea id="dm-text" name="text" rows="2"><%= dmNotif.text || '' %></textarea>
+
+                        <div class="embed-toggle-area">
+                            <label>
+                                <input type="checkbox" name="embed-enabled" data-section="dm" onchange="toggleEmbedFields('dm'); updateEmbedBorder('dm')" <%= dmNotif.embed.enabled ? 'checked' : '' %>> **Ativar Embed**
+                            </label>
+
+                            <div id="dm-embed-fields" class="embed-fields" style="display: <%= dmNotif.embed.enabled ? 'block' : 'none' %>; --embed-color: <%= dmNotif.embed.color || '#2ecc71' %>;">
+                                <div class="embed-color-container">
+                                    <label for="dm-color">COR:</label>
+                                    <input type="color" id="dm-color" name="embed-color" value="<%= dmNotif.embed.color || '#2ecc71' %>" oninput="updateEmbedBorder('dm')">
+                                </div>
+                                
+                                <label for="dm-author-name">Nome do Autor:</label>
+                                <input type="text" id="dm-author-name" name="embed-authorName" value="<%= dmNotif.embed.authorName || '' %>">
+
+                                <label for="dm-author-icon">URL do Ícone do Autor:</label>
+                                <input type="text" id="dm-author-icon" name="embed-authorIconUrl" value="<%= dmNotif.embed.authorIconUrl || '' %>">
+
+                                <label for="dm-title">Título:</label>
+                                <input type="text" id="dm-title" name="embed-title" value="<%= dmNotif.embed.title || '' %>">
+
+                                <label for="dm-description">Descrição:</label>
+                                <textarea id="dm-description" name="embed-description" rows="3"><%= dmNotif.embed.description || '' %></textarea>
+
+                                <label for="dm-image">URL da Imagem:</label>
+                                <input type="text" id="dm-image" name="embed-imageUrl" value="<%= dmNotif.embed.imageUrl || '' %>">
+
+                                <label for="dm-thumbnail">URL da Thumbnail:</label>
+                                <input type="text" id="dm-thumbnail" name="embed-thumbnailUrl" value="<%= dmNotif.embed.thumbnailUrl || '' %>">
+
+                                <label for="dm-footer-text">Texto do Rodapé:</label>
+                                <input type="text" id="dm-footer-text" name="embed-footerText" value="<%= dmNotif.embed.footerText || '' %>">
+
+                                <label for="dm-footer-icon">URL do Ícone do Rodapé:</label>
+                                <input type="text" id="dm-footer-icon" name="embed-footerIconUrl" value="<%= dmNotif.embed.footerIconUrl || '' %>">
+                            </div>
+                        </div>
+
+                        <div class="form-action-buttons">
+                            <button type="submit">Salvar Mensagem DM</button>
+                            <button type="button" class="test-button" onclick="testMessage('dm')">Testar Mensagem DM</button>
+                        </div>
+                    </form>
+                    <div id="dm-status" class="status-message"></div>
                 </div>
             </div>
 
@@ -226,7 +392,62 @@
             document.getElementById(tabName).style.display = "block";
             evt.currentTarget.className += " active";
         }
+
+        // Função para toggle do spoiler de variáveis
+        function toggleSpoiler(id) {
+            const content = document.getElementById(id);
+            if (content.style.display === "none" || content.style.display === "") {
+                content.style.display = "block";
+            } else {
+                content.style.display = "none";
+            }
+        }
         
+        // Função para toggle dos campos do Embed
+        function toggleEmbedFields(section) {
+            const fieldsDiv = document.getElementById(section + '-embed-fields');
+            const checkbox = document.querySelector(`#${section}-form input[name="embed-enabled"]`);
+            fieldsDiv.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        // Função para atualizar a borda do Embed com a cor selecionada (Visual)
+        function updateEmbedBorder(section) {
+            const colorInput = document.getElementById(section + '-color');
+            const fieldsDiv = document.getElementById(section + '-embed-fields');
+            if (fieldsDiv) {
+                fieldsDiv.style.setProperty('--embed-color', colorInput.value);
+            }
+        }
+
+        // --- FUNÇÃO AUXILIAR PARA PEGAR DADOS DO FORMULÁRIO ---
+        function getFormData(formId, isNotification) {
+            const form = document.getElementById(formId);
+            
+            const data = {};
+            if (isNotification) { 
+                data.channelId = form.querySelector('[name="channelId"]').value;
+            }
+            // Garante que o texto seja sempre enviado (mesmo se vazio)
+            const textElement = form.querySelector('[name="text"]');
+            data.text = textElement ? textElement.value.trim() : ''; 
+
+            const embedEnabled = form.querySelector('[name="embed-enabled"]').checked;
+            data.embed = {
+                enabled: embedEnabled,
+                color: form.querySelector('[name="embed-color"]').value,
+                authorName: form.querySelector('[name="embed-authorName"]').value.trim(),
+                authorIconUrl: form.querySelector('[name="embed-authorIconUrl"]').value.trim(),
+                title: form.querySelector('[name="embed-title"]').value.trim(),
+                description: form.querySelector('[name="embed-description"]').value.trim(),
+                imageUrl: form.querySelector('[name="embed-imageUrl"]').value.trim(),
+                thumbnailUrl: form.querySelector('[name="embed-thumbnailUrl"]').value.trim(),
+                footerText: form.querySelector('[name="embed-footerText"]').value.trim(),
+                footerIconUrl: form.querySelector('[name="embed-footerIconUrl"]').value.trim()
+            };
+
+            return data;
+        }
+
         // --- FUNÇÃO DE ENVIO (AJAX) ---
         async function submitForm(endpoint, jsonBody, statusDivId, successCallback) {
             const statusDiv = document.getElementById(statusDivId);
@@ -244,15 +465,15 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    statusDiv.style.backgroundColor = '#2ecc71'; // Verde
+                    statusDiv.style.backgroundColor = '#2ecc71'; 
                     statusDiv.innerHTML = `✅ Sucesso! ${data.message}`;
                     if (successCallback) successCallback(jsonBody);
                 } else {
-                    statusDiv.style.backgroundColor = '#e74c3c'; // Vermelho
+                    statusDiv.style.backgroundColor = '#e74c3c'; 
                     statusDiv.innerHTML = `❌ Erro: ${data.message}`;
                 }
             } catch (error) {
-                statusDiv.style.backgroundColor = '#e74c3c'; // Vermelho
+                statusDiv.style.backgroundColor = '#e74c3c'; 
                 statusDiv.innerHTML = `❌ Erro de Conexão: Ocorreu um problema ao enviar dados.`;
                 console.error('Fetch error:', error);
             }
@@ -280,65 +501,77 @@
             });
         });
 
-        // --- LÓGICA NOTIFICAÇÕES ---
-        document.getElementById('notifications-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const form = e.target;
+        // --- FUNÇÃO DE SALVAMENTO DE NOTIFICAÇÕES ---
+        const saveNotification = (section) => {
+            const endpoint = `save_${section}`;
+            const formId = `${section}-form`;
+            const statusDivId = `${section}-status`;
             
-            // Reúne dados do formulário
-            const jsonBody = { 
-                joinChannelId: form.elements.joinChannelId.value,
-                leaveChannelId: form.elements.leaveChannelId.value,
-                joinMessage: form.elements.joinMessage.value,
-                leaveMessage: form.elements.leaveMessage.value,
-                // Checkboxes: Envia 'true' se marcado, senão 'false'.
-                joinEmbed: form.elements.joinEmbed.checked ? 'true' : 'false',
-                leaveEmbed: form.elements.leaveEmbed.checked ? 'true' : 'false'
-            };
-            
-            submitForm('notifications', jsonBody, 'notifications-status', (jsonBody) => {
-                // Callback para atualizar o texto de status
-                const joinStatus = jsonBody.joinChannelId !== 'none' ? `#${form.elements.joinChannelId.options[form.elements.joinChannelId.selectedIndex].text} (${jsonBody.joinEmbed === 'true' ? 'Embed' : 'Texto'})` : 'Desativado';
-                const leaveStatus = jsonBody.leaveChannelId !== 'none' ? `#${form.elements.leaveChannelId.options[form.elements.leaveChannelId.selectedIndex].text} (${jsonBody.leaveEmbed === 'true' ? 'Embed' : 'Texto'})` : 'Desativado';
+            const jsonBody = getFormData(formId, section !== 'dm');
+
+            submitForm(endpoint, jsonBody, statusDivId, (jsonBody) => {
+                const statusSpan = document.getElementById(`${section}-status-display`);
                 
-                // Atualiza o status visual
-                document.querySelector('#notifications p:nth-child(2) .current-setting').innerHTML = joinStatus;
-                document.querySelector('#notifications p:nth-child(4) .current-setting').innerHTML = leaveStatus;
+                let isEnabled = jsonBody.text.length > 0 || jsonBody.embed.enabled;
+                let statusText = 'Desativado';
+                let statusColor = 'yellow';
                 
-                document.querySelector('#notifications p:nth-child(2) .current-setting').style.color = joinStatus === 'Desativado' ? 'yellow' : '#2ecc71';
-                document.querySelector('#notifications p:nth-child(4) .current-setting').style.color = leaveStatus === 'Desativado' ? 'yellow' : '#2ecc71';
+                if (section !== 'dm') {
+                    if (jsonBody.channelId !== 'none' && isEnabled) {
+                        const selectedChannelText = document.getElementById(`${section}-channel-select`).options[document.getElementById(`${section}-channel-select`).selectedIndex].text;
+                        statusText = `${selectedChannelText} (${jsonBody.embed.enabled ? 'Embed' : 'Texto'})`;
+                        statusColor = '#2ecc71';
+                    } else if (jsonBody.channelId !== 'none' && !isEnabled) {
+                         statusText = `${document.getElementById(`${section}-channel-select`).options[document.getElementById(`${section}-channel-select`).selectedIndex].text} (Vazio)`;
+                         statusColor = 'yellow';
+                    }
+                } else if (isEnabled) {
+                    statusText = 'Ativado';
+                    statusColor = '#2ecc71';
+                }
+                
+                statusSpan.innerHTML = statusText;
+                statusSpan.style.color = statusColor;
             });
-        });
-        
-        // --- TESTE DE MENSAGEM ---
-        function testJoinMessage() {
-            const channelId = document.getElementById('join-channel-select').value;
-            const joinMessage = document.getElementById('join-msg').value;
-            const isEmbed = document.querySelector('input[name="joinEmbed"]').checked ? 'true' : 'false';
-            const statusDiv = document.getElementById('notifications-status');
-            
-            if (channelId === 'none') {
-                 statusDiv.style.backgroundColor = '#e74c3c'; // Vermelho
-                 statusDiv.innerHTML = `❌ Erro: Selecione um canal de Entrada antes de testar.`;
+        };
+
+        // Event Listeners para os formulários
+        document.getElementById('join-form').addEventListener('submit', (e) => { e.preventDefault(); saveNotification('join'); });
+        document.getElementById('leave-form').addEventListener('submit', (e) => { e.preventDefault(); saveNotification('leave'); });
+        document.getElementById('dm-form').addEventListener('submit', (e) => { e.preventDefault(); saveNotification('dm'); });
+
+        // --- LÓGICA TESTAR MENSAGEM ---
+        function testMessage(section) {
+            const formId = section + '-form';
+            const endpoint = section === 'dm' ? 'test_dm' : 'test_join'; 
+            const jsonBody = getFormData(formId, section !== 'dm');
+            const statusDiv = document.getElementById(section + '-status');
+
+            if (section !== 'dm' && jsonBody.channelId === 'none') {
+                 statusDiv.style.backgroundColor = '#e74c3c'; 
+                 statusDiv.innerHTML = `❌ Erro: Selecione um canal antes de testar.`;
+                 statusDiv.style.display = 'block';
+                 return;
+            }
+            if (!jsonBody.text && !jsonBody.embed.enabled) {
+                 statusDiv.style.backgroundColor = '#e74c3c'; 
+                 statusDiv.innerHTML = `❌ Erro: Mensagem ou Embed deve ser configurado para teste.`;
                  statusDiv.style.display = 'block';
                  return;
             }
 
-            const jsonBody = { 
-                channelId: channelId, 
-                joinMessage: joinMessage,
-                isEmbed: isEmbed 
-            };
-
-            submitForm('test_join_message', jsonBody, 'notifications-status');
+            submitForm(endpoint, jsonBody, section + '-status');
         }
         
-        // Abre a primeira aba ao carregar
+        // Abre a primeira aba ao carregar e aplica a cor da borda do embed
         document.addEventListener('DOMContentLoaded', () => {
             const firstButton = document.querySelector('.tab-button');
             if (firstButton) {
                 firstButton.click();
             }
+            updateEmbedBorder('join');
+            updateEmbedBorder('leave');
+            updateEmbedBorder('dm');
         });
     </script>
 </body>

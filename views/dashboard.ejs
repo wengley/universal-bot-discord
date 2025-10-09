@@ -121,6 +121,7 @@
                 <% managedGuilds.forEach(userGuild => { %>
                     <% 
                         const botGuild = client.guilds.cache.get(userGuild.id);
+                        // Tenta obter o ícone, usa um ícone padrão do Discord se não tiver
                         const iconURL = botGuild ? botGuild.iconURL({ dynamic: true, size: 128 }) : `https://cdn.discordapp.com/embed/avatars/${user.discriminator % 5}.png`;
                     %>
                     
@@ -143,10 +144,10 @@
             
             <h3>Próximas Configurações</h3>
             <ul>
-                <li>Configurações Gerais</li>
-                <li>Notificação de entrar/sair (Pronto!)</li>
-                <li>Event logs</li>
+                <li>Notificação de entrar/sair (Pronto com Embeds e canais separados!)</li>
+                <li>Mensagem de DM (Pronto!)</li>
                 <li>Autorole (Pronto!)</li>
+                <li>Event logs</li>
                 <li>Contador de membros</li>
             </ul>
         </div>
