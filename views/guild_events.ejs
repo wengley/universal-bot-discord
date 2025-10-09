@@ -1,65 +1,6 @@
-<%- include('header', { user: user, guild: guild }) %>
-
-<div class="sidebar">
-    <h3><%= guild.name %></h3>
-    <p style="padding: 0 15px; margin-top: -10px; font-size: 0.8em; color: #7289da;">Painel de Configuração</p>
-    
-    <nav class="sidebar-nav">
-        <ul>
-            <li><a href="/dashboard/<%= guild.id %>" class="<%= activePage === 'settings' ? 'active' : '' %>">⚙️ Boas-vindas/Auto-Role</a></li>
-            <li><a href="/dashboard/<%= guild.id %>/config" class="<%= activePage === 'config' ? 'active' : '' %>">💻 Configurações Gerais</a></li>
-            <li><a href="/dashboard/<%= guild.id %>/events" class="<%= activePage === 'events' ? 'active' : '' %>">📄 Logs de Eventos</a></li>
-        </ul>
-    </nav>
-</div>
-
-<div class="main-content">
-    <div class="dashboard-content">
-        <h2>📄 Logs de Eventos do Servidor</h2>
-        <p>Esta seção mostrará atividades do bot (mensagens apagadas, editadas, etc.) após a implementação do armazenamento no DB.</p>
-        
-        <div class="log-container">
-            <% logs.forEach(log => { %>
-                <div class="log-entry log-<%= log.type.toLowerCase() %>">
-                    <span class="log-timestamp">[<%= log.timestamp.toLocaleString() %>]</span>
-                    <span class="log-type">[<%= log.type %>]</span>
-                    <%= log.message %>
-                </div>
-            <% }); %>
-        </div>
+<%- include('header', { user: user, guild: guild, activePage: 'events' }) %>
+    <div class="main-content">
+        <h2>Logs de Eventos Recentes</h2>
+        <p>Histórico de mensagens apagadas ou editadas</p>
     </div>
-</div>
-
-<style>
-.log-container {
-    background-color: #2f3136;
-    padding: 15px;
-    border-radius: 8px;
-    height: 500px; 
-    overflow-y: scroll; 
-    color: #dcddde;
-    font-family: monospace;
-    font-size: 0.9em;
-}
-
-.log-entry {
-    border-bottom: 1px solid #36393f;
-    padding: 5px 0;
-}
-
-.log-timestamp {
-    color: #99aab5;
-    margin-right: 10px;
-}
-
-.log-type {
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-.log-info { color: #7289da; } 
-.log-warning { color: #f1c40f; } 
-.log-error { color: #e74c3c; } 
-</style>
-
 <%- include('footer') %>
