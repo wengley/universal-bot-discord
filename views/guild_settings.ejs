@@ -85,8 +85,8 @@
             </div>
 
             <div class="menu-items">
-                 <a href="/dashboard" style="display: block; margin-bottom: 10px; text-decoration: none; color: #7289da;">🏠 Painel Inicial</a>
-                 <a href="/logout" style="display: block; text-decoration: none; color: #e74c3c;">🚪 Sair (Logout)</a>
+                 <a href="/dashboard">🏠 Painel Inicial</a>
+                 <a href="/logout" style="color: #e74c3c;">🚪 Sair (Logout)</a>
             </div>
         </div>
 
@@ -132,42 +132,74 @@
                 <div class="config-section">
                     
                     <p>
-                        Canal atual: 
-                        <% if (notifChannelId && guild.channels.cache.has(notifChannelId)) { %>
-                            <span class="current-setting">#<%= guild.channels.cache.get(notifChannelId).name %></span>
+                        Entrada (Join): 
+                        <% if (joinChannelId && guild.channels.cache.has(joinChannelId)) { %>
+                            <span class="current-setting">#<%= guild.channels.cache.get(joinChannelId).name %> (<%= joinEmbed ? 'Embed' : 'Texto' %>)</span>
                         <% } else { %>
-                            <span class="current-setting" style="color: yellow;">Nenhum (Desativado)</span>
+                            <span class="current-setting" style="color: yellow;">Desativado</span>
                         <% } %>
                     </p>
-                    
-                    <form id="notifications-form">
-                        <input type="hidden" name="toggle" value="true" id="notifications-toggle">
+                    <p>
+                        Saída (Leave): 
+                        <% if (leaveChannelId && guild.channels.cache.has(leaveChannelId)) { %>
+                            <span class="current-setting">#<%= guild.channels.cache.get(leaveChannelId).name %> (<%= leaveEmbed ? 'Embed' : 'Texto' %>)</span>
+                        <% } else { %>
+                            <span class="current-setting" style="color: yellow;">Desativado</span>
+                        <% } %>
+                    </p>
 
-                        <label for="channel-select">Canal de Texto para Enviar Notificações:</label><br>
-                        <select id="channel-select" name="channelId">
-                            <option value="none">-- Selecionar Canal --</option>
+                    <form id="notifications-form">
+                        <hr style="border-color: #5a5a5a;">
+                        <h3>Configuração de Entrada (Join)</h3>
+                        <label for="join-channel-select">Canal de Texto para Boas-Vindas:</label><br>
+                        <select id="join-channel-select" name="joinChannelId">
+                            <option value="none">-- DESATIVAR Notificação de Entrada --</option>
                             <% textChannels.forEach(channel => { %>
-                                <option value="<%= channel.id %>" <%= channel.id === notifChannelId ? 'selected' : '' %>>
+                                <option value="<%= channel.id %>" <%= channel.id === joinChannelId ? 'selected' : '' %>>
                                     #<%= channel.name %>
                                 </option>
                             <% }); %>
                         </select>
 
-                        <label for="join-msg">Mensagem de Boas-Vindas (Use {mention} ou {user}):</label><br>
-                        <textarea id="join-msg" name="joinMessage" rows="2"><%= joinMsg %></textarea>
+                        <label for="join-msg">Mensagem de Boas-Vindas (Use {mention}, {user}, {guild}, {count}):</label><br>
+                        <textarea id="join-msg" name="joinMessage" rows="3"><%= joinMsg %></textarea>
+                        
+                        <label style="margin-right: 15px;">
+                            <input type="checkbox" name="joinEmbed" value="true" <%= joinEmbed ? 'checked' : '' %>> Enviar como **Embed**
+                        </label>
                         <button type="button" class="test-button" onclick="testJoinMessage()">Testar Entrada</button>
 
-                        <label for="leave-msg">Mensagem de Despedida (Use {mention} ou {user}):</label><br>
-                        <textarea id="leave-msg" name="leaveMessage" rows="2"><%= leaveMsg %></textarea>
+                        <hr style="border-color: #5a5a5a; margin-top: 20px;">
+                        <h3>Configuração de Saída (Leave)</h3>
+                        <label for="leave-channel-select">Canal de Texto para Despedidas:</label><br>
+                        <select id="leave-channel-select" name="leaveChannelId">
+                            <option value="none">-- DESATIVAR Notificação de Saída --</option>
+                            <% textChannels.forEach(channel => { %>
+                                <option value="<%= channel.id %>" <%= channel.id === leaveChannelId ? 'selected' : '' %>>
+                                    #<%= channel.name %>
+                                </option>
+                            <% }); %>
+                        </select>
+
+                        <label for="leave-msg">Mensagem de Despedida (Use {user}, {guild}, {count}):</label><br>
+                        <textarea id="leave-msg" name="leaveMessage" rows="3"><%= leaveMsg %></textarea>
                         
-                        <button type="submit">Salvar Notificações</button>
-                        <button type="button" class="danger-button" onclick="disableNotifications()">Desativar</button>
+                        <label>
+                            <input type="checkbox" name="leaveEmbed" value="true" <%= leaveEmbed ? 'checked' : '' %>> Enviar como **Embed**
+                        </label>
+                        
+                        <button type="submit" style="margin-top: 20px;">Salvar TODAS as Notificações</button>
                     </form>
                     
                     <div id="notifications-status" class="status-message"></div>
                     
                     <p style="margin-top: 20px; font-size: 0.9em; opacity: 0.7;">
-                        **Observação:** O botão 'Testar Entrada' usa a mensagem de boas-vindas. Mensagens de saída não são testáveis (pois exigiria a saída de um membro real).
+                        **Variáveis disponíveis:** <ul>
+                            <li>`{mention}`: Menciona o usuário (Entrada apenas)</li>
+                            <li>`{user}`: Nome de usuário (Ex: wengleeyy\_tr)</li>
+                            <li>`{guild}`: Nome do servidor</li>
+                            <li>`{count}`: Número total de membros</li>
+                        </ul>
                     </p>
                 </div>
             </div>
@@ -255,50 +287,48 @@
             
             // Reúne dados do formulário
             const jsonBody = { 
-                channelId: form.elements.channelId.value,
+                joinChannelId: form.elements.joinChannelId.value,
+                leaveChannelId: form.elements.leaveChannelId.value,
                 joinMessage: form.elements.joinMessage.value,
                 leaveMessage: form.elements.leaveMessage.value,
-                toggle: 'true' // Sempre true ao salvar
+                // Checkboxes: Envia 'true' se marcado, senão 'false'.
+                joinEmbed: form.elements.joinEmbed.checked ? 'true' : 'false',
+                leaveEmbed: form.elements.leaveEmbed.checked ? 'true' : 'false'
             };
             
             submitForm('notifications', jsonBody, 'notifications-status', (jsonBody) => {
-                const currentChannelSpan = document.querySelector('#notifications .current-setting');
-                const selectedChannelText = form.elements.channelId.options[form.elements.channelId.selectedIndex].text;
-
-                currentChannelSpan.innerHTML = selectedChannelText;
-                currentChannelSpan.style.color = '#2ecc71';
+                // Callback para atualizar o texto de status
+                const joinStatus = jsonBody.joinChannelId !== 'none' ? `#${form.elements.joinChannelId.options[form.elements.joinChannelId.selectedIndex].text} (${jsonBody.joinEmbed === 'true' ? 'Embed' : 'Texto'})` : 'Desativado';
+                const leaveStatus = jsonBody.leaveChannelId !== 'none' ? `#${form.elements.leaveChannelId.options[form.elements.leaveChannelId.selectedIndex].text} (${jsonBody.leaveEmbed === 'true' ? 'Embed' : 'Texto'})` : 'Desativado';
+                
+                // Atualiza o status visual
+                document.querySelector('#notifications p:nth-child(2) .current-setting').innerHTML = joinStatus;
+                document.querySelector('#notifications p:nth-child(4) .current-setting').innerHTML = leaveStatus;
+                
+                document.querySelector('#notifications p:nth-child(2) .current-setting').style.color = joinStatus === 'Desativado' ? 'yellow' : '#2ecc71';
+                document.querySelector('#notifications p:nth-child(4) .current-setting').style.color = leaveStatus === 'Desativado' ? 'yellow' : '#2ecc71';
             });
         });
-
-        function disableNotifications() {
-            const form = document.getElementById('notifications-form');
-            
-            // Envia apenas o toggle para false
-            const jsonBody = { toggle: 'false' };
-            
-            submitForm('notifications', jsonBody, 'notifications-status', () => {
-                const currentChannelSpan = document.querySelector('#notifications .current-setting');
-                currentChannelSpan.innerHTML = 'Nenhum (Desativado)';
-                currentChannelSpan.style.color = 'yellow';
-                // Resetar o dropdown visualmente
-                form.elements.channelId.value = 'none';
-            });
-        }
         
         // --- TESTE DE MENSAGEM ---
         function testJoinMessage() {
-            const channelId = document.getElementById('channel-select').value;
+            const channelId = document.getElementById('join-channel-select').value;
             const joinMessage = document.getElementById('join-msg').value;
+            const isEmbed = document.querySelector('input[name="joinEmbed"]').checked ? 'true' : 'false';
             const statusDiv = document.getElementById('notifications-status');
             
             if (channelId === 'none') {
                  statusDiv.style.backgroundColor = '#e74c3c'; // Vermelho
-                 statusDiv.innerHTML = `❌ Erro: Selecione um canal antes de testar.`;
+                 statusDiv.innerHTML = `❌ Erro: Selecione um canal de Entrada antes de testar.`;
                  statusDiv.style.display = 'block';
                  return;
             }
 
-            const jsonBody = { channelId: channelId, joinMessage: joinMessage };
+            const jsonBody = { 
+                channelId: channelId, 
+                joinMessage: joinMessage,
+                isEmbed: isEmbed 
+            };
 
             submitForm('test_join_message', jsonBody, 'notifications-status');
         }

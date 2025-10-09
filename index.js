@@ -82,15 +82,30 @@ client.on('guildMemberAdd', async member => {
     }
 
     // --- LÓGICA NOTIFICAÇÃO DE ENTRADA ---
-    const channelId = await db.get(`notif_channel_${member.guild.id}`);
+    const channelId = await db.get(`join_channel_${member.guild.id}`); 
     const messageTemplate = await db.get(`join_msg_${member.guild.id}`);
+    const isEmbed = await db.get(`join_embed_${member.guild.id}`); 
 
     if (channelId && messageTemplate) {
         const channel = member.guild.channels.cache.get(channelId);
         if (channel) {
-            const message = messageTemplate.replace(/{user}/g, member.user.tag).replace(/{mention}/g, `<@${member.id}>`);
+            const finalMessage = messageTemplate
+                .replace(/{user}/g, member.user.tag)
+                .replace(/{mention}/g, `<@${member.id}>`)
+                .replace(/{guild}/g, member.guild.name)
+                .replace(/{count}/g, member.guild.memberCount);
+
             try {
-                channel.send(message);
+                if (isEmbed) {
+                    const embed = { 
+                        description: finalMessage, 
+                        color: 0x7289da,
+                        timestamp: new Date().toISOString()
+                    }; 
+                    channel.send({ embeds: [embed] });
+                } else {
+                    channel.send(finalMessage);
+                }
             } catch (error) {
                 console.error(`Erro ao enviar mensagem de entrada em ${member.guild.name}:`, error);
             }
@@ -103,15 +118,30 @@ client.on('guildMemberAdd', async member => {
 // 4. EVENTO: MEMBRO SAI (NOTIFICAÇÃO)
 // ===================================
 client.on('guildMemberRemove', async member => {
-    const channelId = await db.get(`notif_channel_${member.guild.id}`);
+    const channelId = await db.get(`leave_channel_${member.guild.id}`); 
     const messageTemplate = await db.get(`leave_msg_${member.guild.id}`);
+    const isEmbed = await db.get(`leave_embed_${member.guild.id}`); 
 
     if (channelId && messageTemplate) {
         const channel = member.guild.channels.cache.get(channelId);
         if (channel) {
-            const message = messageTemplate.replace(/{user}/g, member.user.tag).replace(/{mention}/g, `<@${member.id}>`);
+            const finalMessage = messageTemplate
+                .replace(/{user}/g, member.user.tag)
+                .replace(/{mention}/g, `<@${member.id}>`)
+                .replace(/{guild}/g, member.guild.name)
+                .replace(/{count}/g, member.guild.memberCount);
+
             try {
-                channel.send(message);
+                 if (isEmbed) {
+                    const embed = { 
+                        description: finalMessage, 
+                        color: 0xe74c3c,
+                        timestamp: new Date().toISOString()
+                    }; 
+                    channel.send({ embeds: [embed] });
+                } else {
+                    channel.send(finalMessage);
+                }
             } catch (error) {
                 console.error(`Erro ao enviar mensagem de saída em ${member.guild.name}:`, error);
             }
@@ -289,9 +319,14 @@ app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
 
     // Obter configurações atuais
     const currentAutoroleId = await db.get(`autorole_${guildId}`);
-    const notifChannelId = await db.get(`notif_channel_${guildId}`);
-    const joinMsg = await db.get(`join_msg_${guildId}`) || 'Boas-vindas, {mention}!';
-    const leaveMsg = await db.get(`leave_msg_${guildId}`) || 'Adeus, {user}!';
+    
+    // NOVOS DADOS
+    const joinChannelId = await db.get(`join_channel_${guildId}`);
+    const leaveChannelId = await db.get(`leave_channel_${guildId}`);
+    const joinMsg = await db.get(`join_msg_${guildId}`) || 'Boas-vindas, {mention}! Temos agora {count} membros!';
+    const leaveMsg = await db.get(`leave_msg_${guildId}`) || 'Adeus, {user}! Sentiremos sua falta.';
+    const joinEmbed = await db.get(`join_embed_${guildId}`) || false;
+    const leaveEmbed = await db.get(`leave_embed_${guildId}`) || false;
 
     res.render('guild_settings', { 
         user: req.user,
@@ -299,9 +334,13 @@ app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
         roles: roles,
         textChannels: textChannels,
         currentAutoroleId: currentAutoroleId,
-        notifChannelId: notifChannelId,
+        // NOVAS VARIAVEIS
+        joinChannelId: joinChannelId,
+        leaveChannelId: leaveChannelId,
         joinMsg: joinMsg,
         leaveMsg: leaveMsg,
+        joinEmbed: joinEmbed,
+        leaveEmbed: leaveEmbed,
         client: client
     });
 });
@@ -339,38 +378,51 @@ app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
 // Rota POST para Salvar Notificação de Entrada/Saída
 app.post('/dashboard/:guildId/notifications', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
-    const { channelId, joinMessage, leaveMessage, toggle } = req.body; 
+    // NOVOS DADOS RECEBIDOS
+    const { joinChannelId, leaveChannelId, joinMessage, leaveMessage, joinEmbed, leaveEmbed } = req.body; 
 
     const userGuild = req.user.guilds.find(g => g.id === guildId);
     if (!userGuild || !((userGuild.permissions & 0x8) === 0x8 || (userGuild.permissions & 0x20) === 0x20)) {
         return res.status(403).json({ success: false, message: 'Permissão negada.' });
     }
 
-    if (toggle === 'false') {
-        await db.delete(`join_msg_${guildId}`);
-        await db.delete(`leave_msg_${guildId}`);
-        await db.delete(`notif_channel_${guildId}`);
-        return res.json({ success: true, message: 'Notificações de Entrada/Saída desativadas.' });
-    }
-
     const guild = client.guilds.cache.get(guildId);
     
-    if (!guild || !guild.channels.cache.has(channelId) || guild.channels.cache.get(channelId).type !== 0) {
-        return res.status(400).json({ success: false, message: 'Canal de texto inválido.' });
+    // Configuração de Entrada (Join)
+    if (joinChannelId && joinChannelId !== 'none') {
+        if (!guild.channels.cache.has(joinChannelId) || guild.channels.cache.get(joinChannelId).type !== 0) {
+            return res.status(400).json({ success: false, message: 'Canal de Entrada inválido.' });
+        }
+        await db.set(`join_channel_${guildId}`, joinChannelId);
+        await db.set(`join_msg_${guildId}`, joinMessage || 'Boas-vindas, {mention}!');
+        await db.set(`join_embed_${guildId}`, joinEmbed === 'true'); 
+    } else {
+        await db.delete(`join_channel_${guildId}`);
+        await db.delete(`join_msg_${guildId}`);
+        await db.delete(`join_embed_${guildId}`);
     }
 
-    // Salvando no QuickDB
-    await db.set(`notif_channel_${guildId}`, channelId);
-    await db.set(`join_msg_${guildId}`, joinMessage || 'Boas-vindas, {mention}!');
-    await db.set(`leave_msg_${guildId}`, leaveMessage || 'Adeus, {user}!');
+    // Configuração de Saída (Leave)
+    if (leaveChannelId && leaveChannelId !== 'none') {
+        if (!guild.channels.cache.has(leaveChannelId) || guild.channels.cache.get(leaveChannelId).type !== 0) {
+            return res.status(400).json({ success: false, message: 'Canal de Saída inválido.' });
+        }
+        await db.set(`leave_channel_${guildId}`, leaveChannelId);
+        await db.set(`leave_msg_${guildId}`, leaveMessage || 'Adeus, {user}!');
+        await db.set(`leave_embed_${guildId}`, leaveEmbed === 'true'); 
+    } else {
+        await db.delete(`leave_channel_${guildId}`);
+        await db.delete(`leave_msg_${guildId}`);
+        await db.delete(`leave_embed_${guildId}`);
+    }
 
-    res.json({ success: true, message: `Notificações salvas. Canal: #${guild.channels.cache.get(channelId).name}` });
+    res.json({ success: true, message: `Notificações salvas. ${joinChannelId !== 'none' ? 'Entrada ativada. ' : ''}${leaveChannelId !== 'none' ? 'Saída ativada.' : ''}` });
 });
 
 // Rota POST para TESTAR Notificação de Entrada
 app.post('/dashboard/:guildId/test_join_message', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
-    const { channelId, joinMessage } = req.body; 
+    const { channelId, joinMessage, isEmbed } = req.body; 
 
     const userGuild = req.user.guilds.find(g => g.id === guildId);
     if (!userGuild || !((userGuild.permissions & 0x8) === 0x8 || (userGuild.permissions & 0x20) === 0x20)) {
@@ -378,11 +430,8 @@ app.post('/dashboard/:guildId/test_join_message', isAuthenticated, async (req, r
     }
 
     const guild = client.guilds.cache.get(guildId);
-    if (!guild) {
-        return res.status(400).json({ success: false, message: 'Servidor inválido.' });
-    }
-    
     const channel = guild.channels.cache.get(channelId);
+    
     if (!channel || channel.type !== 0) {
         return res.status(400).json({ success: false, message: 'Canal de texto inválido.' });
     }
@@ -391,12 +440,26 @@ app.post('/dashboard/:guildId/test_join_message', isAuthenticated, async (req, r
     const user = req.user;
     
     let message = (joinMessage || 'Boas-vindas, {mention}!');
-    message = message.replace(/{user}/g, user.username).replace(/{mention}/g, `<@${user.id}>`);
+    message = message.replace(/{user}/g, user.username)
+                     .replace(/{mention}/g, `<@${user.id}>`)
+                     .replace(/{guild}/g, guild.name)
+                     .replace(/{count}/g, guild.memberCount);
     
-    const testMessage = `[TESTE DO PAINEL WEB] - Mensagem de Entrada:\n${message}`;
-
     try {
-        await channel.send(testMessage);
+        if (isEmbed === 'true') {
+            const embed = { 
+                title: "[TESTE DO PAINEL WEB] - Entrada",
+                description: message, 
+                color: 0x7289da, 
+                footer: { text: "Simulação de mensagem Embed." } ,
+                timestamp: new Date().toISOString()
+            };
+            await channel.send({ embeds: [embed] });
+        } else {
+            const testMessage = `[TESTE DO PAINEL WEB] - Mensagem de Entrada:\n${message}`;
+            await channel.send(testMessage);
+        }
+        
         return res.json({ success: true, message: `Mensagem de teste enviada com sucesso para #${channel.name}.` });
     } catch (error) {
         console.error(`Erro ao enviar mensagem de teste em ${guild.name}:`, error);
