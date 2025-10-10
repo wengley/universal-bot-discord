@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= guild ? `${guild.name} - Painel` : 'Painel de Controle' %></title>
+    <link rel="icon" type="image/png" href="/images/favicon.png"> 
     <link rel="stylesheet" href="/css/styles.css"> 
     <script>
         // Lógica de Tema
@@ -22,9 +23,18 @@
 <body>
     <div id="wrapper">
         <nav id="sidebar">
-            <div class="sidebar-header">
-                <h3>Bot Dashboard</h3>
+            <div class="user-profile-widget sidebar-header-profile">
+                <img src="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64` : '/images/default-avatar.png' %>" alt="Avatar" class="user-avatar-large">
+                <div class="user-details-group">
+                    <span class="user-tag-large"><%= user.username %>#<%= user.discriminator %></span>
+                    <span class="user-id">ID: <%= user.id %></span>
+                </div>
+                <div class="action-buttons-group">
+                    <button class="btn btn-theme-toggle" onclick="toggleTheme()">Tema</button>
+                    <a href="/logout" class="btn btn-logout-danger">Sair</a>
+                </div>
             </div>
+
             <ul class="list-unstyled components">
                 <li>
                     <a href="/dashboard" class="<%= activePage === 'home' ? 'active' : '' %>">Início (Servidores)</a>
@@ -34,6 +44,7 @@
                 </li>
                 
                 <% if (guild) { %>
+                <hr style="border-top: 1px solid rgba(255,255,255,0.1);">
                 <li class="<%= activePage === 'settings' ? 'active' : '' %>">
                     <a href="/dashboard/<%= guild.id %>">Configurações Gerais</a>
                 </li>
@@ -48,23 +59,11 @@
         </nav>
         
         <div id="content">
-            <div class="user-info-bar">
-                <div class="user-profile-widget">
-                    <img src="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64` : '/images/default-avatar.png' %>" alt="Avatar" class="user-avatar-large">
-                    <div class="user-details-group">
-                        <span class="user-tag-large"><%= user.username %>#<%= user.discriminator %></span>
-                        <span class="user-id">ID: <%= user.id %></span>
-                    </div>
-                </div>
-
-                <div class="action-buttons-group">
-                    <button class="btn btn-theme-toggle" onclick="toggleTheme()">Mudar Tema</button>
-                    <a href="/logout" class="btn btn-logout-danger">Sair</a>
-                </div>
-            </div>
             ```
 
-### `views/footer.ejs` (Apenas Fechamento de Tags)
+### 2. Novo `footer.ejs` (Apenas Fechamento de Tags)
+
+Aqui está a versão limpa e correta do **`views/footer.ejs`**.
 
 ```ejs
         </div> </div> </body>

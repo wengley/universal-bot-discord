@@ -23,6 +23,7 @@ const prefix = '!';
 // CONFIGURAÇÃO DO CLIENT DISCORD
 // ===============================
 const client = new Client({
+    // Garante que o bot possa ver guilds, mensagens, conteúdo e membros
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
@@ -35,7 +36,7 @@ const client = new Client({
 client.commands = new Collection();
 
 // ===============================
-// CARREGAMENTO DE COMANDOS (Manter estrutura)
+// CARREGAMENTO DE COMANDOS
 // ===============================
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
@@ -49,9 +50,10 @@ if (fs.existsSync(commandsPath)) {
 }
 
 // ===============================
-// EVENTOS DISCORD E FUNÇÕES AUXILIARES (Manter funções)
+// EVENTOS DISCORD E FUNÇÕES AUXILIARES
 // ===============================
 
+// Funções Auxiliares (mantidas para o painel)
 const replacePlaceholders = (text, member) => {
     if (!text) return '';
     return text
@@ -72,6 +74,7 @@ const buildEmbed = (data, member) => {
     return e;
 };
 
+// Evento de Membro Entrando (Exemplo)
 client.on('guildMemberAdd', async member => {
     const join = await db.get(`join_notif_${member.guild.id}`);
     if (!join || !join.channelId) return;
@@ -82,6 +85,7 @@ client.on('guildMemberAdd', async member => {
     ch.send({ content: text || null, embeds: embed ? [embed] : [] }).catch(() => {});
 });
 
+// Evento de Comando (Prefixado)
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.content.startsWith(prefix)) return;
     const args = message.content.slice(prefix.length).trim().split(/ +/);
@@ -104,9 +108,9 @@ const PORT = process.env.PORT || 3000;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-// CORREÇÃO CRÍTICA DO RENDER
+// CORREÇÃO CRÍTICA DO RENDER E SINTOXE EJS
 app.engine('ejs', require('ejs').__express); 
-app.use(express.static('public')); // CSS
+app.use(express.static('public')); // Permite CSS/JS/Imagens
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
@@ -124,7 +128,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// CONFIGURAÇÃO DE VARIÁVEIS DE AMBIENTE
+// CONFIGURAÇÃO DE VARIÁVEIS DE AMBIENTE (Corrigido para _BOT)
 const CLIENT_ID = process.env.CLIENT_ID_BOT;
 const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
 const CALLBACK_URL = process.env.CALLBACK_URL;
@@ -169,13 +173,14 @@ app.get(
 );
 app.get('/logout', (req, res, next) => req.logout(() => res.redirect('/')));
 
-// Rota de Seleção de Servidor (COM FILTRO INTELIGENTE)
+// Rota de Seleção de Servidor (LÓGICA FINAL DE FILTRO)
 app.get('/dashboard', isAuthenticated, (req, res) => {
     
     // 1. Filtra as guilds do usuário por permissão (Admin/Gerenciar)
     const userGuilds = req.user.guilds.filter(g => {
+        // PERMISSÕES: 0x8 é Administrador, 0x20 é Gerenciar Servidor
         const perms = parseInt(g.permissions, 10);
-        return ((perms & 0x8) === 0x8) || ((perms & 0x20) === 0x20); // Admin ou Gerenciar Servidor
+        return ((perms & 0x8) === 0x8) || ((perms & 0x20) === 0x20); 
     });
 
     // 2. Lista de IDs das guilds onde o BOT está
@@ -185,24 +190,28 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
     const dashboardGuilds = userGuilds.map(g => {
         const botInGuild = botGuildIds.includes(g.id);
         
+        // Define se o usuário PODE configurar (Bot está + Usuário tem permissão)
+        const userPerms = parseInt(g.permissions, 10);
+        const canConfigure = botInGuild && (((userPerms & 0x8) === 0x8) || ((userPerms & 0x20) === 0x20));
+
         return {
             id: g.id,
             name: g.name,
             icon: g.icon,
-            isInBot: botInGuild, // true se o bot estiver no servidor
-            userHasPerms: true,
+            isInBot: botInGuild, // O bot está no servidor?
+            canConfigure: canConfigure, // O usuário pode configurar?
         };
     });
 
     res.render('dashboard', { 
         user: req.user, 
-        guilds: dashboardGuilds, // Lista filtrada
+        guilds: dashboardGuilds, // Lista filtrada e categorizada
         guild: null, 
         activePage: 'home' 
     }); 
 });
 
-// NOVA ROTA DE ATUALIZAÇÕES
+// Rota de Atualizações
 app.get('/updates', isAuthenticated, (req, res) => {
     res.render('bot_updates', { user: req.user, guild: null, activePage: 'updates' });
 });
@@ -262,12 +271,13 @@ app.get('/dashboard/:guildId/events', isAuthenticated, async (req, res) => {
 
 // Rota para salvar configurações (Exemplo)
 app.post('/dashboard/:guildId/save', isAuthenticated, async (req, res) => {
-    res.json({ success: true, message: 'Configurações salvas.' });
+    // Lógica para salvar configurações (e.g., autorole) aqui
+    res.json({ success: true, message: 'Configurações salvas (Lógica a ser implementada).' });
 });
 
 
 // ===============================
-// INICIA O BOT E O SERVIDOR WEB (CORREÇÃO FINAL DO ERRO 500)
+// INICIA O BOT E O SERVIDOR WEB (GARANTIA DE ORDEM CORRETA)
 // ===============================
 
 // 1. Faz login do bot

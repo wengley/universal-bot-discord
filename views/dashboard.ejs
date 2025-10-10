@@ -6,19 +6,19 @@
     
     <div class="guild-list">
         <% guilds.forEach(g => { %>
-            <% if (g.isInBot) { %>
-                <a href="/dashboard/<%= g.id %>" class="guild-item ready">
-                    <img src="<%= g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=128` : '/images/default-guild.png' %>" alt="Icone" class="guild-icon">
-                    <span class="guild-name"><%= g.name %></span>
-                    <span class="status-badge status-ready">Configurar</span>
-                </a>
-            <% } else { %>
-                <a href="https://discord.com/oauth2/authorize?client_id=<%= process.env.CLIENT_ID_BOT %>&scope=bot%20applications.commands&permissions=8&guild_id=<%= g.id %>" target="_blank" class="guild-item invite">
-                    <img src="<%= g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=128` : '/images/default-guild.png' %>" alt="Icone" class="guild-icon">
-                    <span class="guild-name"><%= g.name %></span>
-                    <span class="status-badge status-invite">Convidar Bot</span>
-                </a>
-            <% } %>
+            <div class="guild-item <%= g.isInBot ? 'ready' : 'invite' %>">
+                <img src="<%= g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=128` : '/images/default-guild.png' %>" alt="Icone" class="guild-icon">
+                <span class="guild-name"><%= g.name %></span>
+                
+                <% if (g.isInBot && g.canConfigure) { %>
+                    <a href="/dashboard/<%= g.id %>" class="status-badge status-ready">Configurar</a>
+                <% } else if (g.isInBot && !g.canConfigure) { %>
+                    <span class="status-badge status-denied">Permissão Negada</span>
+                <% } else { %>
+                    <a href="https://discord.com/oauth2/authorize?client_id=<%= process.env.CLIENT_ID_BOT %>&scope=bot%20applications.commands&permissions=8&guild_id=<%= g.id %>" target="_blank" class="status-badge status-invite">Convidar Bot</a>
+                <% } %>
+
+            </div>
         <% }); %>
     </div>
 </div>
