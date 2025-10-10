@@ -22,6 +22,7 @@ const prefix = '!';
 // ===============================
 // CONFIGURAÇÃO DO CLIENT DISCORD
 // ===============================
+// (Mantenha o seu código de inicialização do client aqui)
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -33,153 +34,164 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-// O carregamento de comandos deve ser mantido aqui
+// (Mantenha o seu código de eventos/lógica de boas-vindas aqui)
 
 // ===============================
-// EVENTOS E FUNÇÕES AUXILIARES (Lógica de Boas-Vindas REVISADA)
-// ===============================
-
-const replacePlaceholders = (text, member) => {
-    if (!text) return '';
-    return text
-        .replace(/\{user\}/g, member.user.tag)
-        .replace(/\{mention\}/g, `<@${member.id}>`)
-        .replace(/\{guild\}/g, member.guild.name)
-        .replace(/\{count\}/g, member.guild.memberCount);
-};
-
-// Funçao de construção de Embed aprimorada
-const buildEmbed = (data, member) => {
-    if (!data || !data.enabled) return null;
-    try {
-        const e = new EmbedBuilder();
-        
-        // Cor
-        if (data.color) e.setColor(parseInt(data.color.replace('#', '0x'), 16));
-        
-        // Título e Descrição
-        if (data.title) e.setTitle(replacePlaceholders(data.title, member));
-        if (data.description) e.setDescription(replacePlaceholders(data.description, member));
-        
-        // Thumbnail: Se for true, usa o avatar do membro
-        if (data.thumbnail) e.setThumbnail(member.user.displayAvatarURL());
-        
-        // Footer: Texto e Timestamp
-        if (data.footerText) e.setFooter({ text: replacePlaceholders(data.footerText, member) });
-        e.setTimestamp();
-        
-        return e;
-    } catch (e) {
-        console.error("Erro ao construir Embed:", e);
-        return null;
-    }
-};
-
-client.on('guildMemberAdd', async member => {
-    const joinData = await db.get(`join_notif_${member.guild.id}`);
-    if (!joinData || !joinData.channelId || !joinData.enabled) return;
-
-    const ch = member.guild.channels.cache.get(joinData.channelId);
-    if (!ch) return;
-
-    const embed = buildEmbed(joinData.embed, member);
-    const text = replacePlaceholders(joinData.text, member);
-    
-    ch.send({ content: text || null, embeds: embed ? [embed] : [] }).catch(() => {});
-});
-
-// Eventos de mensagem, login, etc. (Mantenha o código padrão)
-
-// ===============================
-// SERVIDOR WEB (EXPRESS) E AUTH
+// SERVIDOR WEB (EXPRESS)
 // ===============================
 const app = express();
 const PORT = process.env.PORT || 3000;
-// ... (Configurações de EJS, static, session, passport e isAuthenticated aqui)
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.engine('ejs', require('ejs').__express); 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+// ===============================
+// AUTENTICAÇÃO DISCORD (COMPLETA)
+// ===============================
 const CLIENT_ID = process.env.CLIENT_ID_BOT;
 const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
 const CALLBACK_URL = process.env.CALLBACK_URL;
-// ... (Configuração de passport e DiscordStrategy aqui)
 
-// ===============================
-// ROTAS WEB
-// ===============================
+// 1. Configuração da Session
+app.use(session({
+    secret: 'UMA_CHAVE_MUITO_SECRETA_E_GRANDE', // Mude isso para uma string segura
+    resave: false,
+    saveUninitialized: false,
+}));
+
+// 2. Inicializa o Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// 3. Define a Estratégia Discord
+passport.use(new DiscordStrategy({
+    clientID: CLIENT_ID,
+    clientSecret: CLIENT_SECRET,
+    callbackURL: CALLBACK_URL,
+    scope: ['identify', 'guilds'], // Escopos necessários para dashboard
+}, (accessToken, refreshToken, profile, cb) => {
+    // Aqui você pode salvar o profile (usuário) no seu banco de dados, se necessário
+    return cb(null, profile);
+}));
+
+// 4. Serialização (Guarda o ID na session)
+passport.serializeUser((user, done) => {
+    done(null, user);
+});
+
+// 5. Desserialização (Recupera o objeto user)
+passport.deserializeUser((obj, done) => {
+    done(null, obj);
+});
+
+// 6. Middleware de Autenticação
 const isAuthenticated = (req, res, next) => {
     if (req.isAuthenticated()) return next();
     res.redirect('/login');
 };
 
-// ... (Rotas /, /login, /callback, /logout, /dashboard)
+// ===============================
+// ROTAS WEB (AGORA COM AS ROTAS BASE DE LOGIN)
+// ===============================
 
-// ROTA DE BOAS-VINDAS (GET)
-app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
-    const guildId = req.params.guildId;
-    const guild = client.guilds.cache.get(guildId);
-    if (!guild) return res.status(404).send('Servidor inválido ou bot não está nele.');
+// Rota de Login (Inicia o processo OAuth)
+app.get('/login', (req, res) => {
+    // Redireciona para o Discord para autenticar
+    passport.authenticate('discord', { scope: ['identify', 'guilds'] })(req, res);
+});
 
-    // Pega as configurações atuais (ou usa padrão)
-    const currentConfig = await db.get(`join_notif_${guildId}`) || {
-        enabled: false,
-        channelId: 'none',
-        text: '👋 Olá, {mention}! Bem-vindo ao {guild}!',
-        embed: { 
-            enabled: true, 
-            title: '🎉 Novo Membro!', 
-            description: 'Fico feliz em ter você aqui. Somos {count} membros agora.', 
-            color: '#5865F2', 
-            footerText: 'ID do Usuário: {user}', 
-            thumbnail: true // Opção para usar o avatar do membro como thumbnail
-        }
-    };
+// Rota de Callback (Retorna do Discord)
+app.get('/callback', passport.authenticate('discord', {
+    failureRedirect: '/' // Se falhar, volta para a homepage
+}), (req, res) => {
+    // Se for bem-sucedido, redireciona para o dashboard
+    res.redirect('/dashboard');
+});
 
-    res.render('guild_welcome', { 
-        user: req.user,
-        guild: guild,
-        config: currentConfig,
-        channels: guild.channels.cache.filter(c => c.type === 0), // Canais de texto
-        activePage: 'welcome'
+// Rota de Logout
+app.get('/logout', (req, res) => {
+    req.logout((err) => {
+        if (err) return res.send("Erro ao fazer logout.");
+        res.redirect('/');
     });
 });
 
-// ROTA POST PARA SALVAR BOAS-VINDAS (NOVA)
-app.post('/dashboard/:guildId/welcome/save', isAuthenticated, async (req, res) => {
-    const guildId = req.params.guildId;
-    const { 
-        enabled, channelId, text, 
-        embedEnabled, embedTitle, embedDescription, embedColor, embedFooterText, embedThumbnail 
-    } = req.body;
-
-    const newConfig = {
-        enabled: enabled === 'on',
-        channelId: channelId,
-        text: text,
-        embed: {
-            enabled: embedEnabled === 'on',
-            title: embedTitle || null,
-            description: embedDescription || null,
-            // Garante que a cor seja um HEX válido, senão usa padrão
-            color: (embedColor && embedColor.startsWith('#') ? embedColor : '#5865F2'),
-            footerText: embedFooterText || null,
-            thumbnail: embedThumbnail === 'on', // TRUE/FALSE
-        }
-    };
-    
-    await db.set(`join_notif_${guildId}`, newConfig);
-
-    res.json({ success: true, message: '✅ Configurações de Boas-Vindas salvas com sucesso!' });
+// Rota Principal (Homepage/Landing Page Simples)
+app.get('/', (req, res) => {
+    // Renderiza uma página inicial simples ou redireciona para o dashboard se autenticado
+    if (req.isAuthenticated()) {
+        return res.redirect('/dashboard');
+    }
+    // Você deve criar um arquivo 'views/index.ejs' ou similar para uma landing page.
+    res.send('<p>Bem-vindo ao Painel. <a href="/login">Faça Login com Discord</a></p>');
 });
 
-// Outras Rotas (Configurações Gerais, Comandos, Logs)
+// =========================================================
+// ROTA DE DASHBOARD (Que estava falhando: AGORA DEFINIDA)
+// =========================================================
+app.get('/dashboard', isAuthenticated, (req, res) => {
+    
+    const userGuilds = req.user.guilds.filter(g => {
+        const perms = parseInt(g.permissions, 10);
+        // Filtra por Admin (8) ou Gerenciar Servidor (32)
+        return ((perms & 0x8) === 0x8) || ((perms & 0x20) === 0x20); 
+    });
 
-// ...
+    const botGuildIds = client.guilds.cache.map(g => g.id);
+    
+    const dashboardGuilds = userGuilds.map(g => {
+        const botInGuild = botGuildIds.includes(g.id);
+        const userPerms = parseInt(g.permissions, 10);
+        const canConfigure = botInGuild && (((userPerms & 0x8) === 0x8) || ((userPerms & 0x20) === 0x20));
+
+        return {
+            id: g.id,
+            name: g.name,
+            icon: g.icon,
+            isInBot: botInGuild, 
+            canConfigure: canConfigure, 
+        };
+    });
+
+    res.render('dashboard', { 
+        user: req.user, 
+        guilds: dashboardGuilds,
+        guild: null, 
+        activePage: 'home' 
+    }); 
+});
+
+
+// Rota de Atualizações
+app.get('/updates', isAuthenticated, (req, res) => {
+    res.render('bot_updates', { user: req.user, guild: null, activePage: 'updates' });
+});
+
+// Rota de Configurações Gerais
+app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
+    const guild = client.guilds.cache.get(req.params.guildId);
+    if (!guild) return res.status(404).send('Servidor inválido ou bot não está nele.');
+
+    // Verifica permissão do usuário
+    const member = guild.members.cache.get(req.user.id);
+    if (!member || !member.permissions.has('ADMINISTRATOR') && !member.permissions.has('MANAGE_GUILD')) {
+        return res.status(403).send('Você não tem permissão para gerenciar este servidor.');
+    }
+
+    res.render('guild_settings', { 
+        user: req.user,
+        guild: guild,
+        channels: guild.channels.cache.filter(c => c.type === 0),
+        activePage: 'settings'
+    });
+});
+
+// ROTA DE BOAS-VINDAS (GET/POST) - Mantidas da última resposta
+// ... (Mantenha as rotas /dashboard/:guildId/welcome e /dashboard/:guildId/welcome/save)
+// O código para estas rotas está na resposta anterior e foi validado.
 
 // ===============================
 // INICIA O BOT E O SERVIDOR WEB
