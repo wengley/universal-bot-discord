@@ -35,7 +35,7 @@ const client = new Client({
 client.commands = new Collection();
 
 // ===============================
-// CARREGAMENTO DE COMANDOS
+// CARREGAMENTO DE COMANDOS (Manter estrutura)
 // ===============================
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
@@ -49,7 +49,7 @@ if (fs.existsSync(commandsPath)) {
 }
 
 // ===============================
-// EVENTOS DISCORD E FUNÇÕES AUXILIARES
+// EVENTOS DISCORD E FUNÇÕES AUXILIARES (Manter funções)
 // ===============================
 
 const replacePlaceholders = (text, member) => {
@@ -169,7 +169,7 @@ app.get(
 );
 app.get('/logout', (req, res, next) => req.logout(() => res.redirect('/')));
 
-// Rota de Seleção de Servidor (AGORA COM FILTRO INTELIGENTE)
+// Rota de Seleção de Servidor (COM FILTRO INTELIGENTE)
 app.get('/dashboard', isAuthenticated, (req, res) => {
     
     // 1. Filtra as guilds do usuário por permissão (Admin/Gerenciar)
@@ -200,6 +200,11 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
         guild: null, 
         activePage: 'home' 
     }); 
+});
+
+// NOVA ROTA DE ATUALIZAÇÕES
+app.get('/updates', isAuthenticated, (req, res) => {
+    res.render('bot_updates', { user: req.user, guild: null, activePage: 'updates' });
 });
 
 // Rota de Configurações Gerais

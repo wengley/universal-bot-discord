@@ -6,14 +6,13 @@
     <title><%= guild ? `${guild.name} - Painel` : 'Painel de Controle' %></title>
     <link rel="stylesheet" href="/css/styles.css"> 
     <script>
-        // Lógica de Tema (Requere classes CSS .dark-mode)
+        // Lógica de Tema
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
             const theme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
             localStorage.setItem('theme', theme);
         }
         document.addEventListener('DOMContentLoaded', () => {
-            // Aplica o tema salvo ao carregar
             if (localStorage.getItem('theme') === 'dark') {
                 document.body.classList.add('dark-mode');
             }
@@ -29,6 +28,9 @@
             <ul class="list-unstyled components">
                 <li>
                     <a href="/dashboard" class="<%= activePage === 'home' ? 'active' : '' %>">Início (Servidores)</a>
+                </li>
+                <li>
+                    <a href="/updates" class="<%= activePage === 'updates' ? 'active' : '' %>">Atualizações - BOT</a>
                 </li>
                 
                 <% if (guild) { %>
@@ -62,7 +64,7 @@
             </div>
             ```
 
-### `views/footer.ejs`
+### `views/footer.ejs` (Apenas Fechamento de Tags)
 
 ```ejs
         </div> </div> </body>
