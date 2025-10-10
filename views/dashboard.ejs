@@ -1,4 +1,4 @@
-<%- include('header', { user: user, guild: null, activePage: 'home' }) %>
+<% includeFile('header', { user: user, guild: null, activePage: 'home' }) %>
 
 <div class="main-content">
     <h1>Bem-vindo(a), <%= user.username %>!</h1>
@@ -7,7 +7,6 @@
     <div class="guild-list">
         <% guilds.forEach(guild => { %>
             <% 
-                // Verifica se o usuário tem permissão de Administrador (8) ou Gerenciar Servidor (20)
                 const isAdmin = (guild.permissions & 0x8) === 0x8;
                 const canManage = (guild.permissions & 0x20) === 0x20;
             %>
@@ -29,4 +28,4 @@
     </div>
 </div>
 
-<%- include('footer') %>
+<% includeFile('footer') %>
