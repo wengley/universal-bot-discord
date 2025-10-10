@@ -33,12 +33,12 @@ const client = new Client({
 });
 
 client.commands = new Collection();
+// O carregamento de comandos deve ser mantido aqui
 
 // ===============================
-// EVENTOS E FUNÇÕES AUXILIARES (Lógica de Boas-Vindas)
+// EVENTOS E FUNÇÕES AUXILIARES (Lógica de Boas-Vindas REVISADA)
 // ===============================
 
-// Funções para substituição de placeholders e construção de Embed
 const replacePlaceholders = (text, member) => {
     if (!text) return '';
     return text
@@ -48,17 +48,26 @@ const replacePlaceholders = (text, member) => {
         .replace(/\{count\}/g, member.guild.memberCount);
 };
 
+// Funçao de construção de Embed aprimorada
 const buildEmbed = (data, member) => {
     if (!data || !data.enabled) return null;
     try {
         const e = new EmbedBuilder();
+        
+        // Cor
         if (data.color) e.setColor(parseInt(data.color.replace('#', '0x'), 16));
+        
+        // Título e Descrição
         if (data.title) e.setTitle(replacePlaceholders(data.title, member));
         if (data.description) e.setDescription(replacePlaceholders(data.description, member));
-        if (data.footerText) e.setFooter({ text: replacePlaceholders(data.footerText, member) });
+        
+        // Thumbnail: Se for true, usa o avatar do membro
         if (data.thumbnail) e.setThumbnail(member.user.displayAvatarURL());
-        if (data.image) e.setImage(data.imageUrl); // Se você adicionar um campo de imagem estática
+        
+        // Footer: Texto e Timestamp
+        if (data.footerText) e.setFooter({ text: replacePlaceholders(data.footerText, member) });
         e.setTimestamp();
+        
         return e;
     } catch (e) {
         console.error("Erro ao construir Embed:", e);
@@ -79,13 +88,14 @@ client.on('guildMemberAdd', async member => {
     ch.send({ content: text || null, embeds: embed ? [embed] : [] }).catch(() => {});
 });
 
-// Outros eventos (mensagens, comandos, etc.) permanecem aqui
+// Eventos de mensagem, login, etc. (Mantenha o código padrão)
 
 // ===============================
-// SERVIDOR WEB (EXPRESS)
+// SERVIDOR WEB (EXPRESS) E AUTH
 // ===============================
 const app = express();
 const PORT = process.env.PORT || 3000;
+// ... (Configurações de EJS, static, session, passport e isAuthenticated aqui)
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -94,76 +104,22 @@ app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// ===============================
-// AUTENTICAÇÃO DISCORD E MIDDLEWARES
-// ===============================
-// Configurações de Session, Passport e Discord Strategy... (Mantenha as configurações da sua última versão)
+const CLIENT_ID = process.env.CLIENT_ID_BOT;
+const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
+const CALLBACK_URL = process.env.CALLBACK_URL;
+// ... (Configuração de passport e DiscordStrategy aqui)
 
-// ...
-
+// ===============================
+// ROTAS WEB
+// ===============================
 const isAuthenticated = (req, res, next) => {
     if (req.isAuthenticated()) return next();
     res.redirect('/login');
 };
 
+// ... (Rotas /, /login, /callback, /logout, /dashboard)
 
-// ===============================
-// ROTAS WEB (FINAL)
-// ===============================
-
-// Rota de Seleção de Servidor (Lógica de Filtro)
-app.get('/dashboard', isAuthenticated, (req, res) => {
-    
-    const userGuilds = req.user.guilds.filter(g => {
-        const perms = parseInt(g.permissions, 10);
-        return ((perms & 0x8) === 0x8) || ((perms & 0x20) === 0x20); // Admin ou Gerenciar Servidor
-    });
-
-    const botGuildIds = client.guilds.cache.map(g => g.id);
-    
-    const dashboardGuilds = userGuilds.map(g => {
-        const botInGuild = botGuildIds.includes(g.id);
-        const userPerms = parseInt(g.permissions, 10);
-        const canConfigure = botInGuild && (((userPerms & 0x8) === 0x8) || ((userPerms & 0x20) === 0x20));
-
-        return {
-            id: g.id,
-            name: g.name,
-            icon: g.icon,
-            isInBot: botInGuild, 
-            canConfigure: canConfigure, 
-        };
-    });
-
-    res.render('dashboard', { 
-        user: req.user, 
-        guilds: dashboardGuilds,
-        guild: null, 
-        activePage: 'home' 
-    }); 
-});
-
-// Rota de Atualizações
-app.get('/updates', isAuthenticated, (req, res) => {
-    res.render('bot_updates', { user: req.user, guild: null, activePage: 'updates' });
-});
-
-// Rota de Configurações Gerais
-app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
-    const guild = client.guilds.cache.get(req.params.guildId);
-    if (!guild) return res.status(404).send('Servidor inválido ou bot não está nele.');
-
-    // Outras configurações...
-
-    res.render('guild_settings', { 
-        user: req.user,
-        guild: guild,
-        channels: guild.channels.cache.filter(c => c.type === 0), // Canais de texto
-        activePage: 'settings'
-    });
-});
-
-// ROTA DE BOAS-VINDAS (NOVA)
+// ROTA DE BOAS-VINDAS (GET)
 app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
     const guild = client.guilds.cache.get(guildId);
@@ -172,9 +128,16 @@ app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
     // Pega as configurações atuais (ou usa padrão)
     const currentConfig = await db.get(`join_notif_${guildId}`) || {
         enabled: false,
-        channelId: null,
-        text: 'Bem-vindo, {mention}!',
-        embed: { enabled: false, title: 'Nova Jornada', description: 'Obrigado por entrar no {guild}!', color: '#5865F2', footerText: 'Contamos com {count} membros.', thumbnail: true }
+        channelId: 'none',
+        text: '👋 Olá, {mention}! Bem-vindo ao {guild}!',
+        embed: { 
+            enabled: true, 
+            title: '🎉 Novo Membro!', 
+            description: 'Fico feliz em ter você aqui. Somos {count} membros agora.', 
+            color: '#5865F2', 
+            footerText: 'ID do Usuário: {user}', 
+            thumbnail: true // Opção para usar o avatar do membro como thumbnail
+        }
     };
 
     res.render('guild_welcome', { 
@@ -189,7 +152,10 @@ app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
 // ROTA POST PARA SALVAR BOAS-VINDAS (NOVA)
 app.post('/dashboard/:guildId/welcome/save', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
-    const { enabled, channelId, text, embedEnabled, embedTitle, embedDescription, embedColor, embedFooterText, embedThumbnail } = req.body;
+    const { 
+        enabled, channelId, text, 
+        embedEnabled, embedTitle, embedDescription, embedColor, embedFooterText, embedThumbnail 
+    } = req.body;
 
     const newConfig = {
         enabled: enabled === 'on',
@@ -197,19 +163,23 @@ app.post('/dashboard/:guildId/welcome/save', isAuthenticated, async (req, res) =
         text: text,
         embed: {
             enabled: embedEnabled === 'on',
-            title: embedTitle,
-            description: embedDescription,
-            color: embedColor,
-            footerText: embedFooterText,
-            thumbnail: embedThumbnail === 'on',
+            title: embedTitle || null,
+            description: embedDescription || null,
+            // Garante que a cor seja um HEX válido, senão usa padrão
+            color: (embedColor && embedColor.startsWith('#') ? embedColor : '#5865F2'),
+            footerText: embedFooterText || null,
+            thumbnail: embedThumbnail === 'on', // TRUE/FALSE
         }
     };
     
     await db.set(`join_notif_${guildId}`, newConfig);
 
-    res.json({ success: true, message: 'Configurações de Boas-Vindas salvas com sucesso!' });
+    res.json({ success: true, message: '✅ Configurações de Boas-Vindas salvas com sucesso!' });
 });
 
+// Outras Rotas (Configurações Gerais, Comandos, Logs)
+
+// ...
 
 // ===============================
 // INICIA O BOT E O SERVIDOR WEB
