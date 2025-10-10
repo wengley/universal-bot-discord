@@ -1,4 +1,4 @@
-<% includeFile('header', { user: user, guild: null, activePage: 'home' }) %>
+<%- include('header', { user: user, guild: null, activePage: 'home' }) %>
 
 <div class="main-content">
     <h1>Bem-vindo(a), <%= user.username %>!</h1>
@@ -28,4 +28,4 @@
     </div>
 </div>
 
-<% includeFile('footer') %>
+<%- include('footer') %>

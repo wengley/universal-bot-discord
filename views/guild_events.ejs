@@ -1,4 +1,4 @@
-<% includeFile('header', { user: user, guild: guild, activePage: 'events' }) %>
+<%- include('header', { user: user, guild: guild, activePage: 'events' }) %>
 
 <div class="main-content">
     <h1>Logs Recentes de <%= guild.name %></h1>
@@ -18,4 +18,4 @@
     </div>
 </div>
 
-<% includeFile('footer') %>
+<%- include('footer') %>

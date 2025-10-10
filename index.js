@@ -118,7 +118,8 @@ const PORT = process.env.PORT || 3000;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.engine('ejs', require('ejs').__express); // CORREÇÃO CRÍTICA
+// CORREÇÃO CRÍTICA DO RENDER
+app.engine('ejs', require('ejs').__express); 
 app.use(express.static('public')); // CSS
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -242,13 +243,12 @@ app.get('/dashboard/:guildId/events', isAuthenticated, async (req, res) => {
 
 // Rota para salvar configurações (Exemplo)
 app.post('/dashboard/:guildId/save', isAuthenticated, async (req, res) => {
-    // Implemente a lógica de salvar aqui
     res.json({ success: true, message: 'Configurações salvas (Lógica POST a ser implementada).' });
 });
 
 
 // ===============================
-// INICIA O BOT E O SERVIDOR WEB (CORREÇÃO FINAL DO ERRO)
+// INICIA O BOT E O SERVIDOR WEB (CORREÇÃO FINAL DO ERRO 500)
 // ===============================
 
 // 1. Faz login do bot
@@ -261,7 +261,6 @@ client.once('ready', () => {
     // INICIA O SERVIDOR WEB AQUI DENTRO DO EVENTO 'ready'
     app.listen(PORT, () => {
         console.log(`🌐 Painel rodando na porta ${PORT}`);
-        // Isso é útil para ver o link correto nos logs do Render
         console.log(`🔗 Link do Painel: ${CALLBACK_URL.replace('/callback', '')}`);
     });
 });
