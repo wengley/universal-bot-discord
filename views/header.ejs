@@ -5,16 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= guild ? `${guild.name} - Painel` : 'Painel de Controle' %></title>
     <link rel="stylesheet" href="/css/styles.css"> 
+    <script>
+        // Lógica de Tema (Requere classes CSS .dark-mode)
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const theme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+            localStorage.setItem('theme', theme);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            // Aplica o tema salvo ao carregar
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+        });
+    </script>
 </head>
 <body>
     <div id="wrapper">
         <nav id="sidebar">
             <div class="sidebar-header">
-                <h3>Discord Bot</h3>
+                <h3>Bot Dashboard</h3>
             </div>
             <ul class="list-unstyled components">
                 <li>
-                    <a href="/dashboard">Início</a>
+                    <a href="/dashboard" class="<%= activePage === 'home' ? 'active' : '' %>">Início (Servidores)</a>
                 </li>
                 
                 <% if (guild) { %>
@@ -33,15 +47,22 @@
         
         <div id="content">
             <div class="user-info-bar">
-                <div class="user-details-group">
-                    <img src="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : '/images/default-avatar.png' %>" width="40" height="40" alt="Avatar" class="user-avatar">
-                    <span class="user-tag"><%= user.username %>#<%= user.discriminator %></span>
+                <div class="user-profile-widget">
+                    <img src="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64` : '/images/default-avatar.png' %>" alt="Avatar" class="user-avatar-large">
+                    <div class="user-details-group">
+                        <span class="user-tag-large"><%= user.username %>#<%= user.discriminator %></span>
+                        <span class="user-id">ID: <%= user.id %></span>
+                    </div>
                 </div>
-                <a href="/logout" class="btn btn-logout">Sair</a>
+
+                <div class="action-buttons-group">
+                    <button class="btn btn-theme-toggle" onclick="toggleTheme()">Mudar Tema</button>
+                    <a href="/logout" class="btn btn-logout-danger">Sair</a>
+                </div>
             </div>
             ```
 
-### 2. `views/footer.ejs`
+### `views/footer.ejs`
 
 ```ejs
         </div> </div> </body>

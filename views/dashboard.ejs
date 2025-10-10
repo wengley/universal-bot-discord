@@ -1,28 +1,23 @@
 <%- include('header', { user: user, guild: null, activePage: 'home' }) %>
 
 <div class="main-content">
-    <h1>Bem-vindo(a), <%= user.username %>!</h1>
-    <p>Selecione um servidor para configurar o bot:</p>
+    <h1>Dashboard de Servidores</h1>
+    <p>Selecione um servidor para configurar o bot. Apenas servidores onde você tem permissão de gerenciar são mostrados.</p>
     
     <div class="guild-list">
-        <% guilds.forEach(guild => { %>
-            <% 
-                const isAdmin = (guild.permissions & 0x8) === 0x8;
-                const canManage = (guild.permissions & 0x20) === 0x20;
-            %>
-            
-            <% if (isAdmin || canManage) { %>
-                <a href="/dashboard/<%= guild.id %>" class="guild-item">
-                    <img src="<%= guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128` : '/images/default-guild.png' %>" alt="Icone" class="guild-icon">
-                    <span class="guild-name"><%= guild.name %></span>
-                    <span class="status-badge ready">Configurar</span>
+        <% guilds.forEach(g => { %>
+            <% if (g.isInBot) { %>
+                <a href="/dashboard/<%= g.id %>" class="guild-item ready">
+                    <img src="<%= g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=128` : '/images/default-guild.png' %>" alt="Icone" class="guild-icon">
+                    <span class="guild-name"><%= g.name %></span>
+                    <span class="status-badge status-ready">Configurar</span>
                 </a>
             <% } else { %>
-                <div class="guild-item disabled">
-                    <img src="<%= guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128` : '/images/default-guild.png' %>" alt="Icone" class="guild-icon">
-                    <span class="guild-name"><%= guild.name %></span>
-                    <span class="status-badge denied">Permissão Negada</span>
-                </div>
+                <a href="https://discord.com/oauth2/authorize?client_id=<%= process.env.CLIENT_ID_BOT %>&scope=bot%20applications.commands&permissions=8&guild_id=<%= g.id %>" target="_blank" class="guild-item invite">
+                    <img src="<%= g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=128` : '/images/default-guild.png' %>" alt="Icone" class="guild-icon">
+                    <span class="guild-name"><%= g.name %></span>
+                    <span class="status-badge status-invite">Convidar Bot</span>
+                </a>
             <% } %>
         <% }); %>
     </div>

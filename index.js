@@ -49,10 +49,9 @@ if (fs.existsSync(commandsPath)) {
 }
 
 // ===============================
-// EVENTOS DISCORD
+// EVENTOS DISCORD E FUNÇÕES AUXILIARES
 // ===============================
 
-// Funções Auxiliares (mantidas para o painel)
 const replacePlaceholders = (text, member) => {
     if (!text) return '';
     return text
@@ -73,7 +72,6 @@ const buildEmbed = (data, member) => {
     return e;
 };
 
-// ======= JOIN EVENT (Simplificado) =======
 client.on('guildMemberAdd', async member => {
     const join = await db.get(`join_notif_${member.guild.id}`);
     if (!join || !join.channelId) return;
@@ -84,18 +82,6 @@ client.on('guildMemberAdd', async member => {
     ch.send({ content: text || null, embeds: embed ? [embed] : [] }).catch(() => {});
 });
 
-// ======= LEAVE EVENT (Simplificado) =======
-client.on('guildMemberRemove', async member => {
-    const leave = await db.get(`leave_notif_${member.guild.id}`);
-    if (!leave || !leave.channelId) return;
-    const ch = member.guild.channels.cache.get(leave.channelId);
-    if (!ch) return;
-    const embed = buildEmbed(leave.embed, member);
-    const text = replacePlaceholders(leave.text, member);
-    ch.send({ content: text || null, embeds: embed ? [embed] : [] }).catch(() => {});
-});
-
-// ======= COMANDOS / AFK =======
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.content.startsWith(prefix)) return;
     const args = message.content.slice(prefix.length).trim().split(/ +/);
@@ -138,7 +124,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// CONFIGURAÇÃO DE VARIÁVEIS DE AMBIENTE (Corrigido para _BOT)
+// CONFIGURAÇÃO DE VARIÁVEIS DE AMBIENTE
 const CLIENT_ID = process.env.CLIENT_ID_BOT;
 const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
 const CALLBACK_URL = process.env.CALLBACK_URL;
@@ -183,12 +169,40 @@ app.get(
 );
 app.get('/logout', (req, res, next) => req.logout(() => res.redirect('/')));
 
-// Rota de Seleção de Servidor
+// Rota de Seleção de Servidor (AGORA COM FILTRO INTELIGENTE)
 app.get('/dashboard', isAuthenticated, (req, res) => {
-    res.render('dashboard', { user: req.user, guilds: req.user.guilds, guild: null, activePage: 'home' }); 
+    
+    // 1. Filtra as guilds do usuário por permissão (Admin/Gerenciar)
+    const userGuilds = req.user.guilds.filter(g => {
+        const perms = parseInt(g.permissions, 10);
+        return ((perms & 0x8) === 0x8) || ((perms & 0x20) === 0x20); // Admin ou Gerenciar Servidor
+    });
+
+    // 2. Lista de IDs das guilds onde o BOT está
+    const botGuildIds = client.guilds.cache.map(g => g.id);
+    
+    // 3. Categoriza as Guilds
+    const dashboardGuilds = userGuilds.map(g => {
+        const botInGuild = botGuildIds.includes(g.id);
+        
+        return {
+            id: g.id,
+            name: g.name,
+            icon: g.icon,
+            isInBot: botInGuild, // true se o bot estiver no servidor
+            userHasPerms: true,
+        };
+    });
+
+    res.render('dashboard', { 
+        user: req.user, 
+        guilds: dashboardGuilds, // Lista filtrada
+        guild: null, 
+        activePage: 'home' 
+    }); 
 });
 
-// Rota de Configurações Gerais (Guild Settings)
+// Rota de Configurações Gerais
 app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
     const guild = client.guilds.cache.get(guildId);
@@ -243,7 +257,7 @@ app.get('/dashboard/:guildId/events', isAuthenticated, async (req, res) => {
 
 // Rota para salvar configurações (Exemplo)
 app.post('/dashboard/:guildId/save', isAuthenticated, async (req, res) => {
-    res.json({ success: true, message: 'Configurações salvas (Lógica POST a ser implementada).' });
+    res.json({ success: true, message: 'Configurações salvas.' });
 });
 
 
@@ -258,7 +272,6 @@ client.login(process.env.TOKEN_BOT);
 client.once('ready', () => {
     console.log(`✅ Bot online como ${client.user.tag}`);
 
-    // INICIA O SERVIDOR WEB AQUI DENTRO DO EVENTO 'ready'
     app.listen(PORT, () => {
         console.log(`🌐 Painel rodando na porta ${PORT}`);
         console.log(`🔗 Link do Painel: ${CALLBACK_URL.replace('/callback', '')}`);
