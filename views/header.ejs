@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= guild ? `${guild.name} - Painel` : 'Painel de Controle' %></title>
-    <link rel="icon" type="image/png" href="/images/favicon.png"> 
+    <link rel="icon" type="image/webp" href="<%= 'https://cdn.discordapp.com/icons/1413669247023841342/bf008aa2a004c2d25d1e3e4577e93450.webp?size=64' %>"> 
     <link rel="stylesheet" href="/css/styles.css"> 
+    <script src="/js/main.js"></script>
     <script>
         // Lógica de Tema
         function toggleTheme() {
@@ -44,15 +45,18 @@
                 </li>
                 
                 <% if (guild) { %>
-                <hr style="border-top: 1px solid rgba(255,255,255,0.1);">
+                <li class="separator"><span>Servidor: <%= guild.name.substring(0, 15) %>...</span></li>
                 <li class="<%= activePage === 'settings' ? 'active' : '' %>">
-                    <a href="/dashboard/<%= guild.id %>">Configurações Gerais</a>
+                    <a href="/dashboard/<%= guild.id %>">⚙️ Configurações Gerais</a>
+                </li>
+                <li class="<%= activePage === 'welcome' ? 'active' : '' %>">
+                    <a href="/dashboard/<%= guild.id %>/welcome">👋 Boas-Vindas / Saída</a>
                 </li>
                 <li class="<%= activePage === 'config' ? 'active' : '' %>">
-                    <a href="/dashboard/<%= guild.id %>/config">Comandos</a>
+                    <a href="/dashboard/<%= guild.id %>/config">📄 Comandos</a>
                 </li>
                 <li class="<%= activePage === 'events' ? 'active' : '' %>">
-                    <a href="/dashboard/<%= guild.id %>/events">Logs de Eventos</a>
+                    <a href="/dashboard/<%= guild.id %>/events">📖 Logs de Eventos</a>
                 </li>
                 <% } %>
             </ul>
@@ -61,10 +65,16 @@
         <div id="content">
             ```
 
-### 2. Novo `footer.ejs` (Apenas Fechamento de Tags)
+#### 2.2. `views/footer.ejs` (Apenas Fechamento e Rodapé)
 
-Aqui está a versão limpa e correta do **`views/footer.ejs`**.
+Este script está limpo e adiciona o rodapé. **Substitua este.**
 
 ```ejs
-        </div> </div> </body>
+            </div> 
+
+        <footer id="dashboard-footer">
+            <p>&copy; <%= new Date().getFullYear() %> | Bot Dashboard. Todos os direitos reservados. | Versão 1.0.1</p>
+        </footer>
+        
+    </div> </body>
 </html>

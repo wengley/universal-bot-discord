@@ -1,23 +1,25 @@
 <%- include('header', { user: user, guild: null, activePage: 'home' }) %>
 
 <div class="main-content">
-    <h1>Dashboard de Servidores</h1>
-    <p>Selecione um servidor para configurar o bot. Apenas servidores onde você tem permissão de gerenciar são mostrados.</p>
+    <h1><i class="fas fa-server"></i> Seleção de Servidor</h1>
+    <p>Selecione um servidor para configurar. Apenas servidores onde você tem permissão de **Administrador** ou **Gerenciar Servidor** são mostrados.</p>
     
     <div class="guild-list">
         <% guilds.forEach(g => { %>
-            <div class="guild-item <%= g.isInBot ? 'ready' : 'invite' %>">
+            <div class="guild-item">
                 <img src="<%= g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=128` : '/images/default-guild.png' %>" alt="Icone" class="guild-icon">
-                <span class="guild-name"><%= g.name %></span>
+                <div class="guild-details">
+                    <span class="guild-name"><%= g.name %></span>
+                    <span class="guild-id-label">ID: <%= g.id %></span>
+                </div>
                 
-                <% if (g.isInBot && g.canConfigure) { %>
-                    <a href="/dashboard/<%= g.id %>" class="status-badge status-ready">Configurar</a>
-                <% } else if (g.isInBot && !g.canConfigure) { %>
-                    <span class="status-badge status-denied">Permissão Negada</span>
+                <% if (g.canConfigure) { %>
+                    <a href="/dashboard/<%= g.id %>" class="btn status-btn status-ready">Configurar</a>
+                <% } else if (g.isInBot) { %>
+                    <span class="status-btn status-denied">Sem Permissão</span>
                 <% } else { %>
-                    <a href="https://discord.com/oauth2/authorize?client_id=<%= process.env.CLIENT_ID_BOT %>&scope=bot%20applications.commands&permissions=8&guild_id=<%= g.id %>" target="_blank" class="status-badge status-invite">Convidar Bot</a>
+                    <a href="https://discord.com/oauth2/authorize?client_id=<%= process.env.CLIENT_ID_BOT %>&scope=bot%20applications.commands&permissions=8&guild_id=<%= g.id %>" target="_blank" class="btn status-btn status-invite">Convidar Bot</a>
                 <% } %>
-
             </div>
         <% }); %>
     </div>

@@ -1,0 +1,102 @@
+<%- include('header', { user: user, guild: guild, activePage: 'welcome' }) %>
+
+<div class="main-content">
+    <h1>👋 Configuração de Boas-Vindas e Saída</h1>
+    <p>Configure a mensagem que será enviada quando um novo membro entrar ou sair do servidor.</p>
+
+    <form id="welcome-config-form">
+        <div class="config-section status-toggle-group">
+            <label for="enabled">Status da Mensagem de Boas-Vindas:</label>
+            <div class="toggle-switch">
+                <input type="checkbox" id="enabled" name="enabled" <%= config.enabled ? 'checked' : '' %>>
+                <label for="enabled" class="toggle-label"></label>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <label for="channelId">Canal de Envio:</label>
+            <select id="channelId" name="channelId" class="input-full">
+                <option value="none">Selecione um Canal de Texto...</option>
+                <% channels.forEach(c => { %>
+                    <option value="<%= c.id %>" <%= config.channelId === c.id ? 'selected' : '' %>>
+                        #<%= c.name %>
+                    </option>
+                <% }); %>
+            </select>
+        </div>
+
+        <div class="config-section">
+            <h2>Mensagem de Texto Simples</h2>
+            <p class="helper-text">Esta mensagem é enviada **acima** ou **em vez** do Embed.</p>
+            <label for="text">Conteúdo da Mensagem:</label>
+            <textarea id="text" name="text" rows="3" class="input-full"><%= config.text || '' %></textarea>
+        </div>
+
+        <div class="config-section embed-preview-container">
+            <h2>Configuração de Embed (Opcional)</h2>
+            <div class="status-toggle-group">
+                <label for="embedEnabled">Ativar Embed:</label>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="embedEnabled" name="embedEnabled" <%= config.embed.enabled ? 'checked' : '' %>>
+                    <label for="embedEnabled" class="toggle-label"></label>
+                </div>
+            </div>
+
+            <div class="embed-fields">
+                <label for="embedTitle">Título do Embed:</label>
+                <input type="text" id="embedTitle" name="embedTitle" value="<%= config.embed.title || '' %>" class="input-full">
+                
+                <label for="embedDescription">Descrição:</label>
+                <textarea id="embedDescription" name="embedDescription" rows="4" class="input-full"><%= config.embed.description || '' %></textarea>
+                
+                <label for="embedColor">Cor (Hex):</label>
+                <input type="color" id="embedColor" name="embedColor" value="<%= config.embed.color || '#5865F2' %>">
+
+                <label for="embedFooterText">Texto do Rodapé:</label>
+                <input type="text" id="embedFooterText" name="embedFooterText" value="<%= config.embed.footerText || '' %>" class="input-full">
+
+                <div class="status-toggle-group">
+                    <label for="embedThumbnail">Mostrar Avatar do Usuário (Thumbnail):</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="embedThumbnail" name="embedThumbnail" <%= config.embed.thumbnail ? 'checked' : '' %>>
+                        <label for="embedThumbnail" class="toggle-label"></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg">💾 Salvar Configurações</button>
+        <div id="message-status" class="status-message"></div>
+    </form>
+</div>
+
+<%- include('footer') %>
+
+<script>
+    // Lógica para enviar o formulário via AJAX para evitar recarregar a página
+    document.getElementById('welcome-config-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const form = e.target;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        const statusDiv = document.getElementById('message-status');
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            const result = await response.json();
+            
+            statusDiv.textContent = result.message;
+            statusDiv.className = result.success ? 'status-message success' : 'status-message error';
+            setTimeout(() => { statusDiv.textContent = ''; statusDiv.className = 'status-message'; }, 5000);
+            
+        } catch (error) {
+            statusDiv.textContent = 'Erro ao salvar: Ocorreu um problema de conexão.';
+            statusDiv.className = 'status-message error';
+        }
+    });
+</script>
