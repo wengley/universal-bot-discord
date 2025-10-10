@@ -1,80 +1,57 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= guild ? `${guild.name} - Painel` : 'Painel de Controle' %></title>
-    <link rel="icon" type="image/webp" href="<%= 'https://cdn.discordapp.com/icons/1413669247023841342/bf008aa2a004c2d25d1e3e4577e93450.webp?size=64' %>"> 
-    <link rel="stylesheet" href="/css/styles.css"> 
-    <script src="/js/main.js"></script>
+    <title>Universal Bot | Dashboard</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : '/images/default-icon.png' %>" type="image/png">
     <script>
-        // Lógica de Tema
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
-            const theme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
-            localStorage.setItem('theme', theme);
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
         }
         document.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('theme') === 'dark') {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
                 document.body.classList.add('dark-mode');
             }
         });
     </script>
 </head>
 <body>
-    <div id="wrapper">
-        <nav id="sidebar">
-            <div class="user-profile-widget sidebar-header-profile">
-                <img src="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64` : '/images/default-avatar.png' %>" alt="Avatar" class="user-avatar-large">
-                <div class="user-details-group">
-                    <span class="user-tag-large"><%= user.username %>#<%= user.discriminator %></span>
-                    <span class="user-id">ID: <%= user.id %></span>
-                </div>
-                <div class="action-buttons-group">
-                    <button class="btn btn-theme-toggle" onclick="toggleTheme()">Tema</button>
-                    <a href="/logout" class="btn btn-logout-danger">Sair</a>
-                </div>
-            </div>
 
-            <ul class="list-unstyled components">
-                <li>
-                    <a href="/dashboard" class="<%= activePage === 'home' ? 'active' : '' %>">Início (Servidores)</a>
-                </li>
-                <li>
-                    <a href="/updates" class="<%= activePage === 'updates' ? 'active' : '' %>">Atualizações - BOT</a>
-                </li>
-                
-                <% if (guild) { %>
-                <li class="separator"><span>Servidor: <%= guild.name.substring(0, 15) %>...</span></li>
+<div id="wrapper">
+    <nav id="sidebar">
+        <div class="sidebar-header-title">
+            <img src="/images/default-icon.png" alt="Logo" class="bot-logo">
+            <h1>Universal Bot</h1>
+        </div>
+
+        <ul class="list-unstyled components">
+            <li class="<%= activePage === 'servers' ? 'active' : '' %>">
+                <a href="/dashboard">Seus Servidores</a>
+            </li>
+            <li class="<%= activePage === 'updates' ? 'active' : '' %>">
+                <a href="/updates">Atualizações</a>
+            </li>
+            
+            <% if (guild) { %>
+                <li class="separator">CONFIGURAÇÕES DE <%= guild.name.toUpperCase() %></li>
                 <li class="<%= activePage === 'settings' ? 'active' : '' %>">
-                    <a href="/dashboard/<%= guild.id %>">⚙️ Configurações Gerais</a>
+                    <a href="/dashboard/<%= guild.id %>">Geral</a>
                 </li>
                 <li class="<%= activePage === 'welcome' ? 'active' : '' %>">
-                    <a href="/dashboard/<%= guild.id %>/welcome">👋 Boas-Vindas / Saída</a>
+                    <a href="/dashboard/<%= guild.id %>/welcome">Boas-Vindas</a>
                 </li>
-                <li class="<%= activePage === 'config' ? 'active' : '' %>">
-                    <a href="/dashboard/<%= guild.id %>/config">📄 Comandos</a>
-                </li>
-                <li class="<%= activePage === 'events' ? 'active' : '' %>">
-                    <a href="/dashboard/<%= guild.id %>/events">📖 Logs de Eventos</a>
-                </li>
-                <% } %>
-            </ul>
-        </nav>
+            <% } %>
+
+            <li class="separator">MISCELÂNEA</li>
+            <li><a href="/logout">Sair</a></li>
+        </ul>
         
-        <div id="content">
-            ```
+        <%- include('user_profile_footer', { user: user }) %>
+    </nav>
 
-#### 2.2. `views/footer.ejs` (Apenas Fechamento e Rodapé)
-
-Este script está limpo e adiciona o rodapé. **Substitua este.**
-
-```ejs
-            </div> 
-
-        <footer id="dashboard-footer">
-            <p>&copy; <%= new Date().getFullYear() %> | Bot Dashboard. Todos os direitos reservados. | Versão 1.0.1</p>
-        </footer>
-        
-    </div> </body>
-</html>
+    <div id="content">

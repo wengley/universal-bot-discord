@@ -1,6 +1,4 @@
-/* ====================================================
-   GLOBAL E TEMA
-   ==================================================== */
+/* ==================================================== CORE E TEMA ==================================================== */
 body {
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
@@ -10,160 +8,156 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-body.dark-mode {
-    background-color: #1e1e2d;
-    color: #f1f1f1;
-}
-body.dark-mode #sidebar {
-    background: #27293d;
-    border-right-color: #3c3f56;
-}
-body.dark-mode #sidebar a {
-    color: #f1f1f1;
-}
-body.dark-mode #sidebar a:hover,
-body.dark-mode #sidebar .active a {
-    background: #3c3f56;
-}
-body.dark-mode #content {
-    background: #212330;
-    color: #f1f1f1;
-}
-body.dark-mode .guild-item,
-body.dark-mode .config-section {
-    background: #27293d;
-    border: 1px solid #3c3f56;
-}
-body.dark-mode .guild-item:hover {
-    background: #33364d;
-}
-body.dark-mode form input,
-body.dark-mode form select,
-body.dark-mode form textarea {
-    background: #33364d;
-    color: #f1f1f1;
-    border-color: #555;
-}
-body.dark-mode #dashboard-footer {
-    background-color: #27293d;
-    color: #aaa;
-    border-top-color: #3c3f56;
-}
-body.dark-mode .status-toggle-group {
-    background: #33364d;
-}
-
 #wrapper {
     display: flex;
     min-height: 100vh;
+    flex-wrap: nowrap;
 }
 
-/* ====================================================
-   SIDEBAR E PERFIL
-   ==================================================== */
+/* ==================================================== SIDEBAR (LORITTA STYLE) ==================================================== */
 #sidebar {
     min-width: 280px;
     max-width: 280px;
-    background: #ffffff;
-    border-right: 1px solid #ddd;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-}
-
-.user-profile-widget.sidebar-header-profile {
-    padding: 20px 15px;
-    background: #5865F2;
-    color: white;
+    background: #36393f; /* Fundo escuro do Discord/Loritta */
+    color: #dcddde;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 12px;
-}
-.sidebar-header-profile .user-avatar-large {
-    width: 60px;
-    height: 60px;
-}
-.sidebar-header-profile .action-buttons-group {
-    display: flex;
-    gap: 10px;
-}
-.sidebar-header-profile .btn {
-    padding: 8px 12px;
-    font-size: 0.9em;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    position: sticky; /* Fixa a sidebar */
+    top: 0;
 }
 
+/* Título e Logo (Universal Bot) */
+.sidebar-header-title {
+    padding: 20px;
+    background: #36393f;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #2f3136;
+}
+.sidebar-header-title h1 {
+    margin: 0;
+    font-size: 1.4em;
+    font-weight: 800;
+    color: #f6f6f7;
+    margin-left: 10px;
+}
+.bot-logo {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+}
+
+
+/* Lista de Links */
 .list-unstyled {
-    padding: 0;
+    padding: 10px 0;
     list-style: none;
+    flex-grow: 1; 
+    overflow-y: auto; /* Permite scrollar apenas o menu */
 }
 #sidebar ul li a {
-    padding: 15px 20px;
+    padding: 10px 20px;
     display: block;
-    color: #555;
+    color: #b9bbbe;
     text-decoration: none;
-    transition: background-color 0.2s;
+    transition: background-color 0.1s, color 0.1s;
+    font-weight: 500;
+    border-left: 4px solid transparent; /* Para o indicador de ativo */
+}
+#sidebar ul li a:hover {
+    color: #f6f6f7;
+    background-color: #3f4247;
 }
 #sidebar ul li.active a {
-    background: #e6e9ff;
-    color: #5865F2;
-    font-weight: bold;
-    border-left: 4px solid #5865F2;
+    background: #42464d;
+    color: #f6f6f7;
+    font-weight: 600;
+    border-left-color: #5865F2; /* Cor de destaque */
 }
 .separator {
-    padding: 10px 20px;
-    font-size: 0.8em;
-    font-weight: 600;
-    color: #999;
+    padding: 15px 20px 5px;
+    font-size: 0.9em;
+    font-weight: 700;
+    color: #96989d; /* Cor mais clara para seções */
+    text-transform: uppercase;
 }
 
-/* ====================================================
-   CONTENT GERAL
-   ==================================================== */
+
+/* Perfil no Rodapé da Sidebar */
+.user-profile-widget.sidebar-footer-profile {
+    padding: 15px;
+    border-top: 1px solid #2f3136;
+    background: #2f3136; /* Fundo mais escuro para o rodapé */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Alinhamento à esquerda */
+    gap: 10px;
+}
+.sidebar-footer-profile .user-avatar-large {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-bottom: 5px;
+}
+.sidebar-footer-profile .user-details-group {
+    text-align: left;
+    width: 100%;
+}
+.user-tag-large {
+    font-weight: 700;
+    color: #f6f6f7;
+    font-size: 1em;
+}
+.user-id {
+    font-size: 0.8em;
+    color: #b9bbbe;
+    display: block;
+}
+.action-buttons-group {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    margin-top: 5px;
+}
+.btn-theme-toggle {
+    background-color: #5865F2;
+    color: white;
+    padding: 6px 10px;
+    font-size: 0.9em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.btn-theme-toggle:hover {
+    background-color: #4854e0;
+}
+
+
+/* ==================================================== CONTENT (Conteúdo Principal) ==================================================== */
 #content {
     flex-grow: 1;
-    padding: 20px 40px;
+    padding: 30px 40px;
+    background: #f4f7f9;
 }
-
+.main-content {
+    flex-grow: 1;
+    max-width: 100%;
+}
 .main-content h1 {
     color: #5865F2;
     margin-bottom: 25px;
     border-bottom: 2px solid #eee;
     padding-bottom: 10px;
+    font-size: 1.8em;
 }
 
-/* ====================================================
-   BOTÕES E BADGES
-   ==================================================== */
-.btn {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: 600;
-    text-decoration: none;
-    display: inline-block;
-    transition: background-color 0.2s;
-    text-align: center;
-}
-.btn-primary {
-    background-color: #5865F2;
-    color: white;
-}
-.btn-logout-danger {
-    background-color: #F04747;
-    color: white;
-}
-.btn-theme-toggle {
-    background-color: rgba(255,255,255,0.2);
-    color: white;
-}
-
-/* ====================================================
-   DASHBOARD DE SERVIDORES
-   ==================================================== */
+/* ==================================================== DASHBOARD DE SERVIDORES ==================================================== */
 .guild-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); /* Mais largo */
+    gap: 15px;
 }
 
 .guild-item {
@@ -172,179 +166,84 @@ body.dark-mode .status-toggle-group {
     padding: 15px;
     border-radius: 8px;
     background: #fff;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    box-shadow: 0 1px 5px rgba(0,0,0,0.08);
+    transition: box-shadow 0.2s;
 }
 .guild-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-
 .guild-icon {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     margin-right: 15px;
     object-fit: cover;
 }
 .guild-details {
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+.guild-name {
+    font-weight: 700;
+    font-size: 1.1em;
+}
+.guild-role-tag {
+    font-size: 0.9em;
+    color: #777;
+    margin-top: 2px;
 }
 
+/* Botões */
 .status-btn {
-    padding: 8px 15px;
+    padding: 10px 20px;
     font-size: 0.9em;
-    font-weight: 700;
-    border-radius: 4px;
-    margin-left: 15px;
+    font-weight: 600;
+    border-radius: 5px;
+    text-align: center;
 }
-.status-ready {
-    background-color: #43b581;
+.btn-primary {
+    background-color: #5865F2;
     color: white;
 }
-.status-invite {
+.btn-invite {
     background-color: #faa61a;
     color: white;
 }
-.status-denied {
-    background-color: #333;
-    color: white;
+
+/* ==================================================== DARK MODE ==================================================== */
+body.dark-mode {
+    background-color: #1e1e2d;
+}
+body.dark-mode #content {
+    background: #1e1e2d;
+    color: #f1f1f1;
+}
+body.dark-mode .sidebar-header-title,
+body.dark-mode #sidebar {
+    background: #21212b;
+}
+body.dark-mode #sidebar ul li a {
+    color: #b9bbbe;
+}
+body.dark-mode #sidebar ul li a:hover {
+    background-color: #27293d;
+}
+body.dark-mode #sidebar ul li.active a {
+    background: #27293d;
+    border-left-color: #5865F2;
+}
+body.dark-mode .sidebar-footer-profile {
+    background: #27293d;
+    border-top-color: #3f4247;
+}
+body.dark-mode .guild-item {
+    background: #27293d;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.5);
+    color: #f1f1f1;
+}
+body.dark-mode .guild-role-tag {
+    color: #aaa;
 }
 
-/* ====================================================
-   CONFIGURAÇÃO DE WELCOME (PROFISSIONAL)
-   ==================================================== */
-.config-section {
-    background: #fff;
-    padding: 25px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-}
-.config-section h2 {
-    color: #5865F2;
-    padding-bottom: 10px;
-    margin-top: 0;
-    border-bottom: 1px solid #f0f0f0;
-    margin-bottom: 15px;
-}
-.header-with-toggle {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* Inputs e Textareas */
-label {
-    margin-top: 10px;
-    margin-bottom: 5px;
-    font-weight: 600;
-}
-.input-full {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    box-sizing: border-box;
-    transition: border-color 0.2s;
-}
-.input-full:focus {
-    border-color: #5865F2;
-    outline: none;
-}
-.input-color {
-    padding: 0;
-    width: 100px;
-    height: 35px;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-    vertical-align: middle;
-}
-
-/* Toggle Switch (Limpo) */
-.status-toggle-group {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #f8f8f8;
-    padding: 15px;
-    border-radius: 6px;
-    margin-top: 15px;
-}
-.config-label {
-    font-weight: 600;
-}
-.toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 34px;
-}
-.toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-/* Estilização do Slider */
-.toggle-label {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: 0.4s;
-    border-radius: 34px;
-}
-.toggle-label:before {
-    content: "";
-    position: absolute;
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: 0.4s;
-    border-radius: 50%;
-}
-input:checked + .toggle-label {
-    background-color: #43b581; /* Verde de sucesso */
-}
-input:checked + .toggle-label:before {
-    transform: translateX(26px);
-}
-
-/* Mensagens de Status (Feedback) */
-.status-message {
-    margin-top: 15px;
-    padding: 12px;
-    border-radius: 6px;
-    font-weight: bold;
-    text-align: center;
-    display: none;
-}
-.status-message.success {
-    background-color: #43b58130;
-    color: #43b581;
-    display: block;
-}
-.status-message.error {
-    background-color: #F0474730;
-    color: #F04747;
-    display: block;
-}
-
-/* ====================================================
-   RODAPÉ
-   ==================================================== */
-#dashboard-footer {
-    width: 100%;
-    padding: 15px 40px;
-    background-color: #e9e9e9;
-    color: #777;
-    text-align: center;
-    border-top: 1px solid #ddd;
-    margin-top: 40px;
-    box-sizing: border-box;
-}
+/* O resto do CSS para outras telas (welcome, settings, etc.) deve ser mantido abaixo */

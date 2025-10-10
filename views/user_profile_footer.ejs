@@ -1,0 +1,14 @@
+<div class="user-profile-widget sidebar-footer-profile">
+    <img src="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128` : 'https://cdn.discordapp.com/embed/avatars/0.png' %>" 
+         alt="Avatar" class="user-avatar-large">
+    <div class="user-details-group">
+        <span class="user-tag-large"><%= user.username %></span>
+        <span class="user-id">@<%= user.username.split('_')[0] %>_tr</span>
+    </div>
+
+    <div class="action-buttons-group">
+        <button class="btn btn-theme-toggle" onclick="toggleTheme()">
+            Tema
+        </button>
+    </div>
+</div>

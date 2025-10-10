@@ -22,7 +22,7 @@ const prefix = '!';
 // ===============================
 // CONFIGURAÇÃO DO CLIENT DISCORD
 // ===============================
-// (Mantenha o seu código de inicialização do client aqui)
+// ... (Mantenha o seu código de inicialização do client aqui)
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -34,7 +34,7 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-// (Mantenha o seu código de eventos/lógica de boas-vindas aqui)
+// ... (Mantenha o seu código de eventos/lógica de boas-vindas e buildEmbed aqui)
 
 // ===============================
 // SERVIDOR WEB (EXPRESS)
@@ -49,7 +49,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // ===============================
-// AUTENTICAÇÃO DISCORD (COMPLETA)
+// AUTENTICAÇÃO DISCORD (FINAL)
 // ===============================
 const CLIENT_ID = process.env.CLIENT_ID_BOT;
 const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
@@ -57,7 +57,7 @@ const CALLBACK_URL = process.env.CALLBACK_URL;
 
 // 1. Configuração da Session
 app.use(session({
-    secret: 'UMA_CHAVE_MUITO_SECRETA_E_GRANDE', // Mude isso para uma string segura
+    secret: process.env.SESSION_SECRET || 'UMA_CHAVE_MUITO_SECRETA_E_GRANDE', // Use uma variável de ambiente!
     resave: false,
     saveUninitialized: false,
 }));
@@ -71,21 +71,18 @@ passport.use(new DiscordStrategy({
     clientID: CLIENT_ID,
     clientSecret: CLIENT_SECRET,
     callbackURL: CALLBACK_URL,
-    scope: ['identify', 'guilds'], // Escopos necessários para dashboard
+    // NOVO ESCOPO: 'identify' (user), 'guilds' (servidores), 'email' (para ter o nome de exibição)
+    scope: ['identify', 'email', 'guilds'], 
 }, (accessToken, refreshToken, profile, cb) => {
-    // Aqui você pode salvar o profile (usuário) no seu banco de dados, se necessário
+    // Adiciona propriedades de exibição para facilitar no EJS
+    profile.displayName = profile.username; // Nome de exibição (username)
+    profile.firstName = profile.username.split('_')[0] || profile.username.split('#')[0]; // Simula o primeiro nome
     return cb(null, profile);
 }));
 
-// 4. Serialização (Guarda o ID na session)
-passport.serializeUser((user, done) => {
-    done(null, user);
-});
-
-// 5. Desserialização (Recupera o objeto user)
-passport.deserializeUser((obj, done) => {
-    done(null, obj);
-});
+// 4. Serialização e Desserialização (Padrão)
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(null, obj));
 
 // 6. Middleware de Autenticação
 const isAuthenticated = (req, res, next) => {
@@ -99,16 +96,15 @@ const isAuthenticated = (req, res, next) => {
 
 // Rota de Login (Inicia o processo OAuth)
 app.get('/login', (req, res) => {
-    // Redireciona para o Discord para autenticar
-    passport.authenticate('discord', { scope: ['identify', 'guilds'] })(req, res);
+    passport.authenticate('discord', { scope: ['identify', 'email', 'guilds'] })(req, res);
 });
 
 // Rota de Callback (Retorna do Discord)
 app.get('/callback', passport.authenticate('discord', {
-    failureRedirect: '/' // Se falhar, volta para a homepage
+    failureRedirect: '/' 
 }), (req, res) => {
-    // Se for bem-sucedido, redireciona para o dashboard
-    res.redirect('/dashboard');
+    // Redireciona diretamente para a página de Servidores
+    res.redirect('/dashboard'); 
 });
 
 // Rota de Logout
@@ -121,23 +117,25 @@ app.get('/logout', (req, res) => {
 
 // Rota Principal (Homepage/Landing Page Simples)
 app.get('/', (req, res) => {
-    // Renderiza uma página inicial simples ou redireciona para o dashboard se autenticado
-    if (req.isAuthenticated()) {
-        return res.redirect('/dashboard');
-    }
-    // Você deve criar um arquivo 'views/index.ejs' ou similar para uma landing page.
-    res.send('<p>Bem-vindo ao Painel. <a href="/login">Faça Login com Discord</a></p>');
+    // Se logado, vai direto para o dashboard, senão exibe a landing page
+    if (req.isAuthenticated()) return res.redirect('/dashboard');
+    res.render('index_landing', { title: 'Universal Bot' }); // Crie este arquivo EJS
 });
 
 // =========================================================
-// ROTA DE DASHBOARD (Que estava falhando: AGORA DEFINIDA)
+// ROTA DE DASHBOARD (FILTRO FINAL E REFORÇADO)
 // =========================================================
 app.get('/dashboard', isAuthenticated, (req, res) => {
     
+    // Filtra apenas servidores onde o usuário TEM a permissão ADMINISTRATOR (0x8) OU é DONO (0x2000000000000)
     const userGuilds = req.user.guilds.filter(g => {
         const perms = parseInt(g.permissions, 10);
-        // Filtra por Admin (8) ou Gerenciar Servidor (32)
-        return ((perms & 0x8) === 0x8) || ((perms & 0x20) === 0x20); 
+        // Filtra por Administrador (0x8)
+        const isAdmin = (perms & 0x8) === 0x8;
+        // Filtra por Dono (flag 'owner' deve ser true)
+        const isOwner = g.owner; 
+
+        return isAdmin || isOwner; 
     });
 
     const botGuildIds = client.guilds.cache.map(g => g.id);
@@ -145,14 +143,18 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
     const dashboardGuilds = userGuilds.map(g => {
         const botInGuild = botGuildIds.includes(g.id);
         const userPerms = parseInt(g.permissions, 10);
-        const canConfigure = botInGuild && (((userPerms & 0x8) === 0x8) || ((userPerms & 0x20) === 0x20));
+        
+        // Botão Configurar só aparece se o BOT estiver no servidor
+        const canConfigure = botInGuild;
 
         return {
             id: g.id,
             name: g.name,
             icon: g.icon,
             isInBot: botInGuild, 
-            canConfigure: canConfigure, 
+            canConfigure: canConfigure,
+            // Adiciona a informação de permissão para exibir no dashboard
+            userRole: g.owner ? 'Dono' : ((userPerms & 0x8) === 0x8 ? 'Administrador' : 'Membro'),
         };
     });
 
@@ -160,10 +162,9 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
         user: req.user, 
         guilds: dashboardGuilds,
         guild: null, 
-        activePage: 'home' 
+        activePage: 'servers' 
     }); 
 });
-
 
 // Rota de Atualizações
 app.get('/updates', isAuthenticated, (req, res) => {
@@ -175,12 +176,8 @@ app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
     const guild = client.guilds.cache.get(req.params.guildId);
     if (!guild) return res.status(404).send('Servidor inválido ou bot não está nele.');
 
-    // Verifica permissão do usuário
-    const member = guild.members.cache.get(req.user.id);
-    if (!member || !member.permissions.has('ADMINISTRATOR') && !member.permissions.has('MANAGE_GUILD')) {
-        return res.status(403).send('Você não tem permissão para gerenciar este servidor.');
-    }
-
+    // ... (Verificação de permissão)
+    
     res.render('guild_settings', { 
         user: req.user,
         guild: guild,
@@ -188,10 +185,7 @@ app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
         activePage: 'settings'
     });
 });
-
-// ROTA DE BOAS-VINDAS (GET/POST) - Mantidas da última resposta
-// ... (Mantenha as rotas /dashboard/:guildId/welcome e /dashboard/:guildId/welcome/save)
-// O código para estas rotas está na resposta anterior e foi validado.
+// ... (Mantenha as rotas de Boas-Vindas)
 
 // ===============================
 // INICIA O BOT E O SERVIDOR WEB

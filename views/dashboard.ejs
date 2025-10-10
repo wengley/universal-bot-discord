@@ -1,24 +1,24 @@
-<%- include('header', { user: user, guild: null, activePage: 'home' }) %>
+<%- include('header', { user: user, guild: guild, activePage: 'servers' }) %>
 
 <div class="main-content">
-    <h1><i class="fas fa-server"></i> Seleção de Servidor</h1>
-    <p>Selecione um servidor para configurar. Apenas servidores onde você tem permissão de **Administrador** ou **Gerenciar Servidor** são mostrados.</p>
-    
+    <h1>Servidores</h1>
+    <p>Aqui estão todos os servidores que você gerencia (Dono ou Administrador). Apenas servidores onde o **Universal Bot** está presente podem ser configurados.</p>
+
     <div class="guild-list">
         <% guilds.forEach(g => { %>
-            <div class="guild-item">
-                <img src="<%= g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=128` : '/images/default-guild.png' %>" alt="Icone" class="guild-icon">
+            <div class="guild-item <%= g.isInBot ? 'ready' : 'invite' %>">
+                <img src="<%= g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : '/images/default-server-icon.png' %>" 
+                     alt="Ícone" class="guild-icon">
+                
                 <div class="guild-details">
                     <span class="guild-name"><%= g.name %></span>
-                    <span class="guild-id-label">ID: <%= g.id %></span>
+                    <span class="guild-role-tag"><%= g.userRole %></span> 
                 </div>
-                
+
                 <% if (g.canConfigure) { %>
-                    <a href="/dashboard/<%= g.id %>" class="btn status-btn status-ready">Configurar</a>
-                <% } else if (g.isInBot) { %>
-                    <span class="status-btn status-denied">Sem Permissão</span>
+                    <a href="/dashboard/<%= g.id %>" class="btn btn-primary status-btn">Configurar</a>
                 <% } else { %>
-                    <a href="https://discord.com/oauth2/authorize?client_id=<%= process.env.CLIENT_ID_BOT %>&scope=bot%20applications.commands&permissions=8&guild_id=<%= g.id %>" target="_blank" class="btn status-btn status-invite">Convidar Bot</a>
+                    <a href="<YOUR_BOT_INVITE_LINK>&guild_id=<%= g.id %>" target="_blank" class="btn btn-invite status-btn">Convidar</a>
                 <% } %>
             </div>
         <% }); %>
