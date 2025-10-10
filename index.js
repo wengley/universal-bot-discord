@@ -10,7 +10,7 @@ const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
-const bodyParser = require('body-parser'); // Adicionado para lidar com POST
+const bodyParser = require('body-parser');
 
 // ===============================
 // CONFIGURAÇÕES INICIAIS
@@ -42,7 +42,6 @@ if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
     for (const file of commandFiles) {
         const cmd = require(path.join(commandsPath, file));
-        // Lógica para garantir que os comandos têm nome e execução
         if (cmd.name && cmd.execute) client.commands.set(cmd.name, cmd);
     }
 } else {
@@ -52,10 +51,8 @@ if (fs.existsSync(commandsPath)) {
 // ===============================
 // EVENTOS DISCORD
 // ===============================
-client.once('ready', () => {
-    console.log(`✅ Bot online como ${client.user.tag}`);
-});
 
+// Funções Auxiliares (mantidas para o painel)
 const replacePlaceholders = (text, member) => {
     if (!text) return '';
     return text
@@ -101,7 +98,6 @@ client.on('guildMemberRemove', async member => {
 // ======= COMANDOS / AFK =======
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.content.startsWith(prefix)) return;
-    // Lógica de comando
     const args = message.content.slice(prefix.length).trim().split(/ +/);
     const name = args.shift().toLowerCase();
     const command = client.commands.get(name);
@@ -115,24 +111,21 @@ client.on('messageCreate', async message => {
 });
 
 // ===============================
-// LOGIN DO BOT
-// ===============================
-client.login(process.env.TOKEN_BOT); // CORRIGIDO PARA TOKEN_BOT
-
-// ===============================
-// SERVIDOR WEB (PAINEL RENDER)
+// SERVIDOR WEB (EXPRESS)
 // ===============================
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.engine('ejs', require('ejs').__express); // CORREÇÃO CRÍTICA MANTIDA
-app.use(express.static('public')); // ESSENCIAL PARA O CSS
-
+app.engine('ejs', require('ejs').__express); // CORREÇÃO CRÍTICA
+app.use(express.static('public')); // CSS
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+// ===============================
+// AUTENTICAÇÃO DISCORD
+// ===============================
 app.use(
     session({
         secret: process.env.SESSION_SECRET || 'uma-chave-secreta-forte',
@@ -144,7 +137,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// CONFIGURAÇÃO DE VARIÁVEIS DE AMBIENTE (CORRIGIDO PARA _BOT)
+// CONFIGURAÇÃO DE VARIÁVEIS DE AMBIENTE (Corrigido para _BOT)
 const CLIENT_ID = process.env.CLIENT_ID_BOT;
 const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
 const CALLBACK_URL = process.env.CALLBACK_URL;
@@ -155,8 +148,8 @@ passport.deserializeUser((obj, done) => done(null, obj));
 passport.use(
     new DiscordStrategy(
         {
-            clientID: CLIENT_ID, // VARIÁVEL CORRIGIDA
-            clientSecret: CLIENT_SECRET, // VARIÁVEL CORRIGIDA
+            clientID: CLIENT_ID, 
+            clientSecret: CLIENT_SECRET, 
             callbackURL: CALLBACK_URL,
             scope: ['identify', 'guilds'],
         },
@@ -171,7 +164,6 @@ passport.use(
 // ===============================
 const isAuthenticated = (req, res, next) => {
     if (req.isAuthenticated()) return next();
-    // Verifica se a requisição é JSON (API) ou página (Redirecionamento)
     if (req.method === 'POST') {
         return res.status(401).json({ success: false, message: 'Sua sessão expirou.' });
     }
@@ -192,7 +184,6 @@ app.get('/logout', (req, res, next) => req.logout(() => res.redirect('/')));
 
 // Rota de Seleção de Servidor
 app.get('/dashboard', isAuthenticated, (req, res) => {
-    // Note: 'guild' e 'activePage' são passados como 'null' ou 'home' para o header funcionar
     res.render('dashboard', { user: req.user, guilds: req.user.guilds, guild: null, activePage: 'home' }); 
 });
 
@@ -202,7 +193,6 @@ app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
     const guild = client.guilds.cache.get(guildId);
     if (!guild) return res.status(404).send('Servidor inválido ou bot não está nele.');
 
-    // Simulação de dados para a página de settings
     const currentAutoroleId = await db.get(`autorole_${guildId}`) || 'none';
     const roles = guild.roles.cache.filter(r => r.id !== guild.id).sort((a, b) => b.position - a.position);
 
@@ -238,9 +228,8 @@ app.get('/dashboard/:guildId/events', isAuthenticated, async (req, res) => {
     const guild = client.guilds.cache.get(req.params.guildId);
     if (!guild) return res.status(404).send('Servidor inválido ou bot não está nele.');
 
-    // Placeholder para logs
     const recentLogs = [
-        { type: 'INFO', message: 'Nenhuma lógica de logs implementada no DB.', timestamp: new Date() },
+        { type: 'INFO', message: 'Logs de evento ainda não implementados.', timestamp: new Date() },
     ];
 
     res.render('guild_events', {
@@ -251,13 +240,28 @@ app.get('/dashboard/:guildId/events', isAuthenticated, async (req, res) => {
     });
 });
 
+// Rota para salvar configurações (Exemplo)
+app.post('/dashboard/:guildId/save', isAuthenticated, async (req, res) => {
+    // Implemente a lógica de salvar aqui
+    res.json({ success: true, message: 'Configurações salvas (Lógica POST a ser implementada).' });
+});
+
 
 // ===============================
-// ROTAS POST (Omitidas por espaço - use as rotas de POST que você já tem)
+// INICIA O BOT E O SERVIDOR WEB (CORREÇÃO FINAL DO ERRO)
 // ===============================
 
+// 1. Faz login do bot
+client.login(process.env.TOKEN_BOT);
 
-// ===============================
-// INICIA SERVIDOR WEB
-// ===============================
-app.listen(PORT, () => console.log(`🌐 Painel rodando na porta ${PORT}`));
+// 2. Ouve na porta SOMENTE após o bot estar pronto
+client.once('ready', () => {
+    console.log(`✅ Bot online como ${client.user.tag}`);
+
+    // INICIA O SERVIDOR WEB AQUI DENTRO DO EVENTO 'ready'
+    app.listen(PORT, () => {
+        console.log(`🌐 Painel rodando na porta ${PORT}`);
+        // Isso é útil para ver o link correto nos logs do Render
+        console.log(`🔗 Link do Painel: ${CALLBACK_URL.replace('/callback', '')}`);
+    });
+});
