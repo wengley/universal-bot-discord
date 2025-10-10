@@ -1,6 +1,20 @@
 <%- include('header', { user: user, guild: guild, activePage: 'config' }) %>
-    <div class="main-content">
-        <h2>Comandos</h2>
-        <p>Lista de comandos do bot para configurar</p>
+
+<div class="main-content">
+    <h1>Comandos Ativos em <%= guild.name %></h1>
+    
+    <div class="command-list">
+        <% if (commands.length > 0) { %>
+            <% commands.forEach(cmd => { %>
+                <div class="command-item">
+                    <h3><%= cmd.name %></h3>
+                    <p><strong>Descrição:</strong> <%= cmd.desc %></p>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <p>Nenhum comando encontrado na pasta `/commands`.</p>
+        <% } %>
     </div>
+</div>
+
 <%- include('footer') %>

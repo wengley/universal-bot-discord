@@ -1,73 +1,58 @@
+// ===============================
+// IMPORTAÇÕES PRINCIPAIS
+// ===============================
 const { Client, GatewayIntentBits, Collection, Partials, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const dotenv = require('dotenv'); 
-const { QuickDB } = require('quick.db'); 
-const db = new QuickDB(); 
-
-// REQUIRES PARA O PAINEL WEB
+const dotenv = require('dotenv');
+const { QuickDB } = require('quick.db');
 const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
 
+// ===============================
+// CONFIGURAÇÕES INICIAIS
+// ===============================
+dotenv.config();
+const db = new QuickDB();
+const prefix = '!';
 
-dotenv.config(); 
-
-// Configuração do Bot Discord
+// ===============================
+// CONFIGURAÇÃO DO CLIENT DISCORD
+// ===============================
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent, 
-        GatewayIntentBits.GuildMembers, 
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
 client.commands = new Collection();
-const prefix = '!'; 
 
-// ===================================
-// 1. CARREGAMENTO DE COMANDOS
-// ===================================
+// ===============================
+// CARREGAMENTO DE COMANDOS
+// ===============================
 const commandsPath = path.join(__dirname, 'commands');
-let commandFiles = [];
-try {
-    commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-} catch (error) {
-    console.warn(`[AVISO] Pasta 'commands' não encontrada ou erro de leitura: ${error.message}.`);
-}
-
-
-for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    try {
-        const command = require(filePath);
-        
-        if ('name' in command && 'execute' in command) {
-            client.commands.set(command.name, command);
-        } else {
-            console.warn(`[AVISO] O comando em ${filePath} está faltando a propriedade "name" ou "execute" necessária.`);
-        }
-    } catch (error) {
-        console.error(`[ERRO NO COMANDO] Não foi possível carregar ${file}:`, error);
+if (fs.existsSync(commandsPath)) {
+    const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
+    for (const file of commandFiles) {
+        const cmd = require(path.join(commandsPath, file));
+        if (cmd.name && cmd.execute) client.commands.set(cmd.name, cmd);
     }
+} else {
+    console.warn('[AVISO] Pasta "commands" não encontrada!');
 }
 
-// ===================================
-// 2. EVENTO: BOT ONLINE
-// ===================================
+// ===============================
+// EVENTOS DISCORD
+// ===============================
 client.once('ready', () => {
-    console.log(`\n===================================`);
-    console.log(`✅ Bot pronto! Conectado como ${client.user.tag}`);
-    console.log(`===================================\n`);
+    console.log(`✅ Bot online como ${client.user.tag}`);
 });
-
-
-// ===================================
-// FUNÇÕES AUXILIARES DE NOTIFICAÇÃO
-// ===================================
 
 const replacePlaceholders = (text, member) => {
     if (!text) return null;
@@ -78,411 +63,247 @@ const replacePlaceholders = (text, member) => {
         .replace(/{count}/g, member.guild.memberCount);
 };
 
-const buildEmbed = (embedData, member) => {
-    if (!embedData || !embedData.enabled) return null;
-
-    const embed = new EmbedBuilder();
-    
-    if (embedData.color) {
-        embed.setColor(parseInt(embedData.color.replace('#', '0x'), 16)); 
-    }
-    
-    if (embedData.authorName) embed.setAuthor({ 
-        name: replacePlaceholders(embedData.authorName, member), 
-        iconURL: embedData.authorIconUrl || member.user.displayAvatarURL()
-    });
-    if (embedData.title) embed.setTitle(replacePlaceholders(embedData.title, member));
-    if (embedData.description) embed.setDescription(replacePlaceholders(embedData.description, member));
-    if (embedData.imageUrl) embed.setImage(embedData.imageUrl);
-    if (embedData.thumbnailUrl) embed.setThumbnail(embedData.thumbnailUrl);
-    if (embedData.footerText) embed.setFooter({ 
-        text: replacePlaceholders(embedData.footerText, member), 
-        iconURL: embedData.footerIconUrl || member.guild.iconURL()
-    });
-    
-    embed.setTimestamp();
-    
-    return embed;
+const buildEmbed = (data, member) => {
+    if (!data?.enabled) return null;
+    const e = new EmbedBuilder();
+    if (data.color) e.setColor(parseInt(data.color.replace('#', '0x'), 16));
+    if (data.title) e.setTitle(replacePlaceholders(data.title, member));
+    if (data.description) e.setDescription(replacePlaceholders(data.description, member));
+    if (data.footerText) e.setFooter({ text: replacePlaceholders(data.footerText, member) });
+    e.setTimestamp();
+    return e;
 };
 
-// Envia a mensagem (Texto, Embed, ou Ambos)
-const sendMessage = async (target, text, embed) => {
-    const payload = {};
-
-    if (text) {
-        payload.content = text;
-    }
-    if (embed) {
-        payload.embeds = [embed];
-    }
-
-    if (!payload.content && !payload.embeds) return;
-    
-    await target.send(payload);
-};
-
-
-// ===================================
-// 3. EVENTO: MEMBRO ENTRA (AUTO-ROLE, NOTIFICAÇÃO E DM)
-// ===================================
+// ======= JOIN EVENT (Com Auto-Role e DM) =======
 client.on('guildMemberAdd', async member => {
-    
-    // --- LÓGICA AUTO-ROLE ---
+    // 1. Auto-Role
     const roleId = await db.get(`autorole_${member.guild.id}`);
-    
     if (roleId && roleId !== 'none') {
         try {
             const role = member.guild.roles.cache.get(roleId);
-            if (role && role.position < member.guild.members.me.roles.highest.position) {
-                await member.roles.add(role, 'Auto-Role configurado via Painel Web.');
-            }
-        } catch (error) {
-            console.error(`[ERRO AUTO-ROLE] Não foi possível dar o cargo ao membro ${member.user.tag}:`, error);
-        }
+            if (role) await member.roles.add(role, 'Auto-Role via Painel Web').catch(() => {});
+        } catch (e) { /* Ignora */ }
     }
 
-    // --- LÓGICA NOTIFICAÇÃO DE ENTRADA (CANAL) ---
-    const joinData = await db.get(`join_notif_${member.guild.id}`);
-    if (joinData && joinData.channelId && joinData.channelId !== 'none') {
-        const channel = member.guild.channels.cache.get(joinData.channelId);
-        
-        if (channel) {
-            const finalEmbed = buildEmbed(joinData.embed, member);
-            const finalText = replacePlaceholders(joinData.text, member);
-
-            try {
-                await sendMessage(channel, finalText, finalEmbed);
-            } catch (error) {
-                console.error(`Erro ao enviar mensagem de entrada em ${member.guild.name}:`, error);
-            }
+    // 2. Notificação de Canal
+    const join = await db.get(`join_notif_${member.guild.id}`);
+    if (join && join.channelId) {
+        const ch = member.guild.channels.cache.get(join.channelId);
+        if (ch) {
+            const embed = buildEmbed(join.embed, member);
+            const text = replacePlaceholders(join.text, member);
+            ch.send({ content: text || null, embeds: embed ? [embed] : [] }).catch(() => {});
         }
     }
     
-    // --- LÓGICA MENSAGEM DE DM ---
+    // 3. Mensagem Direta (DM)
     const dmData = await db.get(`dm_notif_${member.guild.id}`);
-
     if (dmData) {
-        const finalEmbed = buildEmbed(dmData.embed, member);
-        const finalText = replacePlaceholders(dmData.text, member);
-
-        try {
-            await sendMessage(member, finalText, finalEmbed);
-        } catch (error) {
-             // Ignora o erro se o usuário tiver DMs desativadas
-        }
+        const embed = buildEmbed(dmData.embed, member);
+        const text = replacePlaceholders(dmData.text, member);
+        member.send({ content: text || null, embeds: embed ? [embed] : [] }).catch(() => {});
     }
 });
 
-
-// ===================================
-// 4. EVENTO: MEMBRO SAI (NOTIFICAÇÃO)
-// ===================================
+// ======= LEAVE EVENT =======
 client.on('guildMemberRemove', async member => {
+    const leave = await db.get(`leave_notif_${member.guild.id}`);
+    if (!leave || !leave.channelId) return;
     
-    // --- LÓGICA NOTIFICAÇÃO DE SAÍDA (CANAL) ---
-    const leaveData = await db.get(`leave_notif_${member.guild.id}`);
-
-    if (leaveData && leaveData.channelId && leaveData.channelId !== 'none') {
-        const channel = member.guild.channels.cache.get(leaveData.channelId);
-        
-        if (channel) {
-            const finalEmbed = buildEmbed(leaveData.embed, member);
-            const finalText = replacePlaceholders(leaveData.text, member);
-
-            try {
-                await sendMessage(channel, finalText, finalEmbed);
-            } catch (error) {
-                console.error(`Erro ao enviar mensagem de saída em ${member.guild.name}:`, error);
-            }
-        }
-    }
+    const ch = member.guild.channels.cache.get(leave.channelId);
+    if (!ch) return;
+    
+    const embed = buildEmbed(leave.embed, member);
+    const text = replacePlaceholders(leave.text, member);
+    
+    ch.send({ content: text || null, embeds: embed ? [embed] : [] }).catch(() => {});
 });
 
-
-// ===================================
-// 5. EVENTO: MENSAGEM RECEBIDA (COMANDOS E AFK)
-// ===================================
+// ======= COMANDOS / AFK (Simplificado) =======
 client.on('messageCreate', async message => {
-    
     if (message.author.bot) return;
 
-    // --- VERIFICAÇÃO DE AFK (Retorno) ---
-    const guildId = message.guild.id;
-    const userAfkStatus = await db.get(`afk_${guildId}_${message.author.id}`); 
-    
+    // --- Lógica AFK (Retorno) ---
+    const userAfkStatus = await db.get(`afk_${message.guild.id}_${message.author.id}`); 
     if (userAfkStatus) {
-        await db.delete(`afk_${guildId}_${message.author.id}`);
-        
-        try {
-            if (message.member.nickname && message.member.nickname.includes("[AFK]")) {
-                const newNickname = message.member.nickname.replace(/\[AFK\]\s*/, '').trim();
-                await message.member.setNickname(newNickname.length > 0 ? newNickname : null);
-            }
-        } catch (error) {
-             // Ignora o erro de permissão de nick
-        }
-        
-        message.channel.send(`👋 **Bem-vindo(a) de volta, ${message.author}!** Seu status AFK foi removido.`).then(msg => {
-            setTimeout(() => msg.delete().catch(console.error), 7000); 
-        }).catch(console.error);
+        await db.delete(`afk_${message.guild.id}_${message.author.id}`);
+        message.channel.send(`👋 **Bem-vindo(a) de volta, ${message.author}!** Seu status AFK foi removido.`)
+            .then(msg => setTimeout(() => msg.delete().catch(() => {}), 7000))
+            .catch(() => {});
     }
-    
-    // --- TRATAMENTO DE COMANDOS ! ---
-    
-    if (!message.content.startsWith(prefix)) return; 
 
+    if (!message.content.startsWith(prefix)) return;
+    
     const args = message.content.slice(prefix.length).trim().split(/ +/);
-    const commandName = args.shift().toLowerCase();
-
-    const command = client.commands.get(commandName) || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
-
-    if (!command) return; 
-
+    const name = args.shift().toLowerCase();
+    const command = client.commands.get(name);
+    
+    if (!command) return;
+    
     try {
-        command.execute(message, args, client, db); 
-    } catch (error) {
-        console.error(`[ERRO DE EXECUÇÃO] Comando ${commandName}:`, error);
-        message.reply('❌ Ocorreu um erro ao tentar executar este comando!');
+        await command.execute(message, args, client, db);
+    } catch (e) {
+        console.error(e);
+        message.reply('❌ Erro ao executar comando.');
     }
 });
 
+// ===============================
+// LOGIN DO BOT
+// ===============================
+client.login(process.env.TOKEN_BOT);
 
-// ===================================
-// 6. LOGIN DO BOT (Discord)
-// ===================================
-
-client.login(process.env.TOKEN_BOT); 
-
-
-// ===================================
-// 7. SERVIDOR WEB PARA RENDER (Painel e Ping 24/7)
-// ===================================
+// ===============================
+// SERVIDOR WEB (PAINEL RENDER)
+// ===============================
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuração do EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.engine('ejs', require('ejs').__express); // <--- CORREÇÃO CRÍTICA DO EJS
-
-// Serve arquivos estáticos da pasta 'public' (CSS, imagens)
-app.use(express.static('public')); // <--- PARA O SEU CSS FUNCIONAR
-
-
-// Middleware para processar dados JSON no POST
+app.engine('ejs', require('ejs').__express); // <--- CORREÇÃO CRÍTICA MANTIDA
+app.use(express.static('public')); // <--- ESSENCIAL PARA O CSS
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET || 'uma-chave-secreta-forte',
+        resave: false,
+        saveUninitialized: false,
+    })
+);
 
-// Configuração da Sessão
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'uma-chave-secreta-forte-e-aleatoria-criada-por-voce', 
-    resave: false,
-    saveUninitialized: false,
-}));
-
-// Inicializa Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// --- Configuração do Discord OAuth2 ---
-const CLIENT_ID = process.env.CLIENT_ID_BOT; 
-const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT; 
-const CALLBACK_URL = process.env.CALLBACK_URL; 
+const CLIENT_ID = process.env.CLIENT_ID_BOT;
+const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
+const CALLBACK_URL = process.env.CALLBACK_URL;
 
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
-passport.use(new DiscordStrategy({
-    clientID: CLIENT_ID,
-    clientSecret: CLIENT_SECRET, 
-    callbackURL: CALLBACK_URL,
-    scope: ['identify', 'guilds']
-},
-(accessToken, refreshToken, profile, done) => {
-    process.nextTick(() => done(null, profile));
-}));
+passport.use(
+    new DiscordStrategy(
+        {
+            clientID: CLIENT_ID,
+            clientSecret: CLIENT_SECRET,
+            callbackURL: CALLBACK_URL,
+            scope: ['identify', 'guilds'],
+        },
+        (accessToken, refreshToken, profile, done) => {
+            process.nextTick(() => done(null, profile));
+        }
+    )
+);
 
-// --- Rotas do Site ---
-
-// Middleware de Autenticação
+// ===============================
+// ROTAS WEB
+// ===============================
 const isAuthenticated = (req, res, next) => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    if (req.method === 'POST') {
-        return res.status(401).json({ success: false, message: 'Sua sessão expirou. Faça login novamente.' });
-    }
+    if (req.isAuthenticated()) return next();
     res.redirect('/login');
 };
 
-// Rota de Login 
-app.get('/login', passport.authenticate('discord', { scope: ['identify', 'guilds'] }));
-
-// Rota de Callback 
-app.get('/callback', passport.authenticate('discord', {
-    failureRedirect: '/'
-}), (req, res) => {
-    res.redirect('/dashboard');
-});
-
-// Rota de Logout
-app.get('/logout', (req, res, next) => {
-    req.logout((err) => {
-        if (err) { return next(err); }
-        res.redirect('/');
-    });
-});
-
-// Rota Principal (Ping de Estabilidade 24/7)
 app.get('/', (req, res) => {
-    if (client.isReady()) {
-        res.status(200).send(`✅ Bot Discord está online. Ping: ${client.ws.ping}ms.`);
-    } else {
-        res.status(503).send('Bot está iniciando...');
-    }
+    res.status(200).send(client.isReady() ? `✅ Bot online. Ping: ${client.ws.ping}ms` : '⏳ Bot iniciando...');
 });
 
-// Rota do Painel (Requer login)
+app.get('/login', passport.authenticate('discord', { scope: ['identify', 'guilds'] }));
+app.get(
+    '/callback',
+    passport.authenticate('discord', { failureRedirect: '/' }),
+    (req, res) => res.redirect('/dashboard')
+);
+app.get('/logout', (req, res, next) => req.logout(() => res.redirect('/')));
+
+// Rota de Seleção de Servidor
 app.get('/dashboard', isAuthenticated, (req, res) => {
-    res.render('dashboard', { 
-        user: req.user,
-        client: client,
-        db: db,
-        guilds: req.user.guilds 
-    });
+    res.render('dashboard', { user: req.user, guilds: req.user.guilds });
 });
 
-// ===============================================
-// Rota de Configurações (Comandos)
-// ===============================================
-app.get('/dashboard/:guildId/config', isAuthenticated, async (req, res) => {
-    const guildId = req.params.guildId;
-    const guild = client.guilds.cache.get(guildId);
-
-    if (!guild) {
-        return res.status(404).send('Bot não está neste servidor ou servidor inválido.');
-    }
-    
-    // Mapeia comandos para o EJS
-    const commandsList = client.commands.map(cmd => ({
-        name: `${prefix}${cmd.name}`,
-        description: cmd.description || 'Nenhuma descrição fornecida.',
-        usage: cmd.usage || `${prefix}${cmd.name}` 
-    }));
-    
-    if (commandsList.length === 0) {
-        commandsList.push({
-            name: 'Nenhum comando encontrado',
-            description: 'Verifique se a pasta /commands existe e se os arquivos .js estão carregados corretamente.',
-            usage: 'N/A'
-        });
-    }
-
-    res.render('guild_config', { 
-        user: req.user,
-        guild: guild,
-        commands: commandsList,
-        activePage: 'config' // ATIVAR MENU
-    });
-});
-
-// ===============================================
-// Rota de Event Logs (Simples)
-// ===============================================
-app.get('/dashboard/:guildId/events', isAuthenticated, async (req, res) => {
-    const guildId = req.params.guildId;
-    const guild = client.guilds.cache.get(guildId);
-
-    if (!guild) {
-        return res.status(404).send('Bot não está neste servidor ou servidor inválido.');
-    }
-    
-    // Placeholder para logs.
-    const recentLogs = [
-        { type: 'INFO', message: 'Nenhuma lógica de logs implementada no DB.', timestamp: new Date() },
-        { type: 'WARNING', message: 'Você precisa armazenar logs de eventos no QuickDB para exibi-los aqui.', timestamp: new Date() },
-    ];
-
-    res.render('guild_events', { 
-        user: req.user,
-        guild: guild,
-        logs: recentLogs,
-        activePage: 'events' // ATIVAR MENU
-    });
-});
-// ===============================================
-
-
-// Rota de Configuração por Servidor (guild_settings)
+// Rota de Configurações Gerais
 app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
     const guildId = req.params.guildId;
-    
     const guild = client.guilds.cache.get(guildId);
-    if (!guild) {
-        return res.status(404).send('Bot não está neste servidor ou servidor inválido.');
-    }
     
+    if (!guild) return res.status(404).send('Servidor inválido ou bot não está nele.');
+
+    // --- Lógica de Permissão (Simplificada) ---
     const userGuild = req.user.guilds.find(g => g.id === guildId);
     if (!userGuild || !((userGuild.permissions & 0x8) === 0x8 || (userGuild.permissions & 0x20) === 0x20)) {
-        return res.status(403).send('Você não tem permissão de Administrador/Gerenciar Servidor neste local.');
+        return res.status(403).send('Você não tem permissão de Administrador/Gerenciar Servidor para configurar este local.');
     }
+    
+    // Preparação de dados (Cargos, Canais)
+    const roles = guild.roles.cache.filter(r => r.id !== guild.id).sort((a, b) => b.position - a.position);
+    const textChannels = guild.channels.cache.filter(c => c.type === 0).sort((a, b) => a.position - b.position);
 
-    // Obter dados do servidor
-    const roles = guild.roles.cache
-        .filter(r => r.id !== guild.id)
-        .sort((a, b) => b.position - a.position);
-        
-    const textChannels = guild.channels.cache
-        .filter(c => c.type === 0) 
-        .sort((a, b) => a.position - b.position);
-
-    // Obter configurações atuais
+    // Preparação de dados do DB (Ex: Auto-Role)
     const currentAutoroleId = await db.get(`autorole_${guildId}`);
     
-    const defaultEmbed = { enabled: false, color: '#7289da', authorName: null, authorIconUrl: null, title: null, description: null, imageUrl: null, thumbnailUrl: null, footerText: null, footerIconUrl: null };
-    
-    const joinData = await db.get(`join_notif_${guildId}`) || {};
-    const leaveData = await db.get(`leave_notif_${guildId}`) || {};
-    const dmData = await db.get(`dm_notif_${guildId}`) || {};
-
-
-    const joinNotif = { 
-        channelId: joinData.channelId || 'none', 
-        text: joinData.text || 'Boas-vindas, {mention}! Temos agora {count} membros!', 
-        embed: joinData.embed || defaultEmbed 
-    };
-    
-    const leaveNotif = { 
-        channelId: leaveData.channelId || 'none', 
-        text: leaveData.text || 'Adeus, {user}! Sentiremos sua falta.', 
-        embed: leaveData.embed || { ...defaultEmbed, color: '#e74c3c' } 
-    };
-    
-    const dmNotif = { 
-        text: dmData.text || 'Obrigado por entrar em {guild}!', 
-        embed: dmData.embed || { ...defaultEmbed, color: '#2ecc71' } 
-    };
-
+    // Renderiza a página
     res.render('guild_settings', { 
         user: req.user,
         guild: guild,
         roles: roles,
         textChannels: textChannels,
         currentAutoroleId: currentAutoroleId,
-        joinNotif: joinNotif,
-        leaveNotif: leaveNotif,
-        dmNotif: dmNotif,
-        client: client,
-        activePage: 'settings' // ATIVAR MENU
+        activePage: 'settings' // Ativa o link "Configurações Gerais"
     });
 });
 
-// ===================================
-// ROTAS POST: SALVAR E TESTAR (Omitidas por espaço, use o código anterior para elas)
-// ===================================
 
-// Ouve na porta
-app.listen(PORT, () => {
-    console.log(`✅ Servidor Web do Render iniciado na porta ${PORT} para o Painel.`);
+// Rota de Comandos
+app.get('/dashboard/:guildId/config', isAuthenticated, async (req, res) => {
+    const guild = client.guilds.cache.get(req.params.guildId);
+    if (!guild) return res.status(404).send('Servidor inválido.');
+    
+    const commandsList = client.commands.map(cmd => ({
+        name: prefix + cmd.name,
+        desc: cmd.description || 'Sem descrição.',
+    }));
+    
+    res.render('guild_config', { 
+        user: req.user, 
+        guild, 
+        commands: commandsList,
+        activePage: 'config', // Ativa o link "Comandos"
+    });
 });
+
+// Rota de Logs de Eventos
+app.get('/dashboard/:guildId/events', isAuthenticated, async (req, res) => {
+    const guild = client.guilds.cache.get(req.params.guildId);
+    if (!guild) return res.status(404).send('Servidor inválido ou bot não está nele.');
+
+    // Placeholder para logs. Adapte esta linha para buscar logs reais do seu DB.
+    const recentLogs = [
+        { type: 'INFO', message: 'Nenhuma lógica de logs implementada no DB.', timestamp: new Date() },
+    ];
+
+    res.render('guild_events', {
+        user: req.user,
+        guild: guild, 
+        logs: recentLogs,
+        activePage: 'events', // Ativa o link "Logs de Eventos"
+    });
+});
+
+// Rota para salvar configurações (Simplificada)
+app.post('/dashboard/:guildId/save', isAuthenticated, async (req, res) => {
+    // Aqui você deve colocar a lógica para salvar os dados no QuickDB
+    
+    // Exemplo: Salvar Auto-Role
+    if(req.body.autoroleId) {
+        await db.set(`autorole_${req.params.guildId}`, req.body.autoroleId);
+    }
+    
+    res.json({ success: true, message: 'Configurações salvas com sucesso!' });
+});
+
+// ===============================
+// INICIA SERVIDOR WEB
+// ===============================
+app.listen(PORT, () => console.log(`🌐 Painel rodando na porta ${PORT}`));

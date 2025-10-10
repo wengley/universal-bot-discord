@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= guild ? `${guild.name} - Painel` : 'Painel de Controle' %></title>
-    <link rel="stylesheet" href="/css/styles.css">
-    </head>
+    <link rel="stylesheet" href="/css/styles.css"> 
+</head>
 <body>
     <div id="wrapper">
         <nav id="sidebar">
@@ -28,7 +28,7 @@
                     <a href="/dashboard/<%= guild.id %>/events">Logs de Eventos</a>
                 </li>
                 <% } %>
-                </ul>
+            </ul>
         </nav>
         
         <div id="content">
@@ -41,7 +41,7 @@
             </div>
             ```
 
-### `views/footer.ejs` (Simples e Essencial)
+### `views/footer.ejs`
 
 ```ejs
         </div> </div> </body>
