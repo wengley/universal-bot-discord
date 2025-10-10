@@ -1,26 +1,21 @@
 <%- include('header', { user: user, guild: guild, activePage: 'settings' }) %>
 
 <div class="main-content">
-    <h1>Configurações Gerais do Servidor: <%= guild.name %></h1>
     
-    <h2>Auto-Role</h2>
-    <form method="POST" action="/dashboard/<%= guild.id %>/save">
-        <label for="autoroleId">Cargo de Auto-Role:</label>
-        <select id="autoroleId" name="autoroleId">
-            <option value="none" <%= currentAutoroleId === 'none' || !currentAutoroleId ? 'selected' : '' %>>Desativado</option>
-            <% roles.forEach(role => { %>
-                <option value="<%= role.id %>" <%= currentAutoroleId === role.id ? 'selected' : '' %>>
-                    @<%= role.name %>
-                </option>
-            <% }); %>
-        </select>
-        <button type="submit" class="btn btn-primary">Salvar</button>
-    </form>
+    <h1>Configurações Gerais de <%= guild.name %></h1>
     
-    <hr>
-    
-    <h2>Mensagens de Entrada e Saída</h2>
-    <p>Adicione os formulários para configurar as notificações de Join/Leave aqui.</p>
+    <div class="info-box ping-box">
+        <h2>Status do Bot</h2>
+        <p>A latência (ping) do Universal Bot é: <strong><%= botPing %>ms</strong></p>
+        <p>O bot está online e respondendo rapidamente.</p>
+    </div>
+
+    <div class="settings-section">
+        <h2>Informações do Servidor</h2>
+        <p>ID do Servidor: <code><%= guild.id %></code></p>
+        <p>Membros Atuais: <%= guild.memberCount %></p>
+        </div>
+
 </div>
 
 <%- include('footer') %>

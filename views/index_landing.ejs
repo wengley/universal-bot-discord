@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="/images/default-icon.png" type="image/png">
+</head>
+<body class="landing-page">
+    <div class="landing-content">
+        <img src="/images/default-icon.png" alt="Logo" class="bot-logo-lg">
+        <h1>Bem-vindo ao <%= title %></h1>
+        <p>Gerencie e configure seu servidor com ferramentas poderosas e customizáveis.</p>
+        
+        <div class="landing-status">
+            <span class="ping-display">Latência do Bot: <strong><%= ping %>ms</strong></span>
+        </div>
+        
+        <a href="/login" class="btn btn-primary btn-large">
+            Faça Login com Discord e acesse o Painel
+        </a>
+    </div>
+
+    <div class="landing-footer">
+        © <%= new Date().getFullYear() %> Universal Bot. Todos os direitos reservados.
+    </div>
+</body>
+</html>

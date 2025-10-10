@@ -22,7 +22,6 @@ const prefix = '!';
 // ===============================
 // CONFIGURAÇÃO DO CLIENT DISCORD
 // ===============================
-// ... (Mantenha o seu código de inicialização do client aqui)
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -34,7 +33,6 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-// ... (Mantenha o seu código de eventos/lógica de boas-vindas e buildEmbed aqui)
 
 // ===============================
 // SERVIDOR WEB (EXPRESS)
@@ -49,65 +47,67 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // ===============================
-// AUTENTICAÇÃO DISCORD (FINAL)
+// AUTENTICAÇÃO DISCORD
 // ===============================
 const CLIENT_ID = process.env.CLIENT_ID_BOT;
 const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
 const CALLBACK_URL = process.env.CALLBACK_URL;
 
-// 1. Configuração da Session
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'UMA_CHAVE_MUITO_SECRETA_E_GRANDE', // Use uma variável de ambiente!
+    secret: process.env.SESSION_SECRET || 'UMA_CHAVE_MUITO_SECRETA_E_GRANDE',
     resave: false,
     saveUninitialized: false,
 }));
 
-// 2. Inicializa o Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// 3. Define a Estratégia Discord
 passport.use(new DiscordStrategy({
     clientID: CLIENT_ID,
     clientSecret: CLIENT_SECRET,
     callbackURL: CALLBACK_URL,
-    // NOVO ESCOPO: 'identify' (user), 'guilds' (servidores), 'email' (para ter o nome de exibição)
     scope: ['identify', 'email', 'guilds'], 
 }, (accessToken, refreshToken, profile, cb) => {
-    // Adiciona propriedades de exibição para facilitar no EJS
-    profile.displayName = profile.username; // Nome de exibição (username)
-    profile.firstName = profile.username.split('_')[0] || profile.username.split('#')[0]; // Simula o primeiro nome
+    profile.displayName = profile.username;
+    profile.firstName = profile.username.split('_')[0] || profile.username.split('#')[0];
     return cb(null, profile);
 }));
 
-// 4. Serialização e Desserialização (Padrão)
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
-// 6. Middleware de Autenticação
 const isAuthenticated = (req, res, next) => {
     if (req.isAuthenticated()) return next();
     res.redirect('/login');
 };
 
 // ===============================
-// ROTAS WEB (AGORA COM AS ROTAS BASE DE LOGIN)
+// ROTAS WEB
 // ===============================
 
-// Rota de Login (Inicia o processo OAuth)
+// Rota Principal (Landing Page com Ping) - Ponto 7
+app.get('/', (req, res) => {
+    const ping = client.ws.ping || 'Calculando...';
+    if (req.isAuthenticated()) return res.redirect('/dashboard');
+    // Renderiza a landing page que você criará
+    res.render('index_landing', { 
+        title: 'Universal Bot',
+        ping: ping,
+        isAuthenticated: req.isAuthenticated(),
+    }); 
+});
+
+// Rotas de Auth (Login, Callback, Logout)
 app.get('/login', (req, res) => {
     passport.authenticate('discord', { scope: ['identify', 'email', 'guilds'] })(req, res);
 });
 
-// Rota de Callback (Retorna do Discord)
 app.get('/callback', passport.authenticate('discord', {
     failureRedirect: '/' 
 }), (req, res) => {
-    // Redireciona diretamente para a página de Servidores
     res.redirect('/dashboard'); 
 });
 
-// Rota de Logout
 app.get('/logout', (req, res) => {
     req.logout((err) => {
         if (err) return res.send("Erro ao fazer logout.");
@@ -115,24 +115,13 @@ app.get('/logout', (req, res) => {
     });
 });
 
-// Rota Principal (Homepage/Landing Page Simples)
-app.get('/', (req, res) => {
-    // Se logado, vai direto para o dashboard, senão exibe a landing page
-    if (req.isAuthenticated()) return res.redirect('/dashboard');
-    res.render('index_landing', { title: 'Universal Bot' }); // Crie este arquivo EJS
-});
-
-// =========================================================
-// ROTA DE DASHBOARD (FILTRO FINAL E REFORÇADO)
-// =========================================================
+// ROTA DE DASHBOARD (Filtro e Lógica)
 app.get('/dashboard', isAuthenticated, (req, res) => {
     
-    // Filtra apenas servidores onde o usuário TEM a permissão ADMINISTRATOR (0x8) OU é DONO (0x2000000000000)
     const userGuilds = req.user.guilds.filter(g => {
         const perms = parseInt(g.permissions, 10);
-        // Filtra por Administrador (0x8)
+        // Filtra por Administrador (0x8) ou Dono
         const isAdmin = (perms & 0x8) === 0x8;
-        // Filtra por Dono (flag 'owner' deve ser true)
         const isOwner = g.owner; 
 
         return isAdmin || isOwner; 
@@ -144,7 +133,7 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
         const botInGuild = botGuildIds.includes(g.id);
         const userPerms = parseInt(g.permissions, 10);
         
-        // Botão Configurar só aparece se o BOT estiver no servidor
+        // O botão Configurar só aparece se o BOT estiver no servidor (Ponto 2)
         const canConfigure = botInGuild;
 
         return {
@@ -153,7 +142,6 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
             icon: g.icon,
             isInBot: botInGuild, 
             canConfigure: canConfigure,
-            // Adiciona a informação de permissão para exibir no dashboard
             userRole: g.owner ? 'Dono' : ((userPerms & 0x8) === 0x8 ? 'Administrador' : 'Membro'),
         };
     });
@@ -162,7 +150,9 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
         user: req.user, 
         guilds: dashboardGuilds,
         guild: null, 
-        activePage: 'servers' 
+        activePage: 'servers',
+        // Adiciona a variável para exibir o alerta de convite (Ponto 8)
+        showInviteAlert: req.query.invite === 'denied' 
     }); 
 });
 
@@ -171,21 +161,52 @@ app.get('/updates', isAuthenticated, (req, res) => {
     res.render('bot_updates', { user: req.user, guild: null, activePage: 'updates' });
 });
 
-// Rota de Configurações Gerais
+// Rota de Configurações Gerais (CRÍTICO: Correção do Internal Server Error) - Ponto 4, 9
 app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
+    
+    // 1. Garante que o bot está pronto e tem o guild no cache
+    if (!client.isReady()) return res.status(503).send('Bot não está pronto. Tente novamente em instantes.');
+
     const guild = client.guilds.cache.get(req.params.guildId);
     if (!guild) return res.status(404).send('Servidor inválido ou bot não está nele.');
 
-    // ... (Verificação de permissão)
+    // 2. Garante que o membro está no cache do guild (importante para evitar crash)
+    let member;
+    try {
+        member = await guild.members.fetch(req.user.id);
+    } catch (e) {
+        // Se a busca falhar (membro saiu ou erro de API)
+        console.error(`Erro ao buscar membro ${req.user.id} no guild ${guild.id}:`, e);
+        return res.status(403).send('Você não é mais membro deste servidor ou erro de permissão.');
+    }
+
+    // 3. Verifica permissão de Owner ou Admin
+    const isOwner = guild.ownerId === req.user.id;
+    const hasAdmin = member.permissions.has('ADMINISTRATOR');
+
+    if (!isOwner && !hasAdmin) {
+        return res.status(403).send('Você não tem permissão de Administrador ou Dono para gerenciar este servidor.');
+    }
     
+    // Supondo que você quer o ping na tela de Configurações Gerais
+    const botPing = client.ws.ping; 
+
     res.render('guild_settings', { 
         user: req.user,
         guild: guild,
         channels: guild.channels.cache.filter(c => c.type === 0),
-        activePage: 'settings'
+        activePage: 'settings',
+        botPing: botPing, // Ponto 6
     });
 });
-// ... (Mantenha as rotas de Boas-Vindas)
+
+// Rota para Simular Convite Negado (Ponto 8)
+app.get('/invite/denied', isAuthenticated, (req, res) => {
+    // Redireciona para o dashboard com o parâmetro de alerta
+    res.redirect('/dashboard?invite=denied');
+});
+
+// ... (Mantenha as rotas de Boas-Vindas se você as tiver)
 
 // ===============================
 // INICIA O BOT E O SERVIDOR WEB

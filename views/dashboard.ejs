@@ -4,9 +4,15 @@
     <h1>Servidores</h1>
     <p>Aqui estão todos os servidores que você gerencia (Dono ou Administrador). Apenas servidores onde o **Universal Bot** está presente podem ser configurados.</p>
 
+    <% if (showInviteAlert) { %>
+        <div class="alert alert-danger">
+            ⚠️ **Sem Permissão para Convidar.** Este bot é privado e não pode ser convidado por esta interface.
+        </div>
+    <% } %>
+
     <div class="guild-list">
         <% guilds.forEach(g => { %>
-            <div class="guild-item <%= g.isInBot ? 'ready' : 'invite' %>">
+            <div class="guild-item <%= g.canConfigure ? 'ready' : 'denied' %>">
                 <img src="<%= g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : '/images/default-server-icon.png' %>" 
                      alt="Ícone" class="guild-icon">
                 
@@ -18,7 +24,7 @@
                 <% if (g.canConfigure) { %>
                     <a href="/dashboard/<%= g.id %>" class="btn btn-primary status-btn">Configurar</a>
                 <% } else { %>
-                    <a href="<YOUR_BOT_INVITE_LINK>&guild_id=<%= g.id %>" target="_blank" class="btn btn-invite status-btn">Convidar</a>
+                    <a href="/invite/denied" class="btn btn-denied status-btn">Bot Ausente</a>
                 <% } %>
             </div>
         <% }); %>
