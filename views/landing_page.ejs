@@ -31,14 +31,15 @@
             justify-content: center;
             margin-bottom: 20px;
         }
+        /* CORREÇÃO DO TAMANHO DA IMAGEM DO BOT */
         .landing-header .bot-icon {
-            width: 60px;
-            height: 60px;
+            width: 48px; /* Tamanho padrão menor */
+            height: 48px;
             border-radius: 50%;
-            margin-right: 15px;
+            margin-right: 10px;
         }
         .landing-container h1 {
-            font-size: 3em;
+            font-size: 2.5em; /* Reduzido levemente */
             color: #5865F2; 
             margin: 0;
             font-weight: 800;
@@ -101,15 +102,13 @@
             Status: Ping atual do Bot é de <strong><%= ping %>ms</strong>
         </div>
         <div class="copyright">
-            Universal Bot com Todos os direitos reservados
+            © Universal Bot. Todos os direitos reservados.
         </div>
     </div>
     <script>
-        // Lógica simples para manter o tema
         if (localStorage.getItem('theme') === 'dark') {
             document.body.classList.add('dark-mode');
         } else {
-            // Garante que o tema claro seja o padrão
             document.body.classList.remove('dark-mode'); 
         }
     </script>
