@@ -19,7 +19,7 @@ dotenv.config();
 const db = new QuickDB();
 const prefix = '!';
 
-// Lista de Comandos para Config. Geral (PONTO 1)
+// Lista de Comandos para Config. Geral
 const BOT_COMMANDS = [
     { name: `!ppt`, description: 'Inicia uma partida de Pedra, Papel e Tesoura contra o Bot.' },
     { name: `!ping`, description: 'Mostra a latência (ping) do Bot.' },
@@ -70,7 +70,9 @@ app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// ... (Configurações de Autenticação - Passport) ...
+// ===============================
+// AUTENTICAÇÃO DISCORD
+// ===============================
 const CLIENT_ID = process.env.CLIENT_ID_BOT;
 const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
 const CALLBACK_URL = process.env.CALLBACK_URL;
@@ -90,6 +92,7 @@ passport.use(new DiscordStrategy({
     callbackURL: CALLBACK_URL,
     scope: ['identify', 'email', 'guilds'], 
 }, (accessToken, refreshToken, profile, cb) => {
+    // Adiciona o global_name (nome de exibição) ao profile para uso no EJS
     profile.displayName = profile.global_name || profile.username;
     return cb(null, profile);
 }));
@@ -132,19 +135,25 @@ async function getGuildContext(req) {
 // ===============================
 // ROTAS WEB
 // ===============================
-
-// ... (Rotas / /login /callback /logout /dashboard /updates /invite/denied) ...
 app.get('/', (req, res) => {
     const ping = client.ws.ping || 'Calculando...';
     if (req.isAuthenticated()) return res.redirect('/dashboard');
-    res.render('index_landing', { title: 'Universal Bot', ping: ping, isAuthenticated: req.isAuthenticated() }); 
+    res.render('index_landing', { 
+        title: 'Universal Bot',
+        ping: ping,
+        isAuthenticated: req.isAuthenticated(),
+    }); 
 });
 app.get('/login', (req, res) => {
     passport.authenticate('discord', { scope: ['identify', 'email', 'guilds'] })(req, res);
 });
-app.get('/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => {
+
+app.get('/callback', passport.authenticate('discord', {
+    failureRedirect: '/' 
+}), (req, res) => {
     res.redirect('/dashboard'); 
 });
+
 app.get('/logout', (req, res) => {
     req.logout((err) => {
         if (err) return res.send("Erro ao fazer logout.");
@@ -152,30 +161,54 @@ app.get('/logout', (req, res) => {
     });
 });
 app.get('/dashboard', isAuthenticated, (req, res) => {
+    
     const userGuilds = req.user.guilds.filter(g => {
         const perms = parseInt(g.permissions, 10);
         const isAdmin = (perms & 0x8) === 0x8;
         const isOwner = g.owner; 
         return isAdmin || isOwner; 
-    }).map(g => ({
-        id: g.id, name: g.name, icon: g.icon, isInBot: client.guilds.cache.has(g.id), canConfigure: client.guilds.cache.has(g.id),
-        userRole: g.owner ? 'Dono' : ((parseInt(g.permissions, 10) & 0x8) === 0x8 ? 'Administrador' : 'Membro'),
-    }));
-    res.render('dashboard', { user: req.user, guilds: userGuilds, guild: null, activePage: 'servers', showInviteAlert: req.query.invite === 'denied' }); 
+    });
+
+    const botGuildIds = client.guilds.cache.map(g => g.id);
+    
+    const dashboardGuilds = userGuilds.map(g => {
+        const botInGuild = botGuildIds.includes(g.id);
+        const userPerms = parseInt(g.permissions, 10);
+        
+        const canConfigure = botInGuild;
+
+        return {
+            id: g.id,
+            name: g.name,
+            icon: g.icon,
+            isInBot: botInGuild, 
+            canConfigure: canConfigure,
+            userRole: g.owner ? 'Dono' : ((userPerms & 0x8) === 0x8 ? 'Administrador' : 'Membro'),
+        };
+    });
+
+    res.render('dashboard', { 
+        user: req.user, 
+        guilds: dashboardGuilds,
+        guild: null, 
+        activePage: 'servers',
+        showInviteAlert: req.query.invite === 'denied' 
+    }); 
 });
 app.get('/updates', isAuthenticated, (req, res) => {
     res.render('bot_updates', { user: req.user, guild: null, activePage: 'updates' });
 });
+
+// Rota para Simular Convite Negado (Bot privado)
 app.get('/invite/denied', isAuthenticated, (req, res) => {
     res.redirect('/dashboard?invite=denied');
 });
-
 
 // ===============================
 // ROTAS DE CONFIGURAÇÃO FUNCIONAL
 // ===============================
 
-// 1. Configurações Gerais (PONTO 1)
+// 1. Configurações Gerais
 app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(context.message);
@@ -191,7 +224,7 @@ app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
     });
 });
 
-// 2. ROTAS BOAS-VINDAS (PONTO 2)
+// 2. ROTAS BOAS-VINDAS
 app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(context.message);
@@ -237,10 +270,24 @@ app.post('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
     if (context.status !== 200) return res.status(context.status).send(context.message);
 
     const { 
-        join_enabled, join_channel_id, join_message, join_embed_enabled, join_embed_color, join_embed_title, join_embed_description, 
-        leave_enabled, leave_channel_id, leave_message, leave_embed_enabled, leave_embed_color, leave_embed_title, leave_embed_description,
-        dm_enabled, dm_message, dm_embed_enabled, dm_embed_color, dm_embed_title, dm_embed_description,
-        // (Simplificado, adicione outros campos de embed aqui quando necessário)
+        // Entrada (Join)
+        join_enabled, join_channel_id, join_message, 
+        join_embed_enabled, join_embed_color, join_embed_author_name, join_embed_author_icon_url, 
+        join_embed_title, join_embed_description, join_embed_image_url, join_embed_thumbnail_url,
+        join_embed_footer_text, join_embed_footer_icon_url,
+        
+        // Saída (Leave)
+        leave_enabled, leave_channel_id, leave_message, 
+        leave_embed_enabled, leave_embed_color, leave_embed_author_name, leave_embed_author_icon_url, 
+        leave_embed_title, leave_embed_description, leave_embed_image_url, leave_embed_thumbnail_url,
+        leave_embed_footer_text, leave_embed_footer_icon_url,
+
+        // DM
+        dm_enabled, dm_message, 
+        dm_embed_enabled, dm_embed_color, dm_embed_author_name, dm_embed_author_icon_url, 
+        dm_embed_title, dm_embed_description, dm_embed_image_url, dm_embed_thumbnail_url,
+        dm_embed_footer_text, dm_embed_footer_icon_url,
+        
     } = req.body;
 
     const newSettings = {
@@ -251,9 +298,14 @@ app.post('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
         join_embed: {
             enabled: !!join_embed_enabled,
             color: join_embed_color,
+            author_name: join_embed_author_name,
+            author_icon_url: join_embed_author_icon_url,
             title: join_embed_title,
             description: join_embed_description,
-            // ... (outros campos de embed)
+            image_url: join_embed_image_url,
+            thumbnail_url: join_embed_thumbnail_url,
+            footer_text: join_embed_footer_text,
+            footer_icon_url: join_embed_footer_icon_url,
         },
         // Leave
         leave_enabled: !!leave_enabled,
@@ -262,9 +314,14 @@ app.post('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
         leave_embed: {
             enabled: !!leave_embed_enabled,
             color: leave_embed_color,
+            author_name: leave_embed_author_name,
+            author_icon_url: leave_embed_author_icon_url,
             title: leave_embed_title,
             description: leave_embed_description,
-            // ... (outros campos de embed)
+            image_url: leave_embed_image_url,
+            thumbnail_url: leave_embed_thumbnail_url,
+            footer_text: leave_embed_footer_text,
+            footer_icon_url: leave_embed_footer_icon_url,
         },
         // DM
         dm_enabled: !!dm_enabled,
@@ -272,9 +329,14 @@ app.post('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
         dm_embed: {
             enabled: !!dm_embed_enabled,
             color: dm_embed_color,
+            author_name: dm_embed_author_name,
+            author_icon_url: dm_embed_author_icon_url,
             title: dm_embed_title,
             description: dm_embed_description,
-            // ... (outros campos de embed)
+            image_url: dm_embed_image_url,
+            thumbnail_url: dm_embed_thumbnail_url,
+            footer_text: dm_embed_footer_text,
+            footer_icon_url: dm_embed_footer_icon_url,
         },
     };
 
@@ -284,7 +346,7 @@ app.post('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
 });
 
 
-// 3. ROTAS AUTOROLE (PONTO 3 - Múltiplos Cargos)
+// 3. ROTAS AUTOROLE
 app.get('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(context.message);
@@ -294,7 +356,7 @@ app.get('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
         roles: await db.get(`guild_${context.guild.id}.autorole.roles`) || [], // Array de IDs
     };
     
-    // Filtra cargos editáveis e que não sejam o @everyone
+    // Filtra cargos editáveis, não sendo @everyone e abaixo da hierarquia do bot
     const availableRoles = context.guild.roles.cache
         .filter(r => r.editable && r.id !== context.guild.id && r.position < context.guild.members.me.roles.highest.position)
         .map(r => ({ id: r.id, name: r.name, color: r.hexColor }));
@@ -313,10 +375,10 @@ app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(context.message);
 
-    const { enabled, roles = [] } = req.body;
+    const { enabled, roles = '' } = req.body;
     
-    // Garante que roles é um array, mesmo que venha como string de um único checkbox ou esteja vazio
-    const rolesArray = Array.isArray(roles) ? roles : (roles ? [roles] : []);
+    // Converte a string de IDs de volta para um array
+    const rolesArray = roles.split(',').filter(id => id.length > 0);
     
     await db.set(`guild_${context.guild.id}.autorole.enabled`, !!enabled);
     await db.set(`guild_${context.guild.id}.autorole.roles`, rolesArray);

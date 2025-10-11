@@ -9,36 +9,118 @@
         </div>
     <% } %>
 
-    <form method="POST">
+    <form method="POST" id="autorole-form">
         <div class="settings-section">
             <h2>Controle de AutoRole</h2>
             <label class="checkbox-container">
-                <input type="checkbox" name="enabled" value="1" <%= settings.enabled ? 'checked' : '' %>>
+                <input type="checkbox" name="enabled" value="1" id="autorole-enabled" <%= settings.enabled ? 'checked' : '' %>>
                 Ativar AutoRole
             </label>
         </div>
         
-        <div class="settings-section">
+        <div class="settings-section feature-box">
             <h2>Cargos que serão dados</h2>
-            <p>Selecione todos os cargos que deseja atribuir automaticamente a novos membros. Segure **Ctrl** ou **Cmd** para selecionar múltiplos.</p>
             
-            <label for="roles-select">Cargos:</label>
-            <select name="roles" id="roles-select" multiple size="8">
+            <p>Selecione os cargos desejados. Eles aparecerão abaixo como tags. Para remover, clique no "X" ou desmarque na lista.</p>
+            
+            <label for="roles-select">Adicionar Cargo:</label>
+            <select id="roles-add-select">
+                <option value="">Selecione para adicionar...</option>
                 <% availableRoles.forEach(role => { %>
-                    <option value="<%= role.id %>" <%= settings.roles.includes(role.id) ? 'selected' : '' %>
-                            style="color: <%= role.color === '#000000' ? '#ccc' : role.color %>;">
+                    <option value="<%= role.id %>" 
+                            data-name="<%= role.name %>"
+                            data-color="<%= role.color %>">
                         <%= role.name %>
                     </option>
                 <% }); %>
             </select>
-            <small>
-                Atenção: O Bot deve ter um cargo **superior** aos cargos selecionados para poder atribuí-los. 
-                Cargos que o bot não pode gerenciar não aparecem aqui.
-            </small>
+            
+            <div id="selected-roles-container" class="selected-roles-container">
+                </div>
+            
+            <small>O Bot deve ter um cargo **superior** aos cargos selecionados para poder atribuí-los.</small>
+            
+            <input type="hidden" name="roles" id="hidden-roles-input" value="<%= settings.roles.join(',') %>">
         </div>
 
         <button type="submit" class="btn btn-primary btn-save-large">Salvar Configurações</button>
     </form>
 </div>
+
+<script>
+    const availableRoles = [
+        <% availableRoles.forEach(role => { %>
+            { id: '<%= role.id %>', name: '<%= role.name %>', color: '<%= role.color %>' },
+        <% }); %>
+    ];
+    let selectedRoleIds = <%= JSON.stringify(settings.roles) %>;
+    const container = document.getElementById('selected-roles-container');
+    const selectElement = document.getElementById('roles-add-select');
+    const hiddenInput = document.getElementById('hidden-roles-input');
+
+    // Função que renderiza todas as tags de cargo
+    function renderRoles() {
+        container.innerHTML = ''; // Limpa o container
+        hiddenInput.value = selectedRoleIds.join(','); // Atualiza o campo oculto
+
+        selectedRoleIds.forEach(roleId => {
+            const role = availableRoles.find(r => r.id === roleId);
+            if (!role) return;
+
+            const tag = document.createElement('span');
+            tag.className = 'role-tag';
+            // PONTO 4: Cor da Tag
+            tag.style.borderColor = role.color === '#000000' ? '#99aab5' : role.color;
+            tag.style.backgroundColor = role.color + '1A'; // Cor do cargo com 10% de opacidade
+
+            // Nome do cargo
+            tag.innerHTML = `${role.name}`;
+
+            // Botão de Remover 'x'
+            const removeBtn = document.createElement('span');
+            removeBtn.className = 'remove-role';
+            removeBtn.innerHTML = 'x';
+            removeBtn.style.backgroundColor = role.color; // Cor de fundo do X
+            removeBtn.style.color = '#fff';
+            removeBtn.onclick = () => removeRole(roleId);
+            
+            tag.appendChild(removeBtn);
+            container.appendChild(tag);
+        });
+        
+        // Desabilita opções já selecionadas no select de adicionar
+        Array.from(selectElement.options).forEach(option => {
+            if (option.value && selectedRoleIds.includes(option.value)) {
+                option.disabled = true;
+            } else {
+                option.disabled = false;
+            }
+        });
+        selectElement.value = ""; // Reseta o select
+    }
+
+    // Função para adicionar um cargo
+    selectElement.onchange = (e) => {
+        const roleId = e.target.value;
+        if (roleId && !selectedRoleIds.includes(roleId)) {
+            selectedRoleIds.push(roleId);
+            renderRoles();
+        }
+    };
+
+    // Função para remover um cargo
+    function removeRole(roleId) {
+        selectedRoleIds = selectedRoleIds.filter(id => id !== roleId);
+        renderRoles();
+    }
+    
+    // Submete o formulário usando o campo hidden (array convertido para string)
+    document.getElementById('autorole-form').onsubmit = (e) => {
+        // Nada a fazer aqui, o hiddenInput já foi atualizado no renderRoles
+    };
+
+    // Renderiza ao carregar a página
+    document.addEventListener('DOMContentLoaded', renderRoles);
+</script>
 
 <%- include('footer') %>

@@ -82,13 +82,16 @@ body.dark-mode .variable-list {
 body.dark-mode .variable-list span {
     background: #4f545c;
 }
+body.dark-mode .selected-roles-container {
+    background: #33364d;
+}
 
 
 /* ==================================================== SIDEBAR (FIXA E ESTÁTICA) ==================================================== */
 #sidebar {
     width: 280px; 
     height: 100vh; 
-    position: fixed; /* FIXO */
+    position: fixed; 
     top: 0;
     left: 0;
     
@@ -217,17 +220,15 @@ body.dark-mode .variable-list span {
     transition: background-color 0.2s, opacity 0.2s;
     text-align: center;
 }
-/* PONTO CRÍTICO: BOTÃO AZUL */
 .btn-primary {
-    background-color: #5865F2; /* Azul para Configurar/Salvar */
+    background-color: #5865F2; 
     color: white;
 }
 .btn-primary:hover {
     background-color: #4854e0;
 }
-/* PONTO CRÍTICO: BOTÃO VERMELHO */
 .btn-denied {
-    background-color: #F04747; /* Vermelho para Bot Ausente */
+    background-color: #F04747; 
     color: white;
 }
 .btn-denied:hover {
@@ -258,9 +259,9 @@ form label {
     font-weight: 600; 
     margin-top: 10px;
 }
-form select, form input[type="text"] {
+form select, form input[type="text"], textarea {
     width: 100%;
-    max-width: 450px; /* Limita a largura dos inputs */
+    max-width: 450px; 
     padding: 10px;
     margin-bottom: 15px;
     border: 1px solid #ccc;
@@ -274,15 +275,6 @@ form small {
     margin-bottom: 15px;
     color: #777;
     font-size: 0.9em;
-}
-textarea {
-    width: 100%;
-    max-width: 450px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 1em;
 }
 
 /* ==================================================== ALERTAS E CAIXAS ==================================================== */
@@ -374,7 +366,7 @@ body.dark-mode .alert-warning {
 }
 
 
-/* ==================================================== TABELA DE COMANDOS (PONTO 1) ==================================================== */
+/* ==================================================== TABELA DE COMANDOS ==================================================== */
 .command-table {
     width: 100%;
     border-collapse: collapse;
@@ -399,7 +391,17 @@ body.dark-mode .alert-warning {
 }
 
 
-/* ==================================================== BOAS-VINDAS & FORMS (PONTO 2) ==================================================== */
+/* ==================================================== BOAS-VINDAS & FORMS ==================================================== */
+/* PONTO 3: Borda Cinza para Separar Seções de Feature */
+.feature-box {
+    border: 1px solid #dcdcdc; 
+    padding: 20px;
+    margin-bottom: 30px;
+}
+body.dark-mode .feature-box {
+    border-color: #3c3f56;
+}
+
 .checkbox-container {
     display: block;
     font-weight: 600;
@@ -409,7 +411,7 @@ body.dark-mode .alert-warning {
 .checkbox-container input[type="checkbox"] {
     margin-right: 8px;
     vertical-align: middle;
-    transform: scale(1.2); /* Deixa a caixa de seleção maior */
+    transform: scale(1.2); 
 }
 .variables-section h2 {
     color: #5865F2;
@@ -431,11 +433,11 @@ body.dark-mode .alert-warning {
     font-size: 0.9em;
 }
 .btn-test-message {
-    background: #faa61a; /* Laranja para Testar */
+    background: #faa61a; 
     color: white;
     margin-top: 5px;
     margin-bottom: 15px;
-    display: block; /* Ocupa a largura total para destaque */
+    display: block; 
     width: 100%;
     max-width: 450px;
 }
@@ -449,12 +451,57 @@ body.dark-mode .alert-warning {
     margin-top: 10px;
 }
 .collapse-content {
-    /* Estado inicial hidden é definido via JS */
     margin-top: 10px;
     padding-bottom: 10px;
     border-left: 2px solid #ddd;
     padding-left: 10px;
 }
+body.dark-mode .collapse-content {
+    border-left-color: #3c3f56;
+}
 .embed-options-group {
     padding: 10px 0;
+}
+
+/* ==================================================== AUTOROLE TAGS ==================================================== */
+.selected-roles-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 15px;
+    padding: 10px;
+    background: #f7f7f7;
+    border-radius: 4px;
+}
+.role-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 0 4px 10px;
+    border: 1px solid; 
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #333;
+    transition: opacity 0.2s;
+}
+body.dark-mode .role-tag {
+    color: #f1f1f1;
+}
+.remove-role {
+    cursor: pointer;
+    margin-left: 8px;
+    padding: 4px 8px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    font-weight: bold;
+    font-family: monospace;
+    line-height: 1;
+}
+.remove-role:hover {
+    opacity: 0.8;
+}
+
+#roles-add-select {
+    width: 100%;
+    max-width: 450px;
 }
