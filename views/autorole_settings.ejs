@@ -21,9 +21,9 @@
         <div class="settings-section feature-box">
             <h2>Cargos que serão dados</h2>
             
-            <p>Selecione os cargos desejados. Eles aparecerão abaixo como tags. Para remover, clique no "X" ou desmarque na lista.</p>
+            <p>Selecione os cargos. Eles aparecerão abaixo como tags. Para remover, clique no "X" da tag.</p>
             
-            <label for="roles-select">Adicionar Cargo:</label>
+            <label for="roles-add-select">Adicionar Cargo:</label>
             <select id="roles-add-select">
                 <option value="">Selecione para adicionar...</option>
                 <% availableRoles.forEach(role => { %>
@@ -38,9 +38,9 @@
             <div id="selected-roles-container" class="selected-roles-container">
                 </div>
             
-            <small>O Bot deve ter um cargo **superior** aos cargos selecionados para poder atribuí-los.</small>
+            <small>O Bot deve ter um cargo **superior** aos cargos selecionados na hierarquia para poder atribuí-los.</small>
             
-            <input type="hidden" name="roles" id="hidden-roles-input" value="<%= settings.roles.join(',') %>">
+            <input type="hidden" name="roles" id="hidden-roles-input" value="">
         </div>
 
         <button type="submit" class="btn btn-primary btn-save-large">Salvar Configurações</button>
@@ -53,53 +53,50 @@
             { id: '<%= role.id %>', name: '<%= role.name %>', color: '<%= role.color %>' },
         <% }); %>
     ];
-    let selectedRoleIds = <%= JSON.stringify(settings.roles) %>;
+    // Carrega os IDs salvos do backend
+    let selectedRoleIds = <%= JSON.stringify(settings.roles) %>; 
+    
     const container = document.getElementById('selected-roles-container');
     const selectElement = document.getElementById('roles-add-select');
     const hiddenInput = document.getElementById('hidden-roles-input');
 
-    // Função que renderiza todas as tags de cargo
+    // PONTO 4: Renderiza as tags coloridas
     function renderRoles() {
-        container.innerHTML = ''; // Limpa o container
-        hiddenInput.value = selectedRoleIds.join(','); // Atualiza o campo oculto
+        container.innerHTML = ''; 
+        hiddenInput.value = selectedRoleIds.join(','); // CRÍTICO: Atualiza o campo oculto
+        
+        const rolesToRender = selectedRoleIds.map(roleId => availableRoles.find(r => r.id === roleId)).filter(Boolean);
 
-        selectedRoleIds.forEach(roleId => {
-            const role = availableRoles.find(r => r.id === roleId);
-            if (!role) return;
-
+        rolesToRender.forEach(role => {
             const tag = document.createElement('span');
             tag.className = 'role-tag';
-            // PONTO 4: Cor da Tag
-            tag.style.borderColor = role.color === '#000000' ? '#99aab5' : role.color;
-            tag.style.backgroundColor = role.color + '1A'; // Cor do cargo com 10% de opacidade
+            // PONTO 4: Cor da Tag (Borda e Fundo semi-transparente)
+            const roleColor = role.color === '#000000' ? '#99aab5' : role.color;
+            tag.style.borderColor = roleColor;
+            tag.style.backgroundColor = roleColor + '1A'; 
+            tag.style.color = roleColor; 
 
-            // Nome do cargo
             tag.innerHTML = `${role.name}`;
 
-            // Botão de Remover 'x'
             const removeBtn = document.createElement('span');
             removeBtn.className = 'remove-role';
             removeBtn.innerHTML = 'x';
-            removeBtn.style.backgroundColor = role.color; // Cor de fundo do X
+            removeBtn.style.backgroundColor = roleColor; 
             removeBtn.style.color = '#fff';
-            removeBtn.onclick = () => removeRole(roleId);
+            removeBtn.onclick = () => removeRole(role.id);
             
             tag.appendChild(removeBtn);
             container.appendChild(tag);
         });
         
-        // Desabilita opções já selecionadas no select de adicionar
+        // Remove opções já selecionadas do select
         Array.from(selectElement.options).forEach(option => {
-            if (option.value && selectedRoleIds.includes(option.value)) {
-                option.disabled = true;
-            } else {
-                option.disabled = false;
-            }
+            option.disabled = selectedRoleIds.includes(option.value);
         });
-        selectElement.value = ""; // Reseta o select
+        selectElement.value = ""; 
     }
 
-    // Função para adicionar um cargo
+    // Adicionar cargo
     selectElement.onchange = (e) => {
         const roleId = e.target.value;
         if (roleId && !selectedRoleIds.includes(roleId)) {
@@ -108,18 +105,12 @@
         }
     };
 
-    // Função para remover um cargo
+    // Remover cargo
     function removeRole(roleId) {
         selectedRoleIds = selectedRoleIds.filter(id => id !== roleId);
         renderRoles();
     }
     
-    // Submete o formulário usando o campo hidden (array convertido para string)
-    document.getElementById('autorole-form').onsubmit = (e) => {
-        // Nada a fazer aqui, o hiddenInput já foi atualizado no renderRoles
-    };
-
-    // Renderiza ao carregar a página
     document.addEventListener('DOMContentLoaded', renderRoles);
 </script>
 

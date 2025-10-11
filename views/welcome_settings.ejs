@@ -3,13 +3,16 @@
 <div class="main-content">
     <h1>Boas-Vindas e Saída de <%= guild.name %></h1>
     
-    <% if (message === 'success') { %>
-        <div class="alert alert-success">
-            ✅ Configurações salvas com sucesso!
-        </div>
-    <% } %>
+    <div id="test-alert-container">
+        <% if (message === 'success') { %>
+            <div class="alert alert-success">
+                ✅ Configurações salvas com sucesso!
+            </div>
+        <% } %>
+    </div>
 
-    <div class="settings-section variables-section">
+
+    <div class="settings-section variables-section feature-box">
         <h2 onclick="toggleSection('vars-list')" style="cursor: pointer;">
             Variáveis de Placeholder (Clique para expandir)
         </h2>
@@ -27,8 +30,9 @@
     </div>
 
 
-    <form method="POST">
-        <div class="settings-section">
+    <form method="POST" id="welcome-form">
+        
+        <div class="settings-section feature-box">
             <h2>Mensagens de Entrada (Boas-Vindas)</h2>
             <label class="checkbox-container">
                 <input type="checkbox" name="join_enabled" value="1" <%= settings.join_enabled ? 'checked' : '' %>>
@@ -50,7 +54,7 @@
                    value="<%= settings.join_message %>" 
                    placeholder="Mensagem de texto simples (opcional)">
 
-            <button type="button" class="btn btn-primary btn-test-message">Testar mensagem</button>
+            <button type="button" class="btn btn-primary btn-test-message" onclick="testMessage('join')">Testar mensagem</button>
 
             <h3 onclick="toggleSection('join-embed-options')" style="cursor: pointer; margin-top: 20px;">
                 Embed de Boas-Vindas (Clique para configurar)
@@ -64,7 +68,7 @@
             </div>
         </div>
 
-        <div class="settings-section">
+        <div class="settings-section feature-box">
             <h2>Mensagens de Saída</h2>
             <label class="checkbox-container">
                 <input type="checkbox" name="leave_enabled" value="1" <%= settings.leave_enabled ? 'checked' : '' %>>
@@ -86,6 +90,8 @@
                    value="<%= settings.leave_message %>" 
                    placeholder="Mensagem de texto simples (opcional)">
 
+            <button type="button" class="btn btn-primary btn-test-message" onclick="testMessage('leave')">Testar mensagem</button>
+
             <h3 onclick="toggleSection('leave-embed-options')" style="cursor: pointer; margin-top: 20px;">
                 Embed de Saída (Clique para configurar)
             </h3>
@@ -98,7 +104,7 @@
             </div>
         </div>
         
-        <div class="settings-section">
+        <div class="settings-section feature-box">
             <h2>Mensagens na DM</h2>
             <label class="checkbox-container">
                 <input type="checkbox" name="dm_enabled" value="1" <%= settings.dm_enabled ? 'checked' : '' %>>
@@ -120,14 +126,13 @@
                 </label>
                 <%- include('embed_fields', { embed: settings.dm_embed, prefix: 'dm' }) %>
             </div>
-        </div>
+            </div>
 
         <button type="submit" class="btn btn-primary btn-save-large">Salvar Todas as Configurações</button>
     </form>
 </div>
 
 <script>
-    // Função para colapsar/expandir as seções
     function toggleSection(id) {
         const element = document.getElementById(id);
         if (element.style.display === 'block') {
@@ -136,7 +141,64 @@
             element.style.display = 'block';
         }
     }
-    // Oculta as seções de embed por padrão
+    
+    // PONTO 3: Lógica para Testar Mensagem
+    async function testMessage(type) {
+        const prefix = type === 'join' ? 'join' : 'leave';
+        const channelId = document.getElementById(`${prefix}_channel_id`).value;
+        const message = document.getElementById(`${prefix}_message`).value;
+        
+        if (!channelId) {
+            displayAlert('danger', 'Selecione um canal antes de testar a mensagem!');
+            return;
+        }
+
+        const embedData = {};
+        const embedFields = ['enabled', 'color', 'author_name', 'author_icon_url', 'title', 'description', 'image_url', 'thumbnail_url', 'footer_text', 'footer_icon_url'];
+        
+        embedFields.forEach(field => {
+            const element = document.querySelector(`[name=${prefix}_embed_${field}]`);
+            if (element) {
+                embedData[field] = element.type === 'checkbox' ? element.checked : element.value;
+            }
+        });
+        
+        try {
+            const response = await fetch(`/dashboard/<%= guild.id %>/welcome/test`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: type,
+                    channel_id: channelId,
+                    message: message,
+                    embed_data: embedData,
+                })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                displayAlert('success', result.message);
+            } else {
+                displayAlert('danger', `Falha no teste: ${result.message}`);
+            }
+
+        } catch (error) {
+            displayAlert('danger', 'Erro de conexão ao testar a mensagem.');
+        }
+    }
+    
+    function displayAlert(type, message) {
+        const container = document.getElementById('test-alert-container');
+        container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        
+        setTimeout(() => {
+            if (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+        }, 5000);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('vars-list').style.display = 'none';
         document.getElementById('join-embed-options').style.display = 'none';

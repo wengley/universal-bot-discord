@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Painel de Controle</title>
+    <link href="/css/styles.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos específicos da Landing Page */
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #f4f7f9; /* Cor de fundo suave */
+        }
+        .landing-container {
+            text-align: center;
+            background: white;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 90%;
+            transition: all 0.3s;
+        }
+        .landing-container h1 {
+            font-size: 3em;
+            color: #5865F2; /* Azul Discord */
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+        .landing-container p {
+            font-size: 1.2em;
+            color: #555;
+            margin-bottom: 30px;
+        }
+        .ping-status {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 20px;
+        }
+        .landing-container .btn-primary {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            background: #5865F2;
+        }
+        .landing-container .btn-primary:hover {
+            background: #4854e0;
+        }
+
+        /* Dark Mode for Landing Page */
+        body.dark-mode {
+            background: #1e1e2d;
+        }
+        body.dark-mode .landing-container {
+            background: #27293d;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        body.dark-mode .landing-container h1 {
+            color: #7289DA;
+        }
+        body.dark-mode .landing-container p {
+            color: #b9bbbe;
+        }
+        body.dark-mode .ping-status {
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="landing-container">
+        <h1><i class="fas fa-robot"></i> <%= title %></h1>
+        <p>
+            O Painel de Controle completo para gerenciar seu servidor Discord. 
+            Configurações de Boas-Vindas, AutoRole, Moderação e muito mais, tudo em um só lugar.
+        </p>
+        <a href="/login" class="btn btn-primary">
+            Faça Login com Discord e acesse o Painel
+        </a>
+        <div class="ping-status">
+            Status: Ping atual do Bot é de <strong><%= ping %>ms</strong>
+        </div>
+    </div>
+    <script>
+        // Lógica simples para manter o tema (pode ser aprimorada)
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+    </script>
+</body>
+</html>
