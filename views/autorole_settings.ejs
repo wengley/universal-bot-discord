@@ -1,117 +1,180 @@
-<%- include('header', { user: user, guild: guild, activePage: 'autorole' }) %>
+<%- include('partials/header', { user, guild, activePage, botAvatarUrl }) %>
 
-<div class="main-content">
-    <h1>Configurações de AutoRole de <%= guild.name %></h1>
+<div id="wrapper">
     
-    <% if (message === 'success') { %>
-        <div class="alert alert-success">
-            ✅ Configurações de AutoRole salvas com sucesso!
-        </div>
-    <% } %>
+    <%- include('partials/sidebar', { user, guild, activePage, botAvatarUrl }) %>
 
-    <form method="POST" id="autorole-form">
-        <div class="settings-section">
-            <h2>Controle de AutoRole</h2>
-            <label class="checkbox-container">
-                <input type="checkbox" name="enabled" value="1" id="autorole-enabled" <%= settings.enabled ? 'checked' : '' %>>
-                Ativar AutoRole
-            </label>
-        </div>
-        
-        <div class="settings-section feature-box">
-            <h2>Cargos que serão dados</h2>
-            
-            <p>Selecione os cargos. Eles aparecerão abaixo como tags. Para remover, clique no "X" da tag.</p>
-            
-            <label for="roles-add-select">Adicionar Cargo:</label>
-            <select id="roles-add-select">
-                <option value="">Selecione para adicionar...</option>
-                <% availableRoles.forEach(role => { %>
-                    <option value="<%= role.id %>" 
-                            data-name="<%= role.name %>"
-                            data-color="<%= role.color %>">
-                        <%= role.name %>
-                    </option>
-                <% }); %>
-            </select>
-            
-            <div id="selected-roles-container" class="selected-roles-container">
+    <div id="content">
+        <div class="main-content">
+            <h1><i class="fas fa-user-plus"></i> AutoRole</h1>
+            <p>Atribua automaticamente um ou mais cargos (roles) a novos membros que entrarem no seu servidor.</p>
+
+            <% if (message === 'success') { %>
+                <div class="alert alert-success">
+                    ✅ Configurações de AutoRole salvas com sucesso!
                 </div>
+            <% } %>
             
-            <small>O Bot deve ter um cargo **superior** aos cargos selecionados na hierarquia para poder atribuí-los.</small>
-            
-            <input type="hidden" name="roles" id="hidden-roles-input" value="">
-        </div>
+            <% if (settings.enabled && settings.roles.length === 0) { %>
+                <div class="alert alert-warning">
+                    ⚠️ **ATENÇÃO:** O AutoRole está **ATIVO**, mas você não selecionou nenhum cargo. Novos membros **não receberão cargo**!
+                </div>
+            <% } %>
 
-        <button type="submit" class="btn btn-primary btn-save-large">Salvar Configurações</button>
-    </form>
+            <form method="POST" action="/dashboard/<%= guild.id %>/autorole" class="settings-section">
+                
+                <h2>Configurações Gerais</h2>
+                
+                <label class="checkbox-container">
+                    <input type="checkbox" name="enabled" id="autorole-enabled" value="true" <%= settings.enabled ? 'checked' : '' %>>
+                    Ativar AutoRole
+                </label>
+                
+                <div class="feature-box">
+                    <h2>Cargos a Atribuir</h2>
+                    
+                    <p>Selecione os cargos que deseja atribuir automaticamente aos novos membros. O Bot só pode atribuir cargos que estejam **abaixo** do cargo mais alto dele na lista de cargos.</p>
+                    
+                    <label for="roles-add-select">Adicionar Cargo:</label>
+                    <select id="roles-add-select">
+                        <option value="">-- Selecione um Cargo --</option>
+                        <% availableRoles.forEach(role => { %>
+                            <% if (!settings.roles.includes(role.id)) { %>
+                                <option 
+                                    value="<%= role.id %>" 
+                                    data-name="<%= role.name %>" 
+                                    data-color="<%= role.color %>"
+                                >
+                                    <%= role.name %> 
+                                </option>
+                            <% } %>
+                        <% }); %>
+                    </select>
+
+                    <div class="selected-roles-container" id="selected-roles-container">
+                        <% 
+                            const rolesMap = {}; 
+                            availableRoles.forEach(r => rolesMap[r.id] = r);
+                        %>
+                        <% settings.roles.forEach(roleId => { %>
+                            <% const role = rolesMap[roleId]; %>
+                            <% if (role) { %>
+                                <span 
+                                    class="role-tag" 
+                                    data-role-id="<%= role.id %>" 
+                                    style="border-color: <%= role.color %>; background-color: <%= role.color %>30; color: <%= role.color %>;"
+                                >
+                                    <%= role.name %>
+                                    <span 
+                                        class="remove-role" 
+                                        style="background-color: <%= role.color %>;" 
+                                        onclick="removeRole('<%= role.id %>')"
+                                    >
+                                        x
+                                    </span>
+                                </span>
+                            <% } %>
+                        <% }); %>
+                    </div>
+                    
+                    <input type="hidden" name="roles" id="roles-hidden-input" value="<%= settings.roles.join(',') %>">
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-save-large">
+                    <i class="fas fa-save"></i> Salvar Configurações
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
-    const availableRoles = [
+    // Armazena todos os cargos disponíveis (para fins de adicionar/remover)
+    const availableRolesData = [
         <% availableRoles.forEach(role => { %>
             { id: '<%= role.id %>', name: '<%= role.name %>', color: '<%= role.color %>' },
         <% }); %>
     ];
-    // Carrega os IDs salvos do backend
-    let selectedRoleIds = <%= JSON.stringify(settings.roles) %>; 
-    
-    const container = document.getElementById('selected-roles-container');
-    const selectElement = document.getElementById('roles-add-select');
-    const hiddenInput = document.getElementById('hidden-roles-input');
 
-    // PONTO 4: Renderiza as tags coloridas
-    function renderRoles() {
-        container.innerHTML = ''; 
-        hiddenInput.value = selectedRoleIds.join(','); // CRÍTICO: Atualiza o campo oculto
-        
-        const rolesToRender = selectedRoleIds.map(roleId => availableRoles.find(r => r.id === roleId)).filter(Boolean);
+    const rolesSelect = document.getElementById('roles-add-select');
+    const rolesContainer = document.getElementById('selected-roles-container');
+    const rolesHiddenInput = document.getElementById('roles-hidden-input');
 
-        rolesToRender.forEach(role => {
-            const tag = document.createElement('span');
-            tag.className = 'role-tag';
-            // PONTO 4: Cor da Tag (Borda e Fundo semi-transparente)
-            const roleColor = role.color === '#000000' ? '#99aab5' : role.color;
-            tag.style.borderColor = roleColor;
-            tag.style.backgroundColor = roleColor + '1A'; 
-            tag.style.color = roleColor; 
-
-            tag.innerHTML = `${role.name}`;
-
-            const removeBtn = document.createElement('span');
-            removeBtn.className = 'remove-role';
-            removeBtn.innerHTML = 'x';
-            removeBtn.style.backgroundColor = roleColor; 
-            removeBtn.style.color = '#fff';
-            removeBtn.onclick = () => removeRole(role.id);
-            
-            tag.appendChild(removeBtn);
-            container.appendChild(tag);
-        });
-        
-        // Remove opções já selecionadas do select
-        Array.from(selectElement.options).forEach(option => {
-            option.disabled = selectedRoleIds.includes(option.value);
-        });
-        selectElement.value = ""; 
+    // Funções de manipulação de cargos
+    function updateHiddenInput() {
+        const selectedIds = Array.from(rolesContainer.querySelectorAll('.role-tag'))
+                                 .map(tag => tag.getAttribute('data-role-id'));
+        rolesHiddenInput.value = selectedIds.join(',');
     }
 
-    // Adicionar cargo
-    selectElement.onchange = (e) => {
-        const roleId = e.target.value;
-        if (roleId && !selectedRoleIds.includes(roleId)) {
-            selectedRoleIds.push(roleId);
-            renderRoles();
-        }
-    };
-
-    // Remover cargo
     function removeRole(roleId) {
-        selectedRoleIds = selectedRoleIds.filter(id => id !== roleId);
-        renderRoles();
+        const roleTag = rolesContainer.querySelector(`[data-role-id="${roleId}"]`);
+        if (roleTag) {
+            roleTag.remove();
+            
+            // Re-adiciona a opção ao <select>
+            const roleData = availableRolesData.find(r => r.id === roleId);
+            if (roleData) {
+                const option = document.createElement('option');
+                option.value = roleData.id;
+                option.textContent = roleData.name;
+                option.setAttribute('data-name', roleData.name);
+                option.setAttribute('data-color', roleData.color);
+                rolesSelect.appendChild(option);
+            }
+            
+            updateHiddenInput();
+        }
     }
-    
-    document.addEventListener('DOMContentLoaded', renderRoles);
+
+    function addRole(roleId, roleName, roleColor) {
+        // 1. Cria a tag visual
+        const tagHtml = `
+            <span 
+                class="role-tag" 
+                data-role-id="${roleId}" 
+                style="border-color: ${roleColor}; background-color: ${roleColor}30; color: ${roleColor};"
+            >
+                ${roleName}
+                <span 
+                    class="remove-role" 
+                    style="background-color: ${roleColor};" 
+                    onclick="removeRole('${roleId}')"
+                >
+                    x
+                </span>
+            </span>
+        `;
+        rolesContainer.insertAdjacentHTML('beforeend', tagHtml);
+
+        // 2. Remove a opção do <select>
+        const optionToRemove = rolesSelect.querySelector(`option[value="${roleId}"]`);
+        if (optionToRemove) {
+            optionToRemove.remove();
+        }
+        
+        // 3. Atualiza o input oculto para salvar
+        updateHiddenInput();
+    }
+
+    // Event listener para adicionar o cargo ao selecionar no dropdown
+    rolesSelect.addEventListener('change', (e) => {
+        const roleId = e.target.value;
+        if (roleId) {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const roleName = selectedOption.getAttribute('data-name');
+            const roleColor = selectedOption.getAttribute('data-color');
+            
+            addRole(roleId, roleName, roleColor);
+            
+            // Volta o select para a opção padrão
+            e.target.value = '';
+        }
+    });
+
+    // Ponto de inicialização: Atualiza o input oculto na carga da página
+    window.onload = updateHiddenInput; 
+
 </script>
 
-<%- include('footer') %>
+<%- include('partials/footer') %>

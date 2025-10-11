@@ -1,0 +1,20 @@
+<%- include('partials/header', { user, guild, activePage, botAvatarUrl }) %>
+<%- include('partials/sidebar', { user, guild, activePage, botAvatarUrl }) %>
+
+<div id="content">
+    <div class="main-content">
+        <h1><i class="fas fa-star"></i> Área VIP (<%= guild.name %>)</h1>
+        <p>Aqui você pode configurar recursos exclusivos para membros VIP.</p>
+
+        <div class="info-box">
+            <p>Ainda estamos trabalhando nas funcionalidades desta categoria. Em breve, estas opções estarão disponíveis para configuração!</p>
+        </div>
+        
+        <div class="settings-section">
+            <h2><%= settings.painel_vip.message %></h2>
+            <p>Recursos exclusivos do Painel VIP.</p>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

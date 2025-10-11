@@ -1,37 +1,74 @@
-<%- include('header', { user: user, guild: guild, activePage: 'servers' }) %>
+<%- include('partials/header', { user, guild: null, activePage, botAvatarUrl }) %>
 
-<div class="main-content">
-    <h1>Servidores</h1>
-    <p>Aqui estão todos os servidores que você gerencia (Dono ou Administrador). Apenas servidores onde o **Universal Bot** está presente podem ser configurados.</p>
+<div id="wrapper">
+    
+    <%- include('partials/sidebar', { user, guild: null, activePage, botAvatarUrl }) %>
 
-    <% if (showInviteAlert) { %>
-        <div class="alert alert-danger">
-            ⚠️ **Sem Permissão para Convidar.** Este bot é privado e não pode ser convidado por esta interface.
-        </div>
-    <% } %>
-
-    <div class="guild-list">
-        <% guilds.forEach(g => { 
-            // PONTO 2: Truncamento do Nome
-            const shortName = g.name.length > 13 ? g.name.substring(0, 10) + '...' : g.name; 
-        %>
-            <div class="guild-item <%= g.canConfigure ? 'ready' : 'denied' %>">
-                <img src="<%= g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : 'https://i.imgur.com/6SqtAxSamTPqFNcxZ.png' %>" 
-                     alt="Ícone" class="guild-icon">
-                
-                <div class="guild-details">
-                    <span class="guild-name" title="<%= g.name %>"><%= shortName %></span>
-                    <span class="guild-role-tag"><%= g.userRole %></span> 
+    <div id="content">
+        <div class="main-content">
+            <h1><i class="fas fa-server"></i> Selecione um Servidor para Gerenciar</h1>
+            <p>Selecione um dos servidores onde você é **Dono** ou tem permissões de **Administrador** e onde o bot está presente.</p>
+            
+            <% if (showInviteAlert) { %>
+                <div class="alert alert-danger">
+                    ❌ Você cancelou a adição do Bot ao servidor ou não tem permissão.
                 </div>
+            <% } %>
 
-                <% if (g.canConfigure) { %>
-                    <a href="/dashboard/<%= g.id %>" class="btn btn-primary status-btn">Configurar</a>
-                <% } else { %>
-                    <a href="/invite/denied" class="btn btn-denied status-btn">Bot Ausente</a>
-                <% } %>
+            <div class="guild-list">
+                <% guilds.forEach(guild => { %>
+                    <% 
+                        // Mapeia o status do bot para classes CSS
+                        let statusText = '';
+                        let statusButtonClass = '';
+                        
+                        if (guild.botStatus === 'idle') {
+                            statusButtonClass = 'btn-denied';
+                            statusText = 'Bot Ausente';
+                        } else if (guild.botStatus === 'dnd' || guild.botStatus === 'offline') {
+                            statusButtonClass = 'btn-denied';
+                            statusText = 'Bot Offline';
+                        } else if (guild.botStatus === 'online') {
+                            statusButtonClass = 'btn-primary';
+                            statusText = 'Bot Online';
+                        } else {
+                            statusButtonClass = 'btn-denied';
+                            statusText = 'Bot Ausente'; // Fallback para status desconhecido/não na guild
+                        }
+                        
+                        // Aplica a classe denied para servidores que o bot não conseguiu entrar.
+                        const itemClass = guild.isInBot ? '' : 'denied';
+                    %>
+                    
+                    <div class="guild-item <%= itemClass %>">
+                        
+                        <img src="<%= guild.icon %>" alt="<%= guild.name %> icon" class="guild-icon">
+                        
+                        <div class="guild-details">
+                            <div class="guild-name"><%= guild.name %></div>
+                            <div class="guild-role-tag">Seu Cargo: <%= guild.userRole %></div>
+                        </div>
+
+                        <% if (guild.isInBot) { %>
+                            
+                            <span class="btn status-btn <%= statusButtonClass %>">
+                                <%= statusText %>
+                            </span>
+                            
+                            <a href="/dashboard/<%= guild.id %>" class="btn btn-primary btn-configure">
+                                <i class="fas fa-cog"></i> Configurar
+                            </a>
+
+                        <% } else { %>
+                            <a href="<SEU LINK DE CONVITE AQUI>&guild_id=<%= guild.id %>" class="btn btn-primary btn-invite" target="_blank">
+                                <i class="fas fa-plus"></i> Convidar Bot
+                            </a>
+                        <% } %>
+                    </div>
+                <% }); %>
             </div>
-        <% }); %>
+        </div>
     </div>
 </div>
 
-<%- include('footer') %>
+<%- include('partials/footer') %>

@@ -1,210 +1,181 @@
-<%- include('header', { user: user, guild: guild, activePage: 'welcome' }) %>
+<%- include('partials/header', { user, guild, activePage, botAvatarUrl }) %>
 
-<div class="main-content">
-    <h1>Boas-Vindas e Saída de <%= guild.name %></h1>
-    
-    <div id="test-alert-container">
-        <% if (message === 'success') { %>
-            <div class="alert alert-success">
-                ✅ Configurações salvas com sucesso!
+<div id="wrapper">
+
+    <%- include('partials/sidebar', { user, guild, activePage, botAvatarUrl }) %>
+
+    <div id="content">
+        <div class="main-content">
+            <h1><i class="fas fa-handshake"></i> Boas-Vindas & Mensagem de Saída</h1>
+            <p>Configure mensagens automáticas para quando um membro entrar ou sair do servidor. Use os Placeholders abaixo para personalizar as mensagens.</p>
+            
+            <% if (message === 'success') { %>
+                <div class="alert alert-success">
+                    ✅ Configurações de Boas-Vindas salvas com sucesso!
+                </div>
+            <% } %>
+
+            <div class="info-box">
+                <p><strong>Placeholders Disponíveis:</strong></p>
+                <div class="variable-list">
+                    <span><code>&lt;[@user]&gt;</code> (Menciona o usuário)</span>
+                    <span><code>&lt;[@user.name]&gt;</code> (Nome de Exibição)</span>
+                    <span><code>&lt;[user.id]&gt;</code> (ID do Usuário)</span>
+                    <span><code>&lt;[guild.name]&gt;</code> (Nome do Servidor)</span>
+                    <span><code>&lt;[guild.icon]&gt;</code> (Ícone do Servidor)</span>
+                </div>
             </div>
-        <% } %>
-    </div>
+
+            <form method="POST" action="/dashboard/<%= guild.id %>/welcome" class="settings-section">
+
+                <div class="feature-box">
+                    <h2><i class="fas fa-arrow-right"></i> Entrada de Membro</h2>
+                    
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="join_enabled" value="true" <%= settings.join_enabled ? 'checked' : '' %> onchange="toggleCollapse('join-collapse', this.checked)">
+                        Ativar Mensagem de Boas-Vindas no Servidor
+                    </label>
+
+                    <div id="join-collapse" class="collapse-content" style="<%= settings.join_enabled ? '' : 'display: none;' %>">
+                        <label for="join_channel_id">Canal de Boas-Vindas:</label>
+                        <select name="join_channel_id" required>
+                            <option value="">-- Selecione um Canal --</option>
+                            <% textChannels.forEach(channel => { %>
+                                <option value="<%= channel.id %>" <%= settings.join_channel_id === channel.id ? 'selected' : '' %>>
+                                    #<%= channel.name %>
+                                </option>
+                            <% }); %>
+                        </select>
+                        
+                        <label for="join_message">Mensagem de Texto (opcional):</label>
+                        <textarea name="join_message" rows="3" placeholder="Ex: Boas-vindas, <[@user]>!"><%= settings.join_message %></textarea>
+
+                        <%- include('partials/embed_options', { prefix: 'join', settings: settings.join_embed }) %>
+
+                        <button type="button" class="btn btn-test-message" onclick="testMessage('join')">
+                            <i class="fas fa-paper-plane"></i> Testar Mensagem de Boas-Vindas
+                        </button>
+                    </div>
+                </div>
 
 
-    <div class="settings-section variables-section feature-box">
-        <h2 onclick="toggleSection('vars-list')" style="cursor: pointer;">
-            Variáveis de Placeholder (Clique para expandir)
-        </h2>
-        <div id="vars-list" class="collapse-content">
-            <p>Use estas variáveis nas mensagens e embeds. **Exemplo:** `Boas-vindas, <[@user]>!`</p>
-            <div class="variable-list">
-                <span><code>&lt;[@user]&gt;</code>: Menciona o usuário.</span>
-                <span><code>&lt;[@user.name]&gt;</code>: Nome de exibição (Display Name) do usuário.</span>
-                <span><code>&lt;[user]&gt;</code>: Nome de usuário (Username, ex: @usuario_123).</span>
-                <span><code>&lt;[user.id]&gt;</code>: ID do usuário.</span>
-                <span><code>&lt;[guild.icon]&gt;</code>: URL do ícone do servidor.</span>
-                <span><code>&lt;[guild.name]&gt;</code>: Nome do servidor.</span>
-            </div>
+                <div class="feature-box">
+                    <h2><i class="fas fa-arrow-left"></i> Saída de Membro</h2>
+                    
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="leave_enabled" value="true" <%= settings.leave_enabled ? 'checked' : '' %> onchange="toggleCollapse('leave-collapse', this.checked)">
+                        Ativar Mensagem de Saída no Servidor
+                    </label>
+                    
+                    <div id="leave-collapse" class="collapse-content" style="<%= settings.leave_enabled ? '' : 'display: none;' %>">
+                        <label for="leave_channel_id">Canal de Saída:</label>
+                        <select name="leave_channel_id" required>
+                            <option value="">-- Selecione um Canal --</option>
+                            <% textChannels.forEach(channel => { %>
+                                <option value="<%= channel.id %>" <%= settings.leave_channel_id === channel.id ? 'selected' : '' %>>
+                                    #<%= channel.name %>
+                                </option>
+                            <% }); %>
+                        </select>
+                        
+                        <label for="leave_message">Mensagem de Texto (opcional):</label>
+                        <textarea name="leave_message" rows="3" placeholder="Ex: Adeus, <[@user.name]>. Sentiremos sua falta."><%= settings.leave_message %></textarea>
+                        
+                        <%- include('partials/embed_options', { prefix: 'leave', settings: settings.leave_embed }) %>
+
+                        <button type="button" class="btn btn-test-message" onclick="testMessage('leave')">
+                            <i class="fas fa-paper-plane"></i> Testar Mensagem de Saída
+                        </button>
+                    </div>
+                </div>
+
+                <div class="feature-box">
+                    <h2><i class="fas fa-envelope"></i> Mensagem de Boas-Vindas na DM</h2>
+                    
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="dm_enabled" value="true" <%= settings.dm_enabled ? 'checked' : '' %> onchange="toggleCollapse('dm-collapse', this.checked)">
+                        Ativar Mensagem de Boas-Vindas na DM
+                    </label>
+                    
+                    <div id="dm-collapse" class="collapse-content" style="<%= settings.dm_enabled ? '' : 'display: none;' %>">
+                        <label for="dm_message">Mensagem de Texto (opcional):</label>
+                        <textarea name="dm_message" rows="3" placeholder="Ex: Olá, obrigado por entrar no nosso servidor!"><%= settings.dm_message %></textarea>
+                        
+                        <%- include('partials/embed_options', { prefix: 'dm', settings: settings.dm_embed }) %>
+
+                        </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-save-large">
+                    <i class="fas fa-save"></i> Salvar Todas as Configurações
+                </button>
+            </form>
         </div>
     </div>
-
-
-    <form method="POST" id="welcome-form">
-        
-        <div class="settings-section feature-box">
-            <h2>Mensagens de Entrada (Boas-Vindas)</h2>
-            <label class="checkbox-container">
-                <input type="checkbox" name="join_enabled" value="1" <%= settings.join_enabled ? 'checked' : '' %>>
-                Ativar mensagens de Entrada
-            </label>
-
-            <label for="join_channel_id">Canal de Boas-Vindas:</label>
-            <select name="join_channel_id" id="join_channel_id">
-                <option value="">(Nenhum/Desativado)</option>
-                <% textChannels.forEach(channel => { %>
-                    <option value="<%= channel.id %>" <%= settings.join_channel_id === channel.id ? 'selected' : '' %>>
-                        #<%= channel.name %>
-                    </option>
-                <% }); %>
-            </select>
-
-            <label for="join_message">Mensagem Simples:</label>
-            <input type="text" name="join_message" id="join_message" 
-                   value="<%= settings.join_message %>" 
-                   placeholder="Mensagem de texto simples (opcional)">
-
-            <button type="button" class="btn btn-primary btn-test-message" onclick="testMessage('join')">Testar mensagem</button>
-
-            <h3 onclick="toggleSection('join-embed-options')" style="cursor: pointer; margin-top: 20px;">
-                Embed de Boas-Vindas (Clique para configurar)
-            </h3>
-            <div id="join-embed-options" class="collapse-content">
-                <label class="checkbox-container">
-                    <input type="checkbox" name="join_embed_enabled" value="1" <%= settings.join_embed.enabled ? 'checked' : '' %>>
-                    Ativar Embed
-                </label>
-                <%- include('embed_fields', { embed: settings.join_embed, prefix: 'join' }) %>
-            </div>
-        </div>
-
-        <div class="settings-section feature-box">
-            <h2>Mensagens de Saída</h2>
-            <label class="checkbox-container">
-                <input type="checkbox" name="leave_enabled" value="1" <%= settings.leave_enabled ? 'checked' : '' %>>
-                Ativar mensagens de Saída
-            </label>
-
-            <label for="leave_channel_id">Canal de Saída:</label>
-            <select name="leave_channel_id" id="leave_channel_id">
-                <option value="">(Nenhum/Desativado)</option>
-                <% textChannels.forEach(channel => { %>
-                    <option value="<%= channel.id %>" <%= settings.leave_channel_id === channel.id ? 'selected' : '' %>>
-                        #<%= channel.name %>
-                    </option>
-                <% }); %>
-            </select>
-
-            <label for="leave_message">Mensagem Simples:</label>
-            <input type="text" name="leave_message" id="leave_message" 
-                   value="<%= settings.leave_message %>" 
-                   placeholder="Mensagem de texto simples (opcional)">
-
-            <button type="button" class="btn btn-primary btn-test-message" onclick="testMessage('leave')">Testar mensagem</button>
-
-            <h3 onclick="toggleSection('leave-embed-options')" style="cursor: pointer; margin-top: 20px;">
-                Embed de Saída (Clique para configurar)
-            </h3>
-            <div id="leave-embed-options" class="collapse-content">
-                <label class="checkbox-container">
-                    <input type="checkbox" name="leave_embed_enabled" value="1" <%= settings.leave_embed.enabled ? 'checked' : '' %>>
-                    Ativar Embed
-                </label>
-                <%- include('embed_fields', { embed: settings.leave_embed, prefix: 'leave' }) %>
-            </div>
-        </div>
-        
-        <div class="settings-section feature-box">
-            <h2>Mensagens na DM</h2>
-            <label class="checkbox-container">
-                <input type="checkbox" name="dm_enabled" value="1" <%= settings.dm_enabled ? 'checked' : '' %>>
-                Ativar mensagens na DM
-            </label>
-
-            <label for="dm_message">Mensagem Simples na DM:</label>
-            <input type="text" name="dm_message" id="dm_message" 
-                   value="<%= settings.dm_message %>" 
-                   placeholder="Mensagem que será enviada na DM (opcional)">
-
-            <h3 onclick="toggleSection('dm-embed-options')" style="cursor: pointer; margin-top: 20px;">
-                Embed na DM (Clique para configurar)
-            </h3>
-            <div id="dm-embed-options" class="collapse-content">
-                <label class="checkbox-container">
-                    <input type="checkbox" name="dm_embed_enabled" value="1" <%= settings.dm_embed.enabled ? 'checked' : '' %>>
-                    Ativar Embed
-                </label>
-                <%- include('embed_fields', { embed: settings.dm_embed, prefix: 'dm' }) %>
-            </div>
-            </div>
-
-        <button type="submit" class="btn btn-primary btn-save-large">Salvar Todas as Configurações</button>
-    </form>
 </div>
 
 <script>
-    function toggleSection(id) {
+    // Função para mostrar/esconder seções
+    function toggleCollapse(id, isChecked) {
         const element = document.getElementById(id);
-        if (element.style.display === 'block') {
-            element.style.display = 'none';
-        } else {
-            element.style.display = 'block';
+        if (element) {
+            element.style.display = isChecked ? 'block' : 'none';
         }
     }
-    
-    // PONTO 3: Lógica para Testar Mensagem
+
+    // Função para coletar dados do Embed
+    function getEmbedData(prefix) {
+        return {
+            enabled: document.querySelector(`input[name="${prefix}_embed_enabled"]`).checked,
+            color: document.querySelector(`input[name="${prefix}_embed_color"]`).value,
+            author_name: document.querySelector(`input[name="${prefix}_embed_author_name"]`).value,
+            author_icon_url: document.querySelector(`input[name="${prefix}_embed_author_icon_url"]`).value,
+            title: document.querySelector(`input[name="${prefix}_embed_title"]`).value,
+            description: document.querySelector(`textarea[name="${prefix}_embed_description"]`).value,
+            image_url: document.querySelector(`input[name="${prefix}_embed_image_url"]`).value,
+            thumbnail_url: document.querySelector(`input[name="${prefix}_embed_thumbnail_url"]`).value,
+            footer_text: document.querySelector(`input[name="${prefix}_embed_footer_text"]`).value,
+            footer_icon_url: document.querySelector(`input[name="${prefix}_embed_footer_icon_url"]`).value,
+        };
+    }
+
+    // PONTO 4: Função para testar mensagem (Agora envia o Embed e o texto)
     async function testMessage(type) {
-        const prefix = type === 'join' ? 'join' : 'leave';
-        const channelId = document.getElementById(`${prefix}_channel_id`).value;
-        const message = document.getElementById(`${prefix}_message`).value;
+        const channelId = document.querySelector(`select[name="${type}_channel_id"]`).value;
+        const messageText = document.querySelector(`textarea[name="${type}_message"]`).value;
+        const embedData = getEmbedData(type);
         
         if (!channelId) {
-            displayAlert('danger', 'Selecione um canal antes de testar a mensagem!');
+            alert('Selecione um canal antes de testar a mensagem!');
             return;
         }
 
-        const embedData = {};
-        const embedFields = ['enabled', 'color', 'author_name', 'author_icon_url', 'title', 'description', 'image_url', 'thumbnail_url', 'footer_text', 'footer_icon_url'];
-        
-        embedFields.forEach(field => {
-            const element = document.querySelector(`[name=${prefix}_embed_${field}]`);
-            if (element) {
-                embedData[field] = element.type === 'checkbox' ? element.checked : element.value;
-            }
-        });
-        
         try {
             const response = await fetch(`/dashboard/<%= guild.id %>/welcome/test`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     type: type,
                     channel_id: channelId,
-                    message: message,
-                    embed_data: embedData,
+                    message: messageText,
+                    embed_data: embedData 
                 })
             });
-
             const result = await response.json();
             
             if (result.success) {
-                displayAlert('success', result.message);
+                alert(result.message);
             } else {
-                displayAlert('danger', `Falha no teste: ${result.message}`);
+                alert(`Erro ao enviar: ${result.message}`);
             }
 
         } catch (error) {
-            displayAlert('danger', 'Erro de conexão ao testar a mensagem.');
+            console.error('Erro de rede:', error);
+            alert('Erro ao comunicar com o servidor. Verifique o console.');
         }
     }
-    
-    function displayAlert(type, message) {
-        const container = document.getElementById('test-alert-container');
-        container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
-        
-        setTimeout(() => {
-            if (container.firstChild) {
-                container.removeChild(container.firstChild);
-            }
-        }, 5000);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('vars-list').style.display = 'none';
-        document.getElementById('join-embed-options').style.display = 'none';
-        document.getElementById('leave-embed-options').style.display = 'none';
-        document.getElementById('dm-embed-options').style.display = 'none';
-    });
 </script>
 
-<%- include('footer') %>
+<%- include('partials/footer') %>

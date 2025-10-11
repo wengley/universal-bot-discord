@@ -1,43 +1,49 @@
-<%- include('header', { user: user, guild: guild, activePage: 'settings' }) %>
+<%- include('partials/header', { user, guild, activePage, botAvatarUrl }) %>
 
-<div class="main-content">
+<div id="wrapper">
     
-    <h1>Configurações Gerais de <%= guild.name %></h1>
-    
-    <div class="info-box ping-box">
-        <h2>Status do Bot</h2>
-        <p>A latência (ping) do Universal Bot é: <strong><%= botPing %>ms</strong></p>
-        <p>O bot está online e respondendo rapidamente.</p>
-    </div>
+    <%- include('partials/sidebar', { user, guild, activePage, botAvatarUrl }) %>
 
-    <div class="settings-section">
-        <h2>Comandos Disponíveis</h2>
-        <p>Lista dos comandos padrão que o bot executa no seu servidor.</p>
-        
-        <table class="command-table">
-            <thead>
-                <tr>
-                    <th>Comando</th>
-                    <th>Descrição</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% commands.forEach(cmd => { %>
-                    <tr>
-                        <td><code><%= cmd.name %></code></td>
-                        <td><%= cmd.description %></td>
-                    </tr>
-                <% }); %>
-            </tbody>
-        </table>
-    </div>
+    <div id="content">
+        <div class="main-content">
+            <h1><i class="fas fa-cog"></i> Configurações Gerais do Servidor</h1>
+            <p>Ajuste as configurações básicas e veja informações sobre o Bot neste servidor.</p>
+            
+            <div class="settings-section">
+                <h2>Informações do Bot</h2>
+                <p><strong>Latência (Ping):</strong> <%= botPing %> ms</p>
+            </div>
+            
+            <div class="settings-section">
+                <h2>Comandos Disponíveis</h2>
+                <p>Estes são os comandos que o Bot possui atualmente:</p>
+                <table class="command-table">
+                    <thead>
+                        <tr>
+                            <th>Comando</th>
+                            <th>Descrição</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% commands.forEach(cmd => { %>
+                            <tr>
+                                <td><code><%= cmd.name %></code></td>
+                                <td><%= cmd.description %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
 
-    <div class="settings-section">
-        <h2>Informações do Servidor</h2>
-        <p>ID do Servidor: <code><%= guild.id %></code></p>
-        <p>Membros Atuais: <%= guild.memberCount %></p>
-    </div>
+            <div class="settings-section">
+                <h2>Gerenciamento</h2>
+                <a href="/logout" class="btn btn-denied">
+                    <i class="fas fa-sign-out-alt"></i> Sair do Painel
+                </a>
+            </div>
 
+        </div>
+    </div>
 </div>
 
-<%- include('footer') %>
+<%- include('partials/footer') %>

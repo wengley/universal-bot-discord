@@ -1,0 +1,30 @@
+<%- include('partials/header', { user, guild, activePage, botAvatarUrl }) %>
+<%- include('partials/sidebar', { user, guild, activePage, botAvatarUrl }) %>
+
+<div id="content">
+    <div class="main-content">
+        <h1><i class="fas fa-shield-alt"></i> Segurança (<%= guild.name %>)</h1>
+        <p>Aqui você pode configurar os módulos de segurança do seu servidor.</p>
+
+        <div class="info-box">
+            <p>Ainda estamos trabalhando nas funcionalidades desta categoria. Em breve, estas opções estarão disponíveis para configuração!</p>
+        </div>
+
+        <div class="settings-section">
+            <h2><%= settings.anti_nuke.message %></h2>
+            <p>Opções para prevenir ataques de destruição massiva (Anti Nuke).</p>
+        </div>
+        
+        <div class="settings-section">
+            <h2><%= settings.whitelist.message %></h2>
+            <p>Configure uma lista de usuários/cargos confiáveis que não serão afetados por certas regras de segurança.</p>
+        </div>
+
+        <div class="settings-section">
+            <h2><%= settings.anti_raid.message %></h2>
+            <p>Opções para mitigar invasões de bots ou contas em massa (Anti Raid).</p>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
