@@ -12,7 +12,25 @@ body {
     display: flex;
 }
 
-/* Modo Escuro (Dark Mode) - Garantindo contraste */
+/* TEMA CLARO */
+body.light-mode #sidebar {
+    background: #ffffff; 
+    border-right: 1px solid #e0e0e0;
+}
+body.light-mode #sidebar ul li a {
+    color: #555;
+}
+body.light-mode #content {
+    background: #f4f7f9;
+    color: #333;
+}
+body.light-mode .settings-section, 
+body.light-mode .guild-item {
+    background: #ffffff;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.08); /* Efeito flutuante */
+}
+
+/* Modo Escuro (Dark Mode) - Priorizando o contraste e a estética flutuante */
 body.dark-mode {
     background-color: #1e1e2d;
     color: #f1f1f1;
@@ -34,215 +52,57 @@ body.dark-mode #content {
     background: #212330;
     color: #f1f1f1;
 }
-body.dark-mode .sidebar-footer-profile {
-    background: #212330;
-    border-top-color: #3c3f56;
-}
-body.dark-mode .user-tag-large, body.dark-mode .user-id {
-    color: #f1f1f1;
-}
-
-/* PONTO 1: RESTAURANDO O ESTILO DO GUILD-ITEM NO DARK MODE */
+/* RESTAURADO: Estilo do retângulo do servidor no Dark Mode */
 body.dark-mode .guild-item {
     background: #33364d;
     border: 1px solid #3c3f56;
     color: #f1f1f1;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.15); /* Sombra mais visível no Dark */
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3); /* Sombra acentuada para Dark Mode */
 }
 body.dark-mode .guild-item:hover {
     background: #3c3f56;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.4);
     transform: translateY(-2px);
-}
-body.dark-mode .main-content h1 {
-    color: #7289DA;
-    border-bottom-color: #3c3f56;
-}
-body.dark-mode .info-box {
-    background-color: #33364d;
-    border-left-color: #7289DA;
-}
-body.dark-mode form select, body.dark-mode form input[type="text"], body.dark-mode textarea { 
-    background: #3c3f56; 
-    color: #f1f1f1; 
-    border: 1px solid #555;
 }
 body.dark-mode .settings-section,
 body.dark-mode .feature-box {
     background: #27293d;
     border-color: #3c3f56;
 }
-body.dark-mode .command-table th {
-    background-color: #33364d;
-    color: #f1f1f1;
+body.dark-mode form select, body.dark-mode form input[type="text"], body.dark-mode textarea { 
+    background: #3c3f56; 
+    color: #f1f1f1; 
+    border: 1px solid #555;
 }
-
-/* PONTO 2: VARIÁVEIS VISÍVEIS NO DARK MODE */
+/* CORREÇÃO: Variáveis visíveis no Dark Mode */
 body.dark-mode .variable-list {
     background: #33364d;
 }
 body.dark-mode .variable-list span {
-    background: #4f545c; /* Fundo mais claro para destaque */
-    color: #ddd; /* Texto claro */
-}
-
-body.dark-mode .selected-roles-container {
-    background: #33364d;
-}
-body.dark-mode .role-tag {
-    /* Deixamos a cor do texto da tag ser definida pelo JS para contraste, mas garantimos que não fique preto */
-    color: inherit; 
+    background: #4f545c; 
+    color: #ddd; 
 }
 
 
-/* ==================================================== SIDEBAR (FIXA E ESTÁTICA) ==================================================== */
+/* ==================================================== SIDEBAR ==================================================== */
 #sidebar {
-    width: 280px; 
-    height: 100vh; 
-    position: fixed; 
-    top: 0;
-    left: 0;
-    background: #36393f; 
-    color: #dcddde;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
-    z-index: 1000;
+    width: 280px; height: 100vh; position: fixed; top: 0; left: 0;
+    background: #36393f; color: #dcddde; display: flex; flex-direction: column;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.2); z-index: 1000;
 }
-.sidebar-header-title {
-    padding: 20px;
-    background: #36393f;
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid #2f3136;
-}
-.sidebar-header-title h1 {
-    margin: 0;
-    font-size: 1.4em;
-    font-weight: 800;
-    color: #f6f6f7;
-    margin-left: 10px;
-}
-.bot-logo {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-}
-.list-unstyled {
-    padding: 10px 0;
-    list-style: none;
-    flex-grow: 1; 
-    overflow-y: auto; 
-}
-#sidebar ul li a {
-    padding: 10px 20px;
-    display: block;
-    color: #b9bbbe;
-    text-decoration: none;
-    transition: background-color 0.1s, color 0.1s;
-    font-weight: 500;
-    border-left: 4px solid transparent; 
-}
-#sidebar ul li a:hover {
-    color: #f6f6f7;
-    background-color: #3f4247;
-}
-#sidebar ul li.active a {
-    background: #42464d;
-    color: #f6f6f7;
-    font-weight: 600;
-    border-left-color: #5865F2; 
-}
-.separator {
-    padding: 15px 20px 5px;
-    font-size: 0.9em;
-    font-weight: 700;
-    color: #96989d;
-    text-transform: uppercase;
-}
-.user-profile-widget.sidebar-footer-profile {
-    padding: 15px;
-    border-top: 1px solid #2f3136;
-    background: #2f3136; 
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-}
-.user-avatar-large {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-bottom: 5px;
-}
-.user-tag-large {
-    font-weight: bold;
-    font-size: 1.1em;
-    color: #f6f6f7;
-}
-.user-id {
-    font-size: 0.85em;
-    color: #b9bbbe;
-}
-
+.sidebar-header-title { padding: 20px; display: flex; align-items: center; border-bottom: 1px solid #2f3136; }
+.sidebar-header-title h1 { margin: 0; font-size: 1.4em; font-weight: 800; color: #f6f6f7; margin-left: 10px; }
+.bot-logo { width: 30px; height: 30px; border-radius: 50%; }
+.list-unstyled { padding: 10px 0; list-style: none; flex-grow: 1; overflow-y: auto; }
+#sidebar ul li a { padding: 10px 20px; display: block; color: #b9bbbe; text-decoration: none; transition: background-color 0.1s, color 0.1s; font-weight: 500; border-left: 4px solid transparent; }
+#sidebar ul li a:hover { color: #f6f6f7; background-color: #3f4247; }
+#sidebar ul li.active a { background: #42464d; color: #f6f6f7; font-weight: 600; border-left-color: #5865F2; }
+.separator { padding: 15px 20px 5px; font-size: 0.9em; font-weight: 700; color: #96989d; text-transform: uppercase; }
+.user-profile-widget.sidebar-footer-profile { padding: 15px; border-top: 1px solid #2f3136; background: #2f3136; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 
 /* ==================================================== CONTENT ==================================================== */
-#content {
-    margin-left: 280px; 
-    flex-grow: 1;
-    padding: 30px 40px;
-    background: #f4f7f9;
-    min-height: 100vh;
-}
-.main-content {
-    flex-grow: 1;
-    max-width: 100%;
-}
-.main-content h1 {
-    color: #5865F2;
-    margin-bottom: 25px;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 10px;
-    font-size: 1.8em;
-}
-
-/* ==================================================== BOTÕES E FORMULÁRIOS ==================================================== */
-.btn {
-    padding: 10px 18px; 
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: 600;
-    text-decoration: none;
-    display: inline-block;
-    transition: background-color 0.2s, opacity 0.2s;
-    text-align: center;
-}
-.btn-primary {
-    background-color: #5865F2; 
-    color: white;
-}
-.btn-primary:hover {
-    background-color: #4854e0;
-}
-.settings-section {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    margin-bottom: 20px;
-}
-form select, form input[type="text"], textarea {
-    width: 100%;
-    max-width: 450px; 
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 1em;
-}
-
+#content { margin-left: 280px; flex-grow: 1; padding: 30px 40px; min-height: 100vh; }
+.main-content h1 { color: #5865F2; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.8em; }
 
 /* ==================================================== DASHBOARD DE SERVIDORES (LISTA) ==================================================== */
 .guild-list {
@@ -250,7 +110,7 @@ form select, form input[type="text"], textarea {
     grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     gap: 15px;
 }
-/* PONTO 1: RESTAURANDO O ESTILO DO GUILD-ITEM */
+/* ESTILO DO ITEM DO SERVIDOR (RETÂNGULO BONITO) */
 .guild-item {
     display: flex;
     align-items: center;
@@ -259,6 +119,7 @@ form select, form input[type="text"], textarea {
     background: #fff;
     box-shadow: 0 1px 5px rgba(0,0,0,0.08); /* Sombra para o efeito "caixa" */
     transition: box-shadow 0.2s, transform 0.2s;
+    position: relative; /* Para a linha de status */
 }
 .guild-item:hover {
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
@@ -276,24 +137,43 @@ form select, form input[type="text"], textarea {
     display: flex;
     flex-direction: column;
 }
-.guild-name {
-    font-weight: 700;
-    font-size: 1.1em;
+
+/* PONTO 1: ESTILOS DE STATUS DO BOT (LINHA LATERAL E BOTÃO) */
+.status-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px; /* Linha de status */
+    height: 100%;
+    border-radius: 8px 0 0 8px;
 }
-.guild-details .guild-role-tag {
-    color: #777;
-    font-size: 0.9em;
+/* Cores da Linha Lateral */
+.status-online-line { background-color: #43b581; } /* Verde */
+.status-idle-line { background-color: #faa61a; } /* Amarelo/Laranja (Ausente) */
+.status-offline-line { background-color: #f04747; } /* Vermelho (Offline/DND) */
+
+/* Estilo do Botão de Status (Botão vermelho para Ausente/Offline/DND) */
+.status-button {
+    padding: 5px 10px;
+    font-size: 0.8em;
+    border-radius: 4px;
+    margin-right: 10px;
+    font-weight: 600;
+}
+.status-online-button {
+    background-color: #43b581;
+    color: white;
+}
+/* CORREÇÃO PONTO 1: O Botão para Ausente/Offline/DND é VERMELHO (F04747) */
+.status-idle-button, .status-offline-button {
+    background-color: #f04747; 
+    color: white;
+}
+.btn-configure {
+    margin-left: auto; /* Empurra o botão de Configurar para a direita */
 }
 
-
-/* ==================================================== BOAS-VINDAS & AUTOROLE ==================================================== */
-.feature-box {
-    border: 1px solid #dcdcdc; 
-    padding: 20px;
-    margin-bottom: 30px;
-    border-radius: 8px;
-}
-
+/* ==================================================== OUTROS ==================================================== */
 .variable-list {
     display: flex;
     flex-wrap: wrap;
