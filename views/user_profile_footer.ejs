@@ -2,8 +2,9 @@
     <img src="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128` : 'https://cdn.discordapp.com/embed/avatars/0.png' %>" 
          alt="Avatar" class="user-avatar-large">
     <div class="user-details-group">
-        <span class="user-tag-large"><%= user.username %></span>
-        <span class="user-id">@<%= user.firstName %>_tr</span>
+        <span class="user-tag-large"><%= user.displayName %></span>
+        <span class="user-id">@<%= user.username %></span>
+        <span class="user-id">ID: <%= user.id %></span>
     </div>
 
     <div class="action-buttons-group">

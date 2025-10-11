@@ -1,0 +1,39 @@
+<%- include('header', { user: user, guild: guild, activePage: 'welcome' }) %>
+
+<div class="main-content">
+    <h1>Configurações de Boas-Vindas de <%= guild.name %></h1>
+    
+    <% if (message === 'success') { %>
+        <div class="alert alert-success">
+            ✅ Configurações de Boas-Vindas salvas com sucesso!
+        </div>
+    <% } %>
+
+    <form method="POST">
+        <div class="settings-section">
+            <h2>Canal de Boas-Vindas</h2>
+            <label for="channel_id">Selecione o canal para enviar mensagens:</label>
+            <select name="channel_id" id="channel_id">
+                <option value="">Desativado</option>
+                <% textChannels.forEach(channel => { %>
+                    <option value="<%= channel.id %>" <%= settings.channel_id === channel.id ? 'selected' : '' %>>
+                        #<%= channel.name %>
+                    </option>
+                <% }); %>
+            </select>
+        </div>
+
+        <div class="settings-section">
+            <h2>Mensagem de Boas-Vindas</h2>
+            <label for="welcome_message">Mensagem (Use {user} para marcar o usuário):</label>
+            <input type="text" name="welcome_message" id="welcome_message" 
+                   value="<%= settings.message %>" 
+                   placeholder="Ex: Bem-vindo, {user}!">
+            <small>Atenção: A mensagem deve ser curta e objetiva.</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Salvar Configurações</button>
+    </form>
+</div>
+
+<%- include('footer') %>

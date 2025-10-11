@@ -1,0 +1,31 @@
+<%- include('header', { user: user, guild: guild, activePage: 'autorole' }) %>
+
+<div class="main-content">
+    <h1>Configurações de AutoRole de <%= guild.name %></h1>
+    
+    <% if (message === 'success') { %>
+        <div class="alert alert-success">
+            ✅ Configurações de AutoRole salvas com sucesso!
+        </div>
+    <% } %>
+
+    <form method="POST">
+        <div class="settings-section">
+            <h2>Cargo Automático</h2>
+            <label for="role_id">Selecione o cargo para dar automaticamente a novos membros:</label>
+            <select name="role_id" id="role_id">
+                <option value="">Desativado</option>
+                <% roles.forEach(role => { %>
+                    <option value="<%= role.id %>" <%= settings.role_id === role.id ? 'selected' : '' %>>
+                        <%= role.name %>
+                    </option>
+                <% }); %>
+            </select>
+            <small>O Bot deve ter permissão para gerenciar cargos e o cargo do bot deve ser superior ao cargo selecionado.</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Salvar Configurações</button>
+    </form>
+</div>
+
+<%- include('footer') %>
