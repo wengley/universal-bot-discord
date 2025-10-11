@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Universal Bot | Dashboard</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <link rel="icon" href="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : '/images/default-icon.png' %>" type="image/png">
+    <link rel="icon" href="https://cdn.discordapp.com/icons/1413669247023841342/bf008aa2a004c2d25d1e3e4577e93450.webp?size=128" type="image/webp">
     <script>
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
@@ -25,25 +25,37 @@
 <div id="wrapper">
     <nav id="sidebar">
         <div class="sidebar-header-title">
-            <img src="/images/default-icon.png" alt="Logo" class="bot-logo">
+            <img src="https://cdn.discordapp.com/icons/1413669247023841342/bf008aa2a004c2d25d1e3e4577e93450.webp?size=128" alt="Logo" class="bot-logo">
             <h1>Universal Bot</h1>
         </div>
 
         <ul class="list-unstyled components">
-            <li class="<%= activePage === 'servers' ? 'active' : '' %>">
-                <a href="/dashboard">Seus Servidores</a>
-            </li>
-            <li class="<%= activePage === 'updates' ? 'active' : '' %>">
-                <a href="/updates">Atualizações</a>
-            </li>
             
             <% if (guild) { %>
-                <li class="separator">CONFIGURAÇÕES DE <%= guild.name.toUpperCase() %></li>
+                <li class="<%= activePage === 'servers' ? 'active' : '' %>">
+                    <a href="/dashboard">Voltar</a>
+                </li>
+                <li class="separator">CONFIG. <%= guild.name.toUpperCase() %></li>
+                
                 <li class="<%= activePage === 'settings' ? 'active' : '' %>">
-                    <a href="/dashboard/<%= guild.id %>">Geral</a>
+                    <a href="/dashboard/<%= guild.id %>">Config. Geral</a> 
                 </li>
                 <li class="<%= activePage === 'welcome' ? 'active' : '' %>">
                     <a href="/dashboard/<%= guild.id %>/welcome">Boas-Vindas</a>
+                </li>
+                <li class="<%= activePage === 'autorole' ? 'active' : '' %>">
+                    <a href="/dashboard/<%= guild.id %>/autorole">AutoRole</a>
+                </li>
+                <li class="<%= activePage === 'eventlogs' ? 'active' : '' %>">
+                    <a href="/dashboard/<%= guild.id %>/eventlogs">Event Logs</a>
+                </li>
+                
+            <% } else { %>
+                <li class="<%= activePage === 'servers' ? 'active' : '' %>">
+                    <a href="/dashboard">Seus Servidores</a>
+                </li>
+                <li class="<%= activePage === 'updates' ? 'active' : '' %>">
+                    <a href="/updates">Atualizações</a>
                 </li>
             <% } %>
 

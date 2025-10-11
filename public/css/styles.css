@@ -10,15 +10,13 @@ body {
 
 #wrapper {
     display: flex;
-    /* Remove min-height: 100vh para permitir a rolagem do body */
 }
 
-/* ==================================================== SIDEBAR (FIXA E ESTÁTICA) ==================================================== */
+/* ==================================================== SIDEBAR (FIXA E ESTÁTICA - PONTO 3) ==================================================== */
 #sidebar {
-    /* CORREÇÃO CRÍTICA PONTO 3 e 5: Sidebar Fixa e Rolagem de Conteúdo */
-    width: 280px; /* Largura fixa */
-    height: 100vh; /* Ocupa a altura total da janela de visualização */
-    position: fixed; /* Fica fixo, não importa a rolagem */
+    width: 280px; 
+    height: 100vh; 
+    position: fixed; /* Fixa a Sidebar */
     top: 0;
     left: 0;
     
@@ -30,7 +28,7 @@ body {
     z-index: 1000;
 }
 
-/* Título e Logo */
+/* Título e Logo (PONTO 1) */
 .sidebar-header-title {
     padding: 20px;
     background: #36393f;
@@ -51,12 +49,12 @@ body {
     border-radius: 50%;
 }
 
-/* Lista de Links (Permite a rolagem interna do menu, se necessário) */
+/* Lista de Links */
 .list-unstyled {
     padding: 10px 0;
     list-style: none;
     flex-grow: 1; 
-    overflow-y: auto; /* Permite scrollar apenas a lista de links se houver muitos */
+    overflow-y: auto; 
 }
 #sidebar ul li a {
     padding: 10px 20px;
@@ -80,7 +78,6 @@ body {
     color: #96989d;
     text-transform: uppercase;
 }
-
 /* Perfil no Rodapé da Sidebar */
 .user-profile-widget.sidebar-footer-profile {
     padding: 15px;
@@ -91,22 +88,21 @@ body {
     align-items: flex-start;
     gap: 10px;
 }
-.sidebar-footer-profile .user-avatar-large {
+.user-avatar-large {
     width: 40px;
     height: 40px;
     border-radius: 50%;
     margin-bottom: 5px;
 }
-/* ... (Manter estilos do perfil e botões) ... */
+/* ... (Restante do CSS do Perfil) ... */
 
-/* ==================================================== CONTENT (Conteúdo Principal ROLÁVEL) ==================================================== */
+
+/* ==================================================== CONTENT (Conteúdo Principal ROLÁVEL - PONTO 5) ==================================================== */
 #content {
-    /* CRÍTICO PONTO 3 e 5: Deixa espaço para a sidebar fixa e ocupa o resto */
-    margin-left: 280px; 
+    margin-left: 280px; /* Garante que o conteúdo comece após a sidebar fixa */
     flex-grow: 1;
     padding: 30px 40px;
     background: #f4f7f9;
-    /* Garante que este bloco pode ser rolado */
     min-height: 100vh;
 }
 .main-content {
@@ -121,6 +117,34 @@ body {
     font-size: 1.8em;
 }
 
+/* ==================================================== BOTÕES (PONTO 2) ==================================================== */
+.btn {
+    padding: 10px 18px; 
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.2s, opacity 0.2s;
+    text-align: center;
+}
+.btn-primary {
+    background-color: #5865F2; /* Azul para Configurar */
+    color: white;
+}
+.btn-primary:hover {
+    background-color: #4854e0;
+}
+.btn-denied {
+    background-color: #F04747; /* Vermelho para Bot Ausente */
+    color: white;
+}
+.btn-denied:hover {
+    background-color: #d03939;
+}
+
+
 /* ==================================================== ALERTAS E CAIXAS ==================================================== */
 .alert {
     padding: 15px;
@@ -133,17 +157,19 @@ body {
     border: 1px solid #f04747;
     color: #f04747;
 }
+/* Alerta para "Em Construção" */
+.alert-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #856404;
+}
+
 .info-box {
     padding: 20px;
     margin-bottom: 20px;
     border-radius: 8px;
     background-color: #e6e9ff;
     border-left: 5px solid #5865F2;
-}
-.info-box h2 {
-    margin-top: 0;
-    color: #5865F2;
-    font-size: 1.3em;
 }
 
 /* ==================================================== DASHBOARD DE SERVIDORES ==================================================== */
@@ -161,59 +187,29 @@ body {
     box-shadow: 0 1px 5px rgba(0,0,0,0.08);
     transition: box-shadow 0.2s;
 }
-/* Estilo para servidores onde o bot não está (Ponto 2 - sem convite) */
 .guild-item.denied {
     border: 1px solid #f04747;
     opacity: 0.8;
 }
-
-/* ==================================================== LANDING PAGE (PONTO 7) ==================================================== */
-.landing-page {
+.guild-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    margin-right: 15px;
+    object-fit: cover;
+}
+.guild-details {
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background-color: #2c2f33; /* Fundo escuro */
-    color: white;
 }
-.landing-content {
-    text-align: center;
-    padding: 40px;
-    background: #36393f;
-    border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
-    max-width: 600px;
-}
-.bot-logo-lg {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    margin-bottom: 15px;
-}
-.landing-content h1 {
-    color: #5865F2;
-    font-size: 2.5em;
-    border: none;
-    padding: 0;
-    margin-bottom: 10px;
-}
-.landing-status {
-    margin: 20px 0;
-    font-size: 1.1em;
-    color: #bbb;
-}
-.btn-large {
-    padding: 12px 30px;
+.guild-name {
+    font-weight: 700;
     font-size: 1.1em;
 }
-.landing-footer {
-    position: absolute;
-    bottom: 0;
-    padding: 10px;
-    color: #888;
+.guild-details .guild-role-tag {
+    color: #777;
     font-size: 0.9em;
 }
 
-/* ==================================================== DARK MODE ==================================================== */
-/* ... (Manter regras de Dark Mode) ... */
+/* ... (Restante do CSS, incluindo Landing Page) ... */

@@ -1,0 +1,15 @@
+<%- include('header', { user: user, guild: guild, activePage: featureName.toLowerCase().replace(' ', '') }) %>
+
+<div class="main-content">
+    
+    <h1><%= featureName %> de <%= guild.name %></h1>
+    
+    <div class="info-box alert-warning">
+        <h2>🛠️ Em Construção</h2>
+        <p><%= message %></p>
+        <p>Acompanhe a página de Atualizações para saber quando esta função for lançada.</p>
+    </div>
+
+</div>
+
+<%- include('footer') %>

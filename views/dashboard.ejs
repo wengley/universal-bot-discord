@@ -11,13 +11,16 @@
     <% } %>
 
     <div class="guild-list">
-        <% guilds.forEach(g => { %>
+        <% guilds.forEach(g => { 
+            // PONTO 2: Truncamento do Nome
+            const shortName = g.name.length > 13 ? g.name.substring(0, 10) + '...' : g.name; 
+        %>
             <div class="guild-item <%= g.canConfigure ? 'ready' : 'denied' %>">
-                <img src="<%= g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : '/images/default-server-icon.png' %>" 
+                <img src="<%= g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : 'https://i.imgur.com/6SqtAxSamTPqFNcxZ.png' %>" 
                      alt="Ícone" class="guild-icon">
                 
                 <div class="guild-details">
-                    <span class="guild-name"><%= g.name %></span>
+                    <span class="guild-name" title="<%= g.name %>"><%= shortName %></span>
                     <span class="guild-role-tag"><%= g.userRole %></span> 
                 </div>
 
