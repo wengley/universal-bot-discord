@@ -1,0 +1,27 @@
+<%- include('partials/header', { user, guild, activePage, botAvatarUrl }) %>
+
+<div id="wrapper">
+    
+    <%- include('partials/sidebar', { user, guild, activePage, botAvatarUrl }) %>
+
+    <div id="content">
+        <div class="main-content">
+            <h1 class="text-warning"><i class="fas fa-tools"></i> Em Construção</h1>
+            <p><strong>Configuração de <%= activePageDisplay %></strong></p>
+            <hr>
+            
+            <div class="alert alert-info text-center">
+                <h3>🛠️ Esta página está atualmente em desenvolvimento.</h3>
+                <p>Nossos desenvolvedores estão trabalhando duro para trazer esta funcionalidade para você em breve!</p>
+                <i class="fas fa-hammer fa-5x mt-3 mb-3" style="color: #6c757d;"></i>
+                <p class="mt-3">Agradecemos a sua paciência.</p>
+            </div>
+            
+            <a href="/dashboard/<%= guild.id %>" class="btn btn-primary mt-3">
+                <i class="fas fa-arrow-left"></i> Voltar para Configurações Gerais
+            </a>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

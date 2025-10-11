@@ -3,7 +3,7 @@
 // ===============================
 const { 
     Client, GatewayIntentBits, Collection, Partials, EmbedBuilder, 
-    PermissionsBitField 
+    PermissionsBitField, ChannelType 
 } = require('discord.js');
 const { QuickDB } = require('quick.db');
 const express = require('express');
@@ -15,13 +15,13 @@ const path = require('path');
 const dotenv = require('dotenv');
 
 // ===============================
-// 2. CONFIGURAÇÕES INICIAIS (CORRIGIDO: PORT e app no topo)
+// 2. CONFIGURAÇÕES INICIAIS
 // ===============================
 dotenv.config();
 const db = new QuickDB();
 const prefix = '!';
 
-// Constantes do Servidor Web - CORREÇÃO DO ReferenceError: PORT is not defined
+// Constantes do Servidor Web (CORRIGIDO: Escopo Global para PORT e app)
 const PORT = process.env.PORT || 3000;
 const app = express();
 
@@ -57,6 +57,7 @@ const DEFAULT_EMBED = {
 function processPlaceholders(text, member, guild, isLeave = false) {
     if (!text) return text;
     
+    // O mock de 'user' é necessário para garantir que o leave event tenha todos os campos.
     const user = isLeave ? { 
         displayName: member.user.username, 
         id: member.id, 
@@ -115,15 +116,17 @@ function createEmbedFromSettings(settings, member, guild, isLeave = false) {
 }
 
 // ===============================
-// 4. CONFIGURAÇÃO DO CLIENT DISCORD (CORRIGIDO: Intents)
+// 4. CONFIGURAÇÃO DO CLIENT DISCORD (AGORA COM OS INTENTS NECESSÁRIOS ATIVADOS)
 // ===============================
 const client = new Client({
     intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-        // Intents privilegiados (GuildMembers, GuildPresences) REMOVIDOS para garantir o deploy.
-        // AutoRole e Welcome VÃO FALHAR se não ativados no Portal Discord.
+        GatewayIntentBits.Guilds,           
+        GatewayIntentBits.GuildMessages,    
+        GatewayIntentBits.MessageContent,   
+        
+        // INTENTS PRIVILEGIADOS CONFIRMADOS PELO USUÁRIO
+        GatewayIntentBits.GuildMembers,     // CRÍTICO para Dashboard, AutoRole e Welcome
+        GatewayIntentBits.GuildPresences,   // CRÍTICO para Presenças
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
@@ -170,7 +173,8 @@ const isAuthenticated = (req, res, next) => {
 };
 
 /**
- * @description Obtém o contexto do servidor. CRÍTICO para EVITAR o Internal Server Error (500).
+ * @description Obtém o contexto do servidor, garantindo que o usuário tenha permissão.
+ * Usa um bloco try...catch para buscar o membro, prevenindo o erro 500.
  */
 async function getGuildContext(req) {
     if (!client.isReady()) return { status: 503, message: 'Bot não está pronto.' };
@@ -184,14 +188,14 @@ async function getGuildContext(req) {
     let hasAdmin = false;
 
     try {
-        // Tenta buscar o membro, mas captura o erro (evita 500) se o Intent estiver desativado.
+        // Agora que o Intent está ativo, esta busca deve funcionar, mas o catch é uma garantia extra.
         member = await guild.members.fetch(req.user.id).catch(() => null);
         
         if (member) {
             hasAdmin = member.permissions.has(PermissionsBitField.Flags.Administrator);
         }
     } catch (e) {
-        console.error(`Erro ao buscar membro: ${e.message}`);
+        console.error(`Erro ao buscar membro: ${e.message}. Ocorre se o Intent estiver desativado.`);
     }
 
     // Checagem de Permissão
@@ -202,7 +206,7 @@ async function getGuildContext(req) {
         };
     }
     
-    // Cria um objeto 'mock' se o membro real não foi obtido (crítico para o EJS)
+    // Cria um objeto 'mock' se o membro real não foi obtido (crítico para o EJS não quebrar)
     if (!member) {
          member = { 
             permissions: { has: (flag) => isOwner && flag === PermissionsBitField.Flags.Administrator },
@@ -223,7 +227,7 @@ async function getGuildContext(req) {
 }
 
 // ===============================
-// 6. ROTAS WEB (COMPLETAS)
+// 6. ROTAS WEB 
 // ===============================
 
 // Landing Page
@@ -315,12 +319,24 @@ app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
 });
 
 
-// ROTAS BOAS-VINDAS (GET e POST)
+// ROTAS BOAS-VINDAS (GET e POST) - ROBUSTO
 app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
     
     const currentSettings = await db.get(`guild_${context.guild.id}.welcome`) || {};
+    let textChannels = [];
+    let errorMessage = null;
+
+    try {
+        // Tratamento de erro para canais: se falhar (permissão ou cache), ele continua.
+        textChannels = context.guild.channels.cache
+            .filter(c => c.type === ChannelType.GuildText && c.permissionsFor(client.user.id)?.has(PermissionsBitField.Flags.SendMessages))
+            .map(c => ({ id: c.id, name: c.name }));
+    } catch (e) {
+        console.error(`Erro ao carregar canais para Welcome: ${e.message}`);
+        errorMessage = "Falha ao carregar canais de texto. Verifique as permissões do Bot.";
+    }
     
     const settings = {
         join_enabled: currentSettings.join_enabled || false,
@@ -336,10 +352,6 @@ app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
         dm_embed: { ...DEFAULT_EMBED, ...(currentSettings.dm_embed || {}) },
     };
 
-    const textChannels = context.guild.channels.cache
-        .filter(c => c.type === 0 && c.permissionsFor(client.user.id)?.has(PermissionsBitField.Flags.SendMessages))
-        .map(c => ({ id: c.id, name: c.name }));
-
     res.render('welcome_settings', { 
         user: req.user,
         guild: context.guild,
@@ -347,6 +359,7 @@ app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
         settings: settings,
         textChannels: textChannels,
         message: req.query.message,
+        errorMessage: errorMessage, 
         botAvatarUrl: context.botAvatarUrl
     });
 });
@@ -389,7 +402,7 @@ app.post('/dashboard/:guildId/welcome/test', isAuthenticated, async (req, res) =
     const { type, channel_id, message, embed_data } = req.body;
     
     const channel = context.guild.channels.cache.get(channel_id);
-    if (!channel || channel.type !== 0) {
+    if (!channel || channel.type !== ChannelType.GuildText) {
         return res.status(400).json({ success: false, message: 'Canal inválido ou inalcançável.' });
     }
     
@@ -421,29 +434,38 @@ app.post('/dashboard/:guildId/welcome/test', isAuthenticated, async (req, res) =
 });
 
 
-// ROTAS AUTOROLE (GET e POST)
+// ROTAS AUTOROLE (GET e POST) - ROBUSTO
 app.get('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
 
     const currentSettings = await db.get(`guild_${context.guild.id}.autorole`) || {};
+    let availableRoles = [];
+    let errorMessage = null;
+
+    try {
+        // Tratamento de erro para cargos: se falhar (permissão ou Intent), ele continua.
+        const botMember = context.guild.members.cache.get(client.user.id);
+        const botTopRole = botMember ? botMember.roles.highest.position : 0;
+
+        availableRoles = context.guild.roles.cache
+            .filter(role => !role.managed && role.position < botTopRole && role.id !== context.guild.id)
+            .sort((a, b) => b.position - a.position)
+            .map(role => ({ 
+                id: role.id, 
+                name: role.name, 
+                color: `#${role.color.toString(16).padStart(6, '0').toUpperCase()}` 
+            }));
+
+    } catch (e) {
+        console.error(`Erro ao carregar cargos para Autorole: ${e.message}`);
+        errorMessage = "Falha ao carregar cargos. Verifique se o Bot tem permissão para ver todos os cargos e se o Server Member Intent está ativo.";
+    }
 
     const settings = {
         enabled: currentSettings.enabled || false,
         roles: currentSettings.roles || [],
     };
-    
-    const botMember = context.guild.members.cache.get(client.user.id);
-    const botTopRole = botMember ? botMember.roles.highest.position : 0;
-
-    const availableRoles = context.guild.roles.cache
-        .filter(role => !role.managed && role.position < botTopRole && role.id !== context.guild.id)
-        .sort((a, b) => b.position - a.position)
-        .map(role => ({ 
-            id: role.id, 
-            name: role.name, 
-            color: `#${role.color.toString(16).padStart(6, '0').toUpperCase()}` 
-        }));
 
     res.render('autorole_settings', {
         user: req.user,
@@ -452,6 +474,7 @@ app.get('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
         settings: settings,
         availableRoles: availableRoles,
         message: req.query.message,
+        errorMessage: errorMessage, 
         botAvatarUrl: context.botAvatarUrl
     });
 });
@@ -473,40 +496,101 @@ app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     res.redirect(`/dashboard/${context.guild.id}/autorole?message=success`);
 });
 
-// ROTAS DE SEGURANÇA E VIP (APENAS EXEMPLOS, SUPOSTAMENTE SEM ERROS DE ACESSO)
+// ROTAS "EM CONSTRUÇÃO"
 app.get('/dashboard/:guildId/security', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) {
         return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
     }
-    const textChannels = context.guild.channels.cache.filter(c => c.type === 0).map(c => ({ id: c.id, name: c.name }));
-    res.render('security_settings', { user: req.user, guild: context.guild, activePage: 'security', botAvatarUrl: context.botAvatarUrl, textChannels });
+    res.render('coming_soon', { 
+        user: req.user, 
+        guild: context.guild, 
+        activePage: 'security', 
+        activePageDisplay: 'Segurança', 
+        botAvatarUrl: context.botAvatarUrl 
+    });
 });
+
 app.get('/dashboard/:guildId/vip', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) {
         return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
     }
-    res.render('vip_settings', { user: req.user, guild: context.guild, activePage: 'vip', botAvatarUrl: context.botAvatarUrl });
+    res.render('coming_soon', { 
+        user: req.user, 
+        guild: context.guild, 
+        activePage: 'vip', 
+        activePageDisplay: 'VIP/Premium',
+        botAvatarUrl: context.botAvatarUrl 
+    });
 });
+
 app.get('/updates', isAuthenticated, async (req, res) => {
-    res.render('updates', { user: req.user, activePage: 'updates' });
+    const botAvatarUrl = client.isReady() ? client.user.displayAvatarURL({ size: 128 }) : FALLBACK_ICON_URL;
+    res.render('updates', { 
+        user: req.user, 
+        activePage: 'updates',
+        botAvatarUrl: botAvatarUrl
+    });
 });
 
 
 // ===============================
-// 7. EVENTOS DISCORD (AVISOS)
+// 7. EVENTOS DISCORD (BOAS-VINDAS E AUTOROLE)
 // ===============================
 
 client.on('guildMemberAdd', async member => {
-    // AVISO: Estes eventos ainda dependem do Intent Privilegiado GuildMembers!
-    // Eles podem falhar.
-    // Lógica de AutoRole e Welcome Message
+    if (!member.guild || member.user.bot) return;
+
+    // 1. Lógica de AutoRole
+    try {
+        const autoroleSettings = await db.get(`guild_${member.guild.id}.autorole`);
+        if (autoroleSettings && autoroleSettings.enabled && autoroleSettings.roles.length > 0) {
+            await member.roles.add(autoroleSettings.roles, 'AutoRole ativado via Painel.');
+            console.log(`AutoRole executado para ${member.user.tag} em ${member.guild.name}`);
+        }
+    } catch (e) {
+        console.error(`Erro ao aplicar AutoRole para ${member.user.tag}: ${e.message}`);
+    }
+
+    // 2. Lógica de Welcome
+    try {
+        const welcomeSettings = await db.get(`guild_${member.guild.id}.welcome`);
+        
+        if (welcomeSettings && welcomeSettings.join_enabled && welcomeSettings.join_channel_id) {
+            const channel = member.guild.channels.cache.get(welcomeSettings.join_channel_id);
+            if (channel && channel.type === ChannelType.GuildText) {
+                const message = processPlaceholders(welcomeSettings.join_message, member, member.guild);
+                const embed = createEmbedFromSettings(welcomeSettings.join_embed, member, member.guild);
+                
+                await channel.send({ content: message, embeds: embed ? [embed] : [] });
+            }
+        }
+    } catch (e) {
+        console.error(`Erro ao enviar mensagem de Welcome para ${member.user.tag}: ${e.message}`);
+    }
 });
 
 client.on('guildMemberRemove', async member => {
-    // AVISO: Estes eventos ainda dependem do Intent Privilegiado GuildMembers!
-    // Lógica de Saída
+    if (!member.guild || member.user.bot) return;
+
+    // 1. Lógica de Saída (Leave)
+    try {
+        const welcomeSettings = await db.get(`guild_${member.guild.id}.welcome`);
+        
+        if (welcomeSettings && welcomeSettings.leave_enabled && welcomeSettings.leave_channel_id) {
+            const channel = member.guild.channels.cache.get(welcomeSettings.leave_channel_id);
+            if (channel && channel.type === ChannelType.GuildText) {
+                // Passa isLeave = true para usar o nome de usuário (member.user.username) em vez do nickname
+                const message = processPlaceholders(welcomeSettings.leave_message, member, member.guild, true);
+                const embed = createEmbedFromSettings(welcomeSettings.leave_embed, member, member.guild, true);
+                
+                await channel.send({ content: message, embeds: embed ? [embed] : [] });
+            }
+        }
+    } catch (e) {
+        console.error(`Erro ao enviar mensagem de Saída para ${member.user.tag}: ${e.message}`);
+    }
 });
 
 
@@ -514,7 +598,7 @@ client.on('guildMemberRemove', async member => {
 // 8. INICIALIZAÇÃO
 // ===============================
 
-// CORRIGIDO: Usa TOKEN_BOT e o bot fará o login
+// CORRIGIDO: Usa TOKEN_BOT
 client.login(process.env.TOKEN_BOT); 
 
 client.once('ready', () => {
