@@ -508,7 +508,7 @@ client.on('guildMemberRemove', async member => {
 
 // --- 9. INICIALIZAÇÃO ---
 
-client.login(process.env.BOT_TOKEN);
+client.login(process.env.TOKEN_BOT);
 client.once('ready', () => {
     console.log(`✅ Bot online como ${client.user.tag}`);
     app.listen(PORT, () => {
