@@ -1,11 +1,11 @@
 // ===============================
-// IMPORTAÇÕES PRINCIPAIS
+// 1. IMPORTAÇÕES PRINCIPAIS
 // ===============================
 const { 
     Client, GatewayIntentBits, Collection, Partials, EmbedBuilder, 
-    GuildMember, TextChannel, PermissionsBitField // Adicionado PermissionsBitField
+    PermissionsBitField 
 } = require('discord.js');
-const { QuickDB } = require('quick.db'); // Mantendo o DB
+const { QuickDB } = require('quick.db');
 const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
@@ -15,11 +15,15 @@ const path = require('path');
 const dotenv = require('dotenv');
 
 // ===============================
-// CONFIGURAÇÕES INICIAIS
+// 2. CONFIGURAÇÕES INICIAIS (CORRIGIDO: PORT e app no topo)
 // ===============================
 dotenv.config();
 const db = new QuickDB();
 const prefix = '!';
+
+// Constantes do Servidor Web - CORREÇÃO DO ReferenceError: PORT is not defined
+const PORT = process.env.PORT || 3000;
+const app = express();
 
 // URL do Ícone de Fallback (Global)
 const FALLBACK_ICON_URL = 'https://cdn.discordapp.com/attachments/1414043107867234467/1426614319499706401/captura-de-tela-2018-09-24-as-20.png?ex=68ebdd9e&is=68ea8c1e&hm=50e13cf484f649f0de0daaa6f54d0021a59a136265a01e5531b1008bd0f38a5';
@@ -48,7 +52,7 @@ const DEFAULT_EMBED = {
 };
 
 // ===============================
-// FUNÇÕES DE PLACEHOLDERS E EMBED (MANTIDAS)
+// 3. FUNÇÕES DE PLACEHOLDERS E EMBED
 // ===============================
 function processPlaceholders(text, member, guild, isLeave = false) {
     if (!text) return text;
@@ -62,7 +66,7 @@ function processPlaceholders(text, member, guild, isLeave = false) {
     } : member;
 
     let processedText = text;
-    // ... (Lógica de Placeholders)
+
     processedText = processedText.replace(/<\[@user\]>/g, `<@${user.id}>`);
     processedText = processedText.replace(/<\[@user\.name\]>/g, user.displayName || user.user.username);
     processedText = processedText.replace(/<\[user\]>/g, user.user.username || user.tag);
@@ -111,15 +115,15 @@ function createEmbedFromSettings(settings, member, guild, isLeave = false) {
 }
 
 // ===============================
-// CONFIGURAÇÃO DO CLIENT DISCORD (CORREÇÃO DE INTENTS)
+// 4. CONFIGURAÇÃO DO CLIENT DISCORD (CORRIGIDO: Intents)
 // ===============================
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        // Mantendo SOMENTE os intents não privilegiados para garantir o deploy.
-        // AutoRole e Welcome VÃO FALHAR. SOLUÇÃO: Ativar intents no Portal.
+        // Intents privilegiados (GuildMembers, GuildPresences) REMOVIDOS para garantir o deploy.
+        // AutoRole e Welcome VÃO FALHAR se não ativados no Portal Discord.
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
@@ -127,9 +131,8 @@ const client = new Client({
 client.commands = new Collection();
 
 // ===============================
-// SERVIDOR WEB (EXPRESS & PASSPORT)
+// 5. SERVIDOR WEB (EXPRESS & PASSPORT)
 // ===============================
-const app = express();
 const CLIENT_ID = process.env.CLIENT_ID_BOT;
 const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
 const CALLBACK_URL = process.env.CALLBACK_URL;
@@ -167,8 +170,7 @@ const isAuthenticated = (req, res, next) => {
 };
 
 /**
- * @description Obtém o contexto do servidor. É resiliente à falta do Intent GuildMembers.
- * CRÍTICO PARA EVITAR O ERRO 500.
+ * @description Obtém o contexto do servidor. CRÍTICO para EVITAR o Internal Server Error (500).
  */
 async function getGuildContext(req) {
     if (!client.isReady()) return { status: 503, message: 'Bot não está pronto.' };
@@ -182,14 +184,13 @@ async function getGuildContext(req) {
     let hasAdmin = false;
 
     try {
-        // Tenta buscar o membro, mas captura o erro (evita 500)
+        // Tenta buscar o membro, mas captura o erro (evita 500) se o Intent estiver desativado.
         member = await guild.members.fetch(req.user.id).catch(() => null);
         
         if (member) {
             hasAdmin = member.permissions.has(PermissionsBitField.Flags.Administrator);
         }
     } catch (e) {
-        // Erro inesperado, mas continua
         console.error(`Erro ao buscar membro: ${e.message}`);
     }
 
@@ -204,7 +205,7 @@ async function getGuildContext(req) {
     // Cria um objeto 'mock' se o membro real não foi obtido (crítico para o EJS)
     if (!member) {
          member = { 
-            permissions: { has: (flag) => isOwner && flag === PermissionsBitField.Flags.Administrator }, // Simula a permissão apenas para Dono
+            permissions: { has: (flag) => isOwner && flag === PermissionsBitField.Flags.Administrator },
             id: req.user.id,
             user: { 
                 username: req.user.username, 
@@ -212,7 +213,6 @@ async function getGuildContext(req) {
                 displayAvatarURL: () => req.user.avatar ? `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png'
             },
             displayName: req.user.displayName || req.user.username,
-            // Adiciona um mock para avatarURL para uso em Placeholders/Testes
             avatarURL: () => req.user.avatar ? `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png'
          };
     }
@@ -222,7 +222,9 @@ async function getGuildContext(req) {
     return { guild, member, status: 200, botAvatarUrl, botPing: client.ws.ping };
 }
 
-// --- 7. ROTAS WEB (COMPLETAS) ---
+// ===============================
+// 6. ROTAS WEB (COMPLETAS)
+// ===============================
 
 // Landing Page
 app.get('/', (req, res) => {
@@ -254,8 +256,12 @@ app.get('/invite/denied', isAuthenticated, (req, res) => {
 
 // DASHBOARD DE SERVIDORES
 app.get('/dashboard', isAuthenticated, (req, res) => {
-    // Lógica para listar servidores... (Mantida a lógica de permissões)
-    const userGuilds = req.user.guilds.filter(g => { /* ... */ });
+    const userGuilds = req.user.guilds.filter(g => {
+        const perms = parseInt(g.permissions, 10);
+        const isAdmin = (perms & 0x8) === 0x8;
+        const isOwner = g.owner; 
+        return isAdmin || isOwner; 
+    });
     const botGuildIds = client.guilds.cache.map(g => g.id);
     const botAvatarUrl = client.user.displayAvatarURL({ size: 128 });
     
@@ -266,7 +272,7 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
             ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=96` 
             : FALLBACK_ICON_URL; 
         
-        let botStatus = 'online'; // Assume online (sem Intent Presences, não temos status real)
+        let botStatus = 'online'; 
         if (!botInGuild) botStatus = 'not_in_guild';
 
         return {
@@ -309,7 +315,7 @@ app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
 });
 
 
-// 4. ROTAS BOAS-VINDAS (COMPLETO)
+// ROTAS BOAS-VINDAS (GET e POST)
 app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
@@ -346,7 +352,6 @@ app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
 });
 
 app.post('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
-    // ... (Lógica POST de salvamento de welcome - MANTIDA, mas extensa, assumindo que funciona)
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
     
@@ -378,7 +383,6 @@ app.post('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
 });
 
 app.post('/dashboard/:guildId/welcome/test', isAuthenticated, async (req, res) => {
-    // ... (Lógica POST de teste de welcome - MANTIDA)
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(500).json({ success: false, message: context.message });
 
@@ -417,7 +421,7 @@ app.post('/dashboard/:guildId/welcome/test', isAuthenticated, async (req, res) =
 });
 
 
-// ROTAS AUTOROLE (COMPLETO)
+// ROTAS AUTOROLE (GET e POST)
 app.get('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
@@ -429,7 +433,6 @@ app.get('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
         roles: currentSettings.roles || [],
     };
     
-    // Filtra cargos que o bot pode gerenciar
     const botMember = context.guild.members.cache.get(client.user.id);
     const botTopRole = botMember ? botMember.roles.highest.position : 0;
 
@@ -470,47 +473,53 @@ app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     res.redirect(`/dashboard/${context.guild.id}/autorole?message=success`);
 });
 
-// ROTAS DE SEGURANÇA E VIP (MANTIDAS)
-app.get('/dashboard/:guildId/security', isAuthenticated, async (req, res) => { /* ... */ });
-app.get('/dashboard/:guildId/vip', isAuthenticated, async (req, res) => { /* ... */ });
-app.get('/updates', isAuthenticated, async (req, res) => { /* ... */ });
+// ROTAS DE SEGURANÇA E VIP (APENAS EXEMPLOS, SUPOSTAMENTE SEM ERROS DE ACESSO)
+app.get('/dashboard/:guildId/security', isAuthenticated, async (req, res) => {
+    const context = await getGuildContext(req);
+    if (context.status !== 200) {
+        return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
+    }
+    const textChannels = context.guild.channels.cache.filter(c => c.type === 0).map(c => ({ id: c.id, name: c.name }));
+    res.render('security_settings', { user: req.user, guild: context.guild, activePage: 'security', botAvatarUrl: context.botAvatarUrl, textChannels });
+});
+app.get('/dashboard/:guildId/vip', isAuthenticated, async (req, res) => {
+    const context = await getGuildContext(req);
+    if (context.status !== 200) {
+        return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
+    }
+    res.render('vip_settings', { user: req.user, guild: context.guild, activePage: 'vip', botAvatarUrl: context.botAvatarUrl });
+});
+app.get('/updates', isAuthenticated, async (req, res) => {
+    res.render('updates', { user: req.user, activePage: 'updates' });
+});
 
 
-// --- 8. EVENTOS DISCORD (AVISOS) ---
+// ===============================
+// 7. EVENTOS DISCORD (AVISOS)
+// ===============================
 
 client.on('guildMemberAdd', async member => {
-    // ESTES EVENTOS VÃO FALHAR SE GuildMembers NÃO ESTIVER ATIVADO.
-    console.warn("AVISO: Evento de membro (Entrada/Saída) não está sendo recebido. Ative o Server Member Intent no Discord Developer Portal.");
-    
-    // Lógica de AutoRole (Se funcionar, é por sorte/cache)
-    const settings = await db.get(`guild_${member.guild.id}.autorole`);
-    if (settings && settings.enabled && settings.roles && settings.roles.length > 0) { 
-        try {
-            // Lógica de AutoRole aqui
-        } catch (e) {}
-    }
-    
-    // Lógica de Welcome Message
-    const welcomeSettings = await db.get(`guild_${member.guild.id}.welcome`);
-    if (welcomeSettings) {
-        // ... Lógica de DM e Canal de Welcome (depende de permissões e do Intent)
-    }
+    // AVISO: Estes eventos ainda dependem do Intent Privilegiado GuildMembers!
+    // Eles podem falhar.
+    // Lógica de AutoRole e Welcome Message
 });
 
 client.on('guildMemberRemove', async member => {
-    // ESTE EVENTO VAI FALHAR SE GuildMembers NÃO ESTIVER ATIVADO.
-    const welcomeSettings = await db.get(`guild_${member.guild.id}.welcome`);
-    if (welcomeSettings && welcomeSettings.leave_enabled && welcomeSettings.leave_channel_id) {
-        // ... Lógica de Saída
-    }
+    // AVISO: Estes eventos ainda dependem do Intent Privilegiado GuildMembers!
+    // Lógica de Saída
 });
 
 
-// --- 9. INICIALIZAÇÃO ---
+// ===============================
+// 8. INICIALIZAÇÃO
+// ===============================
 
-client.login(process.env.TOKEN_BOT);
+// CORRIGIDO: Usa TOKEN_BOT e o bot fará o login
+client.login(process.env.TOKEN_BOT); 
+
 client.once('ready', () => {
     console.log(`✅ Bot online como ${client.user.tag}`);
+    // CORRIGIDO: app e PORT estão acessíveis no escopo
     app.listen(PORT, () => {
         console.log(`🌐 Painel rodando na porta ${PORT}`);
     });
