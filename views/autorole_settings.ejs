@@ -11,20 +11,33 @@
 
     <form method="POST">
         <div class="settings-section">
-            <h2>Cargo Automático</h2>
-            <label for="role_id">Selecione o cargo para dar automaticamente a novos membros:</label>
-            <select name="role_id" id="role_id">
-                <option value="">Desativado</option>
-                <% roles.forEach(role => { %>
-                    <option value="<%= role.id %>" <%= settings.role_id === role.id ? 'selected' : '' %>>
+            <h2>Controle de AutoRole</h2>
+            <label class="checkbox-container">
+                <input type="checkbox" name="enabled" value="1" <%= settings.enabled ? 'checked' : '' %>>
+                Ativar AutoRole
+            </label>
+        </div>
+        
+        <div class="settings-section">
+            <h2>Cargos que serão dados</h2>
+            <p>Selecione todos os cargos que deseja atribuir automaticamente a novos membros. Segure **Ctrl** ou **Cmd** para selecionar múltiplos.</p>
+            
+            <label for="roles-select">Cargos:</label>
+            <select name="roles" id="roles-select" multiple size="8">
+                <% availableRoles.forEach(role => { %>
+                    <option value="<%= role.id %>" <%= settings.roles.includes(role.id) ? 'selected' : '' %>
+                            style="color: <%= role.color === '#000000' ? '#ccc' : role.color %>;">
                         <%= role.name %>
                     </option>
                 <% }); %>
             </select>
-            <small>O Bot deve ter permissão para gerenciar cargos e o cargo do bot deve ser superior ao cargo selecionado.</small>
+            <small>
+                Atenção: O Bot deve ter um cargo **superior** aos cargos selecionados para poder atribuí-los. 
+                Cargos que o bot não pode gerenciar não aparecem aqui.
+            </small>
         </div>
 
-        <button type="submit" class="btn btn-primary">Salvar Configurações</button>
+        <button type="submit" class="btn btn-primary btn-save-large">Salvar Configurações</button>
     </form>
 </div>
 

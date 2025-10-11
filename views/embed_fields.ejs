@@ -1,0 +1,25 @@
+<div class="embed-options-group">
+    <label for="<%= prefix %>_embed_color">Cor (Hexadecimal):</label>
+    <input type="color" name="<%= prefix %>_embed_color" id="<%= prefix %>_embed_color" 
+           value="<%= embed.color || '#5865F2' %>">
+
+    <label for="<%= prefix %>_embed_title">Título:</label>
+    <input type="text" name="<%= prefix %>_embed_title" id="<%= prefix %>_embed_title" 
+           value="<%= embed.title || '' %>" placeholder="Título principal do Embed">
+           
+    <label for="<%= prefix %>_embed_description">Descrição:</label>
+    <textarea name="<%= prefix %>_embed_description" id="<%= prefix %>_embed_description" rows="3" 
+              placeholder="O corpo principal do Embed. Aceita variáveis."><%= embed.description || '' %></textarea>
+
+    <label for="<%= prefix %>_embed_author_name">Nome do Autor:</label>
+    <input type="text" name="<%= prefix %>_embed_author_name" id="<%= prefix %>_embed_author_name" 
+           value="<%= embed.author_name || '' %>" placeholder="Nome do autor (opcional)">
+    
+    <label for="<%= prefix %>_embed_footer_text">Texto do Rodapé:</label>
+    <input type="text" name="<%= prefix %>_embed_footer_text" id="<%= prefix %>_embed_footer_text" 
+           value="<%= embed.footer_text || '' %>" placeholder="Rodapé (opcional)">
+
+    <label for="<%= prefix %>_embed_image_url">URL da Imagem:</label>
+    <input type="url" name="<%= prefix %>_embed_image_url" id="<%= prefix %>_embed_image_url" 
+           value="<%= embed.image_url || '' %>" placeholder="URL para a imagem principal">
+</div>

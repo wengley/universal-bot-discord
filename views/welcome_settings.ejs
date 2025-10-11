@@ -1,39 +1,148 @@
 <%- include('header', { user: user, guild: guild, activePage: 'welcome' }) %>
 
 <div class="main-content">
-    <h1>Configurações de Boas-Vindas de <%= guild.name %></h1>
+    <h1>Boas-Vindas e Saída de <%= guild.name %></h1>
     
     <% if (message === 'success') { %>
         <div class="alert alert-success">
-            ✅ Configurações de Boas-Vindas salvas com sucesso!
+            ✅ Configurações salvas com sucesso!
         </div>
     <% } %>
 
+    <div class="settings-section variables-section">
+        <h2 onclick="toggleSection('vars-list')" style="cursor: pointer;">
+            Variáveis de Placeholder (Clique para expandir)
+        </h2>
+        <div id="vars-list" class="collapse-content">
+            <p>Use estas variáveis nas mensagens e embeds. **Exemplo:** `Boas-vindas, <[@user]>!`</p>
+            <div class="variable-list">
+                <span><code>&lt;[@user]&gt;</code>: Menciona o usuário.</span>
+                <span><code>&lt;[@user.name]&gt;</code>: Nome de exibição (Display Name) do usuário.</span>
+                <span><code>&lt;[user]&gt;</code>: Nome de usuário (Username, ex: @usuario_123).</span>
+                <span><code>&lt;[user.id]&gt;</code>: ID do usuário.</span>
+                <span><code>&lt;[guild.icon]&gt;</code>: URL do ícone do servidor.</span>
+                <span><code>&lt;[guild.name]&gt;</code>: Nome do servidor.</span>
+            </div>
+        </div>
+    </div>
+
+
     <form method="POST">
         <div class="settings-section">
-            <h2>Canal de Boas-Vindas</h2>
-            <label for="channel_id">Selecione o canal para enviar mensagens:</label>
-            <select name="channel_id" id="channel_id">
-                <option value="">Desativado</option>
+            <h2>Mensagens de Entrada (Boas-Vindas)</h2>
+            <label class="checkbox-container">
+                <input type="checkbox" name="join_enabled" value="1" <%= settings.join_enabled ? 'checked' : '' %>>
+                Ativar mensagens de Entrada
+            </label>
+
+            <label for="join_channel_id">Canal de Boas-Vindas:</label>
+            <select name="join_channel_id" id="join_channel_id">
+                <option value="">(Nenhum/Desativado)</option>
                 <% textChannels.forEach(channel => { %>
-                    <option value="<%= channel.id %>" <%= settings.channel_id === channel.id ? 'selected' : '' %>>
+                    <option value="<%= channel.id %>" <%= settings.join_channel_id === channel.id ? 'selected' : '' %>>
                         #<%= channel.name %>
                     </option>
                 <% }); %>
             </select>
+
+            <label for="join_message">Mensagem Simples:</label>
+            <input type="text" name="join_message" id="join_message" 
+                   value="<%= settings.join_message %>" 
+                   placeholder="Mensagem de texto simples (opcional)">
+
+            <button type="button" class="btn btn-primary btn-test-message">Testar mensagem</button>
+
+            <h3 onclick="toggleSection('join-embed-options')" style="cursor: pointer; margin-top: 20px;">
+                Embed de Boas-Vindas (Clique para configurar)
+            </h3>
+            <div id="join-embed-options" class="collapse-content">
+                <label class="checkbox-container">
+                    <input type="checkbox" name="join_embed_enabled" value="1" <%= settings.join_embed.enabled ? 'checked' : '' %>>
+                    Ativar Embed
+                </label>
+                <%- include('embed_fields', { embed: settings.join_embed, prefix: 'join' }) %>
+            </div>
         </div>
 
         <div class="settings-section">
-            <h2>Mensagem de Boas-Vindas</h2>
-            <label for="welcome_message">Mensagem (Use {user} para marcar o usuário):</label>
-            <input type="text" name="welcome_message" id="welcome_message" 
-                   value="<%= settings.message %>" 
-                   placeholder="Ex: Bem-vindo, {user}!">
-            <small>Atenção: A mensagem deve ser curta e objetiva.</small>
+            <h2>Mensagens de Saída</h2>
+            <label class="checkbox-container">
+                <input type="checkbox" name="leave_enabled" value="1" <%= settings.leave_enabled ? 'checked' : '' %>>
+                Ativar mensagens de Saída
+            </label>
+
+            <label for="leave_channel_id">Canal de Saída:</label>
+            <select name="leave_channel_id" id="leave_channel_id">
+                <option value="">(Nenhum/Desativado)</option>
+                <% textChannels.forEach(channel => { %>
+                    <option value="<%= channel.id %>" <%= settings.leave_channel_id === channel.id ? 'selected' : '' %>>
+                        #<%= channel.name %>
+                    </option>
+                <% }); %>
+            </select>
+
+            <label for="leave_message">Mensagem Simples:</label>
+            <input type="text" name="leave_message" id="leave_message" 
+                   value="<%= settings.leave_message %>" 
+                   placeholder="Mensagem de texto simples (opcional)">
+
+            <h3 onclick="toggleSection('leave-embed-options')" style="cursor: pointer; margin-top: 20px;">
+                Embed de Saída (Clique para configurar)
+            </h3>
+            <div id="leave-embed-options" class="collapse-content">
+                <label class="checkbox-container">
+                    <input type="checkbox" name="leave_embed_enabled" value="1" <%= settings.leave_embed.enabled ? 'checked' : '' %>>
+                    Ativar Embed
+                </label>
+                <%- include('embed_fields', { embed: settings.leave_embed, prefix: 'leave' }) %>
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <h2>Mensagens na DM</h2>
+            <label class="checkbox-container">
+                <input type="checkbox" name="dm_enabled" value="1" <%= settings.dm_enabled ? 'checked' : '' %>>
+                Ativar mensagens na DM
+            </label>
+
+            <label for="dm_message">Mensagem Simples na DM:</label>
+            <input type="text" name="dm_message" id="dm_message" 
+                   value="<%= settings.dm_message %>" 
+                   placeholder="Mensagem que será enviada na DM (opcional)">
+
+            <h3 onclick="toggleSection('dm-embed-options')" style="cursor: pointer; margin-top: 20px;">
+                Embed na DM (Clique para configurar)
+            </h3>
+            <div id="dm-embed-options" class="collapse-content">
+                <label class="checkbox-container">
+                    <input type="checkbox" name="dm_embed_enabled" value="1" <%= settings.dm_embed.enabled ? 'checked' : '' %>>
+                    Ativar Embed
+                </label>
+                <%- include('embed_fields', { embed: settings.dm_embed, prefix: 'dm' }) %>
+            </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">Salvar Configurações</button>
+        <button type="submit" class="btn btn-primary btn-save-large">Salvar Todas as Configurações</button>
     </form>
 </div>
+
+<script>
+    // Função para colapsar/expandir as seções
+    function toggleSection(id) {
+        const element = document.getElementById(id);
+        if (element.style.display === 'block') {
+            element.style.display = 'none';
+        } else {
+            element.style.display = 'block';
+        }
+    }
+    // Oculta as seções de embed por padrão
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('vars-list').style.display = 'none';
+        document.getElementById('join-embed-options').style.display = 'none';
+        document.getElementById('leave-embed-options').style.display = 'none';
+        document.getElementById('dm-embed-options').style.display = 'none';
+    });
+</script>
 
 <%- include('footer') %>
