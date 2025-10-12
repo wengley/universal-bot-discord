@@ -19,7 +19,7 @@ dotenv.config();
 const db = new QuickDB();
 const prefix = '!';
 
-// Constantes do Servidor Web - ESSENCIAL PARA O RENDER
+// Constantes do Servidor Web
 const PORT = process.env.PORT || 3000;
 const app = express();
 
@@ -50,11 +50,12 @@ const BOT_COMMANDS = [
 ];
 
 // ===============================
-// 2. FUNÇÕES DE PROCESSAMENTO (PONTO 3: PLACEHOLDERS APLICADOS EM TODOS OS CAMPOS)
+// 2. FUNÇÕES DE PROCESSAMENTO
 // ===============================
 function processPlaceholders(text, member, guild, isLeave = false) {
     if (!text) return text;
     
+    // Configurações de membro (garante que funciona para user join/leave e mock member)
     const user = isLeave ? { 
         displayName: member.user.username, 
         id: member.id, 
@@ -93,22 +94,18 @@ function createEmbedFromSettings(settings, member, guild, isLeave = false) {
     if (settings.author_name) {
         embed.setAuthor({
             name: processPlaceholders(settings.author_name, member, guild, isLeave),
-            // PONTO 3: Permite placeholder em URL do Autor
             iconURL: processPlaceholders(settings.author_icon_url, member, guild, isLeave) || null,
         });
     }
     if (settings.thumbnail_url) {
-        // PONTO 3: Permite placeholder em Thumbnail
         embed.setThumbnail(processPlaceholders(settings.thumbnail_url, member, guild, isLeave));
     }
     if (settings.image_url) {
-        // PONTO 3: Permite placeholder em Imagem
         embed.setImage(processPlaceholders(settings.image_url, member, guild, isLeave));
     }
     if (settings.footer_text) {
         embed.setFooter({
             text: processPlaceholders(settings.footer_text, member, guild, isLeave),
-            // PONTO 3: Permite placeholder em URL do Footer
             iconURL: processPlaceholders(settings.footer_icon_url, member, guild, isLeave) || null,
         });
     }
@@ -124,7 +121,6 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        // É essencial ter estes Intents mínimos para o dashboard
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
@@ -168,7 +164,7 @@ const isAuthenticated = (req, res, next) => {
 };
 
 /**
- * @description Obtém o contexto do servidor, com tratamento de erros. ESSENCIAL!
+ * @description Obtém o contexto do servidor, com tratamento de erros.
  */
 async function getGuildContext(req) {
     if (!client.isReady()) return { status: 503, message: 'Bot não está pronto.' };
@@ -212,7 +208,7 @@ async function getGuildContext(req) {
 }
 
 // ===============================
-// 5. ROTAS WEB (INCLUINDO AS CORREÇÕES)
+// 5. ROTAS WEB (CORRIGIDA /dashboard)
 // ===============================
 
 // Rota de Status (Health Check)
@@ -224,27 +220,55 @@ app.get('/status', (req, res) => {
     }
 });
 
-// Landing Page (PONTO 1: Melhor visual/descrição no EJS)
+// Landing Page (PONTO 1)
 app.get('/', (req, res) => {
     if (req.isAuthenticated()) return res.redirect('/dashboard');
-    // A view 'landing_page.ejs' deve ser estilizada para ter o visual Loritta/Dark Mode
     res.render('landing_page', { 
         title: 'Universal Bot | Painel de Controle',
         isAuthenticated: req.isAuthenticated(),
         botAvatarUrl: client.isReady() ? client.user.displayAvatarURL({ size: 128 }) : FALLBACK_ICON_URL,
     }); 
 });
+app.get('/login', (req, res) => {
+    passport.authenticate('discord', { scope: ['identify', 'email', 'guilds'] })(req, res);
+});
+app.get('/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => {
+    res.redirect('/dashboard'); 
+});
+app.get('/logout', (req, res) => {
+    req.logout(() => res.redirect('/')); 
+});
 
-// ... Outras rotas de Autenticação e Dashboard Guild Select (mantidas)
+// ROTA DASHBOARD (GUILD SELECT) - CORRIGE O 'Cannot GET /dashboard'
+app.get('/dashboard', isAuthenticated, (req, res) => {
+    // Filtra apenas os servidores onde o usuário é Administrador ou Dono
+    const managedGuilds = req.user.guilds.filter(guild => {
+        // Verifica permissão de Administrador (bit 3 - 0x8)
+        const permissions = new PermissionsBitField(BigInt(guild.permissions));
+        const isAdmin = permissions.has(PermissionsBitField.Flags.Administrator);
+        
+        // Também verifica se o bot está no servidor (cache)
+        const isBotInGuild = client.guilds.cache.has(guild.id);
+        
+        return isAdmin && isBotInGuild;
+    });
 
+    res.render('dashboard', { 
+        user: req.user, 
+        guilds: managedGuilds,
+        activePage: 'guild_select', 
+        botAvatarUrl: client.isReady() ? client.user.displayAvatarURL({ size: 128 }) : FALLBACK_ICON_URL
+    }); 
+});
+
+
+// Rota base de CONFIGURAÇÃO DO SERVIDOR (guild_settings.ejs)
 app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
 
-    // PONTO 2: O modo escuro já é o padrão. As classes CSS (ex: .settings-section) do seu styles.css 
-    // já cuidam da aparência (borda cinza/fundo escuro).
     res.render('guild_settings', { 
-        user: req.user, guild: context.guild, activePage: 'settings', 
+        user: req.user, guild: context.guild, activePage: 'settings',
         botPing: context.botPing, commands: BOT_COMMANDS, botAvatarUrl: context.botAvatarUrl
     });
 });
@@ -254,7 +278,7 @@ app.get('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
 
-    const currentSettings = await db.get(`guild_${context.guild.id}.autorole`) || {};
+    const currentSettings = await db.get(`guild_${context.guild.id}.autorole`) || { roles: [] };
     let availableRoles = [];
     let errorMessage = null;
 
@@ -267,7 +291,6 @@ app.get('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
             .sort((a, b) => b.position - a.position)
             .map(role => ({ 
                 id: role.id, name: role.name, 
-                // A cor do cargo é passada para o EJS para o visual de TAG
                 color: `#${role.color.toString(16).padStart(6, '0').toUpperCase()}` 
             }));
 
@@ -278,7 +301,6 @@ app.get('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
 
     const settings = { 
         enabled: currentSettings.enabled || false, 
-        // Armazena ID e a cor para o EJS renderizar a TAG corretamente
         roles: currentSettings.roles.map(roleId => {
             const role = context.guild.roles.cache.get(roleId);
             return {
@@ -295,13 +317,11 @@ app.get('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
         errorMessage: errorMessage, botAvatarUrl: context.botAvatarUrl
     });
 });
-
 app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
 
     const { enabled, roles } = req.body;
-    // PONTO 4: Salva apenas a lista de IDs de cargo (roles é uma string de IDs separados por vírgula vindo do EJS)
     const roleIds = roles ? roles.split(',').filter(id => id.length > 0) : [];
 
     await db.set(`guild_${context.guild.id}.autorole`, { enabled: !!enabled, roles: roleIds });
@@ -309,16 +329,52 @@ app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
 });
 
 
-// ROTAS BOAS-VINDAS (GET, POST e TESTE) (PONTO 3: PLACEHOLDERS e TESTAR MENSAGEM)
+// ROTAS BOAS-VINDAS (GET/POST mantidas)
 app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
-    // ... (Lógica de GET /welcome mantida robusta e com try/catch) ...
-    // ... (Certifique-se de que o EJS permite entrada de texto em todos os campos de URL/texto) ...
+    const context = await getGuildContext(req);
+    if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
+    
+    const currentSettings = await db.get(`guild_${context.guild.id}.welcome`) || {};
+    let textChannels = [];
+    let errorMessage = null;
+
+    try {
+        textChannels = context.guild.channels.cache
+            .filter(c => c.type === 0 && c.permissionsFor(client.user.id)?.has(PermissionsBitField.Flags.SendMessages))
+            .map(c => ({ id: c.id, name: c.name }));
+    } catch (e) {
+        console.error(`Erro ao carregar canais para Welcome: ${e.message}`);
+        errorMessage = "Falha ao carregar canais. Verifique se o Bot tem permissão para ver/enviar mensagens nos canais de texto.";
+    }
+    
+    // Configuração de settings (precisa ser completa para o EJS)
+    const settings = {
+        enabled: currentSettings.enabled || false,
+        join_channel_id: currentSettings.join_channel_id || null,
+        leave_channel_id: currentSettings.leave_channel_id || null,
+        join_message: currentSettings.join_message || "Bem-vindo(a) <[@user]>!",
+        leave_message: currentSettings.leave_message || "<[user]> saiu do servidor.",
+        join_embed: { ...DEFAULT_EMBED, ...currentSettings.join_embed },
+        leave_embed: { ...DEFAULT_EMBED, ...currentSettings.leave_embed },
+    };
+
+    res.render('welcome_settings', { 
+        user: req.user, guild: context.guild, activePage: 'welcome', settings: settings,
+        textChannels: textChannels, message: req.query.message,
+        errorMessage: errorMessage, botAvatarUrl: context.botAvatarUrl
+    });
 });
 
 app.post('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
-    // ... (Lógica de POST /welcome mantida, salva as configurações) ...
+    const context = await getGuildContext(req);
+    if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
+
+    // Lógica de salvamento aqui.
+    await db.set(`guild_${context.guild.id}.welcome`, req.body);
+    res.redirect(`/dashboard/${context.guild.id}/welcome?message=success`);
 });
 
+// ROTA BOAS-VINDAS TESTE (PONTO 3: Testar Mensagem)
 app.post('/dashboard/:guildId/welcome/test', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(500).json({ success: false, message: context.message });
@@ -334,14 +390,11 @@ app.post('/dashboard/:guildId/welcome/test', isAuthenticated, async (req, res) =
     const isLeave = type === 'leave';
     
     let content = processPlaceholders(message, mockMember, context.guild, isLeave);
-    // Cria o embed usando a função que agora suporta placeholders nos campos de URL
     let embed = embed_data.enabled ? createEmbedFromSettings(embed_data, mockMember, context.guild, isLeave) : null;
     
-    // PONTO 3: Adiciona o aviso de Teste
     const testMessageSuffix = `\n*(Mensagem de Teste enviada via Painel por ${req.user.displayName})*`;
     
     if (embed) {
-        // Altera o footer para incluir o aviso de teste
         const currentFooter = embed_data.footer_text || '';
         embed.setFooter({
             text: `${processPlaceholders(currentFooter, mockMember, context.guild, isLeave)} | MENSAGEM DE TESTE (Painel)`,
@@ -354,7 +407,6 @@ app.post('/dashboard/:guildId/welcome/test', isAuthenticated, async (req, res) =
 
     try {
         await channel.send({ content: content, embeds: embed ? [embed] : [] });
-        // PONTO 3: Resposta de sucesso
         return res.json({ success: true, message: `Mensagem de Teste enviada com sucesso para #${channel.name}!` });
     } catch (error) {
         return res.status(500).json({ success: false, message: `Erro ao enviar: ${error.message}` });
@@ -362,7 +414,7 @@ app.post('/dashboard/:guildId/welcome/test', isAuthenticated, async (req, res) =
 });
 
 
-// ROTAS DE "EM CONSTRUÇÃO" (Security, Vip, Guild Events, etc.)
+// ROTAS DE "EM CONSTRUÇÃO"
 app.get('/dashboard/:guildId/security', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
@@ -375,31 +427,34 @@ app.get('/dashboard/:guildId/vip', isAuthenticated, async (req, res) => {
     res.render('coming_soon', { user: req.user, guild: context.guild, activePage: 'vip', activePageDisplay: 'VIP/Premium', botAvatarUrl: context.botAvatarUrl });
 });
 
+app.get('/dashboard/:guildId/guild_events', isAuthenticated, async (req, res) => {
+    const context = await getGuildContext(req);
+    if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
+    res.render('coming_soon', { user: req.user, guild: context.guild, activePage: 'guild_events', activePageDisplay: 'Eventos', botAvatarUrl: context.botAvatarUrl });
+});
+
+
 // ===============================
 // 6. EVENTOS DISCORD E INICIALIZAÇÃO
 // ===============================
 
-// Eventos do Bot (onde a lógica de AutoRole/Welcome é executada)
+// Eventos do Bot
 client.on('guildMemberAdd', async member => {
     const settings = await db.get(`guild_${member.guild.id}.autorole`);
 
-    // PONTO 4: Lógica de AutoRole funcional
+    // Lógica de AutoRole funcional
     if (settings && settings.enabled && settings.roles && settings.roles.length > 0) {
         try {
-            // Adiciona todos os cargos de uma vez
             await member.roles.add(settings.roles, 'AutoRole ativado via painel.');
         } catch (e) {
             console.error(`Falha ao adicionar AutoRole no servidor ${member.guild.id}: ${e.message}`);
-            // Ignora a falha para não derrubar o bot
         }
     }
 
     // Lógica de Welcome Message aqui
 });
 
-// ... Outros eventos (guildMemberRemove, messageCreate, etc.)
-
-// Inicialização Final (CORRIGIDO: Login com TOKEN_BOT e start do Express)
+// Inicialização Final
 client.login(process.env.TOKEN_BOT); 
 
 client.once('ready', () => {
