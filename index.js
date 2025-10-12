@@ -137,7 +137,7 @@ client.commands = new Collection();
 // ===============================
 const CLIENT_ID = process.env.CLIENT_ID_BOT;
 const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
-const CALLBACK_URL = process.env.CALLBACK_URL;
+const CALLBACK_URL = process.env.CALLBACK_URL; // Usando a variável de ambiente fornecida
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -226,9 +226,8 @@ async function getGuildContext(req) {
 // 6. ROTAS WEB 
 // ===============================
 
-// Landing Page - CORRIGIDO: Passa 'ping' para o EJS
+// Landing Page
 app.get('/', (req, res) => {
-    // CORREÇÃO: ping precisa de um valor padrão se o bot ainda não estiver pronto
     const ping = client.ws.ping || 'Calculando...'; 
     const botAvatarUrl = client.isReady() ? client.user.displayAvatarURL({ size: 128 }) : FALLBACK_ICON_URL;
     
@@ -239,7 +238,7 @@ app.get('/', (req, res) => {
         ping: ping, 
         isAuthenticated: req.isAuthenticated(),
         botAvatarUrl: botAvatarUrl,
-        guild: null // CRÍTICO: Garante que o header/sidebar na landing não quebre
+        guild: null
     }); 
 });
 app.get('/login', (req, res) => {
@@ -248,8 +247,7 @@ app.get('/login', (req, res) => {
 app.get('/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => {
     res.redirect('/dashboard'); 
 });
-app.get('/logout', (req, res) => {
-    // Nota: O método .logout() espera um callback no Express 5+
+app.get('/logout', (req, res, next) => {
     req.logout((err) => {
         if (err) { return next(err); }
         res.redirect('/');
@@ -261,6 +259,11 @@ app.get('/invite/denied', isAuthenticated, (req, res) => {
 
 // DASHBOARD DE SERVIDORES
 app.get('/dashboard', isAuthenticated, (req, res) => {
+    // CRÍTICO: Devemos garantir que o bot está pronto para acessar client.user.id
+    if (!client.isReady()) {
+        return res.status(503).send('Bot está inicializando. Por favor, tente novamente em instantes.');
+    }
+
     const userGuilds = req.user.guilds.filter(g => {
         const perms = parseInt(g.permissions, 10);
         const isAdmin = (perms & 0x8) === 0x8;
@@ -290,10 +293,14 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
     res.render('dashboard', { 
         user: req.user, 
         guilds: dashboardGuilds,
-        guild: null, // CRÍTICO: Passa 'null' para o EJS para evitar erro 500
+        guild: null, // CRÍTICO: Passa 'null'
         activePage: 'servers',
         showInviteAlert: req.query.invite === 'denied',
-        botAvatarUrl: botAvatarUrl
+        botAvatarUrl: botAvatarUrl,
+        
+        // CORREÇÃO FINAL: Variáveis necessárias para o link de convite EJS
+        client_id: client.user.id, 
+        callback_url: CALLBACK_URL 
     }); 
 });
 
@@ -324,6 +331,7 @@ app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
     let errorMessage = null;
 
     try {
+        // CORREÇÃO: Usar client.user.id
         textChannels = context.guild.channels.cache
             .filter(c => c.type === ChannelType.GuildText && c.permissionsFor(client.user.id)?.has(PermissionsBitField.Flags.SendMessages))
             .map(c => ({ id: c.id, name: c.name }));
@@ -386,6 +394,7 @@ app.post('/dashboard/:guildId/welcome/test', isAuthenticated, async (req, res) =
 
     const { type, channel_id, message, embed_data } = req.body;
     
+    // CORREÇÃO: Usar client.user.id
     const channel = context.guild.channels.cache.get(channel_id);
     if (!channel || channel.type !== ChannelType.GuildText || !channel.permissionsFor(client.user.id)?.has(PermissionsBitField.Flags.SendMessages)) {
         return res.status(400).json({ success: false, message: 'Canal inválido, ou o Bot não pode enviar mensagens nele.' });
@@ -480,9 +489,8 @@ app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
 });
 
 // ROTAS GLOBAIS DE INFORMAÇÃO
-// Rota de Updates - CORRIGIDO: Passa 'ping' e 'guild: null'
+// Rota de Updates 
 app.get('/updates', isAuthenticated, async (req, res) => {
-    // CORREÇÃO: ping precisa de um valor padrão se o bot ainda não estiver pronto
     const ping = client.ws.ping || 'N/A';
     const botAvatarUrl = client.isReady() ? client.user.displayAvatarURL({ size: 128 }) : FALLBACK_ICON_URL;
     
@@ -490,7 +498,7 @@ app.get('/updates', isAuthenticated, async (req, res) => {
         user: req.user, 
         activePage: 'updates',
         botAvatarUrl: botAvatarUrl,
-        guild: null, // CRÍTICO: Passa 'null' para o EJS para evitar erro 500
+        guild: null, 
         ping: ping 
     });
 });
