@@ -52,11 +52,12 @@ const DEFAULT_EMBED = {
 };
 
 // ===============================
-// 3. FUNÇÕES DE PLACEHOLDERS E EMBED (Ponto 3)
+// 3. FUNÇÕES DE PLACEHOLDERS E EMBED
 // ===============================
 function processPlaceholders(text, member, guild, isLeave = false) {
     if (!text) return text;
     
+    // Cria um objeto de usuário mock se for uma saída, para não dar erro
     const user = isLeave ? { 
         displayName: member.user.username, 
         id: member.id, 
@@ -225,19 +226,20 @@ async function getGuildContext(req) {
 // 6. ROTAS WEB 
 // ===============================
 
-// Landing Page (Ponto 1)
+// Landing Page - CORRIGIDO: Passa 'ping' para o EJS
 app.get('/', (req, res) => {
-    const ping = client.ws.ping || 'Calculando...';
+    // CORREÇÃO: ping precisa de um valor padrão se o bot ainda não estiver pronto
+    const ping = client.ws.ping || 'Calculando...'; 
     const botAvatarUrl = client.isReady() ? client.user.displayAvatarURL({ size: 128 }) : FALLBACK_ICON_URL;
     
     if (req.isAuthenticated()) return res.redirect('/dashboard');
     
-    // Renderiza a landing page usando 'landing_page.ejs' (ou 'index_landing.ejs' se for o principal)
-    res.render('landing_page', { // Use 'landing_page' ou 'index_landing' conforme a sua preferência
+    res.render('landing_page', { 
         title: 'Universal Bot', 
         ping: ping, 
         isAuthenticated: req.isAuthenticated(),
-        botAvatarUrl: botAvatarUrl
+        botAvatarUrl: botAvatarUrl,
+        guild: null // CRÍTICO: Garante que o header/sidebar na landing não quebre
     }); 
 });
 app.get('/login', (req, res) => {
@@ -247,7 +249,11 @@ app.get('/callback', passport.authenticate('discord', { failureRedirect: '/' }),
     res.redirect('/dashboard'); 
 });
 app.get('/logout', (req, res) => {
-    req.logout(() => res.redirect('/')); 
+    // Nota: O método .logout() espera um callback no Express 5+
+    req.logout((err) => {
+        if (err) { return next(err); }
+        res.redirect('/');
+    });
 });
 app.get('/invite/denied', isAuthenticated, (req, res) => {
     res.redirect('/dashboard?invite=denied');
@@ -259,7 +265,6 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
         const perms = parseInt(g.permissions, 10);
         const isAdmin = (perms & 0x8) === 0x8;
         const isOwner = g.owner; 
-        // Filtra guilds onde o usuário é Admin ou Dono
         return isAdmin || isOwner; 
     });
     const botGuildIds = client.guilds.cache.map(g => g.id);
@@ -285,7 +290,7 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
     res.render('dashboard', { 
         user: req.user, 
         guilds: dashboardGuilds,
-        guild: null, // ESSENCIAL: Passa 'null' para o EJS saber que não é uma página de configuração de guild
+        guild: null, // CRÍTICO: Passa 'null' para o EJS para evitar erro 500
         activePage: 'servers',
         showInviteAlert: req.query.invite === 'denied',
         botAvatarUrl: botAvatarUrl
@@ -319,7 +324,6 @@ app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
     let errorMessage = null;
 
     try {
-        // Filtra canais de texto onde o bot tem permissão de enviar mensagens
         textChannels = context.guild.channels.cache
             .filter(c => c.type === ChannelType.GuildText && c.permissionsFor(client.user.id)?.has(PermissionsBitField.Flags.SendMessages))
             .map(c => ({ id: c.id, name: c.name }));
@@ -358,7 +362,6 @@ app.post('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
 
-    // Estrutura complexa de salvamento (mantida para robustez)
     const newSettings = {
         join_enabled: !!req.body.join_enabled,
         join_channel_id: req.body.join_channel_id || '',
@@ -377,7 +380,6 @@ app.post('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
     res.redirect(`/dashboard/${context.guild.id}/welcome?message=success`);
 });
 
-// ROTA BOAS-VINDAS TESTE (Ponto 3: Testar Mensagem)
 app.post('/dashboard/:guildId/welcome/test', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(500).json({ success: false, message: context.message });
@@ -416,7 +418,7 @@ app.post('/dashboard/:guildId/welcome/test', isAuthenticated, async (req, res) =
     }
 });
 
-// ROTAS AUTOROLE (GET e POST) (Ponto 4)
+// ROTAS AUTOROLE (GET e POST)
 app.get('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
@@ -429,7 +431,6 @@ app.get('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
         const botMember = context.guild.members.cache.get(client.user.id);
         const botTopRole = botMember ? botMember.roles.highest.position : 0;
 
-        // Filtra cargos que o bot pode gerenciar
         availableRoles = context.guild.roles.cache
             .filter(role => !role.managed && role.position < botTopRole && role.id !== context.guild.id)
             .sort((a, b) => b.position - a.position)
@@ -467,7 +468,6 @@ app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
 
     const { enabled, roles } = req.body;
     
-    // Converte a string de IDs de volta para um array de IDs
     const roleIds = roles ? roles.split(',').filter(id => id.length > 0) : [];
 
     const newSettings = {
@@ -479,13 +479,29 @@ app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     res.redirect(`/dashboard/${context.guild.id}/autorole?message=success`);
 });
 
+// ROTAS GLOBAIS DE INFORMAÇÃO
+// Rota de Updates - CORRIGIDO: Passa 'ping' e 'guild: null'
+app.get('/updates', isAuthenticated, async (req, res) => {
+    // CORREÇÃO: ping precisa de um valor padrão se o bot ainda não estiver pronto
+    const ping = client.ws.ping || 'N/A';
+    const botAvatarUrl = client.isReady() ? client.user.displayAvatarURL({ size: 128 }) : FALLBACK_ICON_URL;
+    
+    res.render('bot_updates', { 
+        user: req.user, 
+        activePage: 'updates',
+        botAvatarUrl: botAvatarUrl,
+        guild: null, // CRÍTICO: Passa 'null' para o EJS para evitar erro 500
+        ping: ping 
+    });
+});
+
 // ROTAS "EM CONSTRUÇÃO"
 app.get('/dashboard/:guildId/security', isAuthenticated, async (req, res) => {
     const context = await getGuildContext(req);
     if (context.status !== 200) {
         return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
     }
-    res.render('security_settings', { // Usando o nome do seu arquivo, se houver lógica.
+    res.render('security_settings', { 
         user: req.user, 
         guild: context.guild, 
         activePage: 'security', 
@@ -498,7 +514,7 @@ app.get('/dashboard/:guildId/vip', isAuthenticated, async (req, res) => {
     if (context.status !== 200) {
         return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
     }
-    res.render('vip_settings', { // Usando o nome do seu arquivo, se houver lógica.
+    res.render('vip_settings', { 
         user: req.user, 
         guild: context.guild, 
         activePage: 'vip', 
@@ -506,23 +522,14 @@ app.get('/dashboard/:guildId/vip', isAuthenticated, async (req, res) => {
     });
 });
 
-app.get('/updates', isAuthenticated, async (req, res) => {
-    const botAvatarUrl = client.isReady() ? client.user.displayAvatarURL({ size: 128 }) : FALLBACK_ICON_URL;
-    res.render('bot_updates', { // Usando o nome do seu arquivo, se houver lógica.
-        user: req.user, 
-        activePage: 'updates',
-        botAvatarUrl: botAvatarUrl
-    });
-});
-
 // ===============================
-// 7. EVENTOS DISCORD (BOAS-VINDAS E AUTOROLE)
+// 7. EVENTOS DISCORD
 // ===============================
 
 client.on('guildMemberAdd', async member => {
     if (!member.guild || member.user.bot) return;
 
-    // 1. Lógica de AutoRole (Ponto 4)
+    // 1. Lógica de AutoRole
     try {
         const autoroleSettings = await db.get(`guild_${member.guild.id}.autorole`);
         if (autoroleSettings && autoroleSettings.enabled && autoroleSettings.roles.length > 0) {
@@ -532,7 +539,7 @@ client.on('guildMemberAdd', async member => {
         console.error(`Erro ao aplicar AutoRole para ${member.user.tag}: ${e.message}`);
     }
 
-    // 2. Lógica de Welcome (Ponto 3)
+    // 2. Lógica de Welcome
     try {
         const welcomeSettings = await db.get(`guild_${member.guild.id}.welcome`);
         

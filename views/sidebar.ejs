@@ -1,52 +1,42 @@
-<div id="sidebar">
+<nav id="sidebar">
     <div class="sidebar-header-title">
-        <img src="<%= botAvatarUrl %>" alt="Bot Logo" class="bot-logo">
+        <img src="<%= botAvatarUrl %>" alt="Logo" class="bot-logo">
         <h1>Universal Bot</h1>
     </div>
 
-    <ul class="list-unstyled">
-        <li class="separator">Navegação</li>
-        <li class="<%= activePage === 'servers' ? 'active' : '' %>">
-            <a href="/dashboard"><i class="fas fa-server"></i> Seus Servidores</a>
-        </li>
-        <li class="<%= activePage === 'updates' ? 'active' : '' %>">
-            <a href="/updates"><i class="fas fa-bullhorn"></i> Novidades e Updates</a>
-        </li>
-
+    <ul class="list-unstyled components">
+        
         <% if (guild) { %>
-            <li class="separator">Configurações (<%= guild.name %>)</li>
+            <li class="<%= activePage === 'servers' ? 'active' : '' %>">
+                <a href="/dashboard">Voltar</a>
+            </li>
+            <li class="separator">CONFIG. <%= guild.name.toUpperCase() %></li> 
             
             <li class="<%= activePage === 'settings' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>"><i class="fas fa-cog"></i> Configurações Gerais</a>
+                <a href="/dashboard/<%= guild.id %>">Config. Geral</a> 
             </li>
-            
             <li class="<%= activePage === 'welcome' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>/welcome"><i class="fas fa-handshake"></i> Boas-Vindas & Saída</a>
+                <a href="/dashboard/<%= guild.id %>/welcome">Boas-Vindas</a>
             </li>
-            
             <li class="<%= activePage === 'autorole' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>/autorole"><i class="fas fa-user-plus"></i> AutoRole</a>
+                <a href="/dashboard/<%= guild.id %>/autorole">AutoRole</a>
             </li>
-
-            <li class="separator">Segurança (<%= guild.name %>)</li>
-            <li class="<%= activePage === 'security' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>/security"><i class="fas fa-shield-alt"></i> Módulos de Segurança</a>
+            <li class="<%= activePage === 'eventlogs' ? 'active' : '' %>">
+                <a href="/dashboard/<%= guild.id %>/eventlogs">Event Logs</a>
             </li>
             
-            <li class="separator">Área VIP (<%= guild.name %>)</li>
-            <li class="<%= activePage === 'vip' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>/vip"><i class="fas fa-star"></i> Módulos VIP</a>
+        <% } else { %>
+            <li class="<%= activePage === 'servers' ? 'active' : '' %>">
+                <a href="/dashboard">Seus Servidores</a>
             </li>
-
+            <li class="<%= activePage === 'updates' ? 'active' : '' %>">
+                <a href="/updates">Atualizações</a>
+            </li>
         <% } %>
-    </ul>
 
-    <div class="user-profile-widget sidebar-footer-profile">
-        <div class="user-details-group">
-            <img src="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128` : 'https://cdn.discordapp.com/embed/avatars/0.png' %>" alt="Avatar" class="user-avatar-large">
-            <span class="user-tag-large"><%= user.displayName %></span>
-            <span class="user-id">ID: <%= user.id %></span>
-        </div>
-        <a href="/logout" class="btn btn-denied"><i class="fas fa-sign-out-alt"></i> Sair</a>
-    </div>
-</div>
+        <li class="separator">MISCELÂNEA</li>
+        <li><a href="/logout">Sair</a></li>
+    </ul>
+    
+    <%- include('user_profile_footer', { user: user }) %>
+</nav>
