@@ -137,7 +137,6 @@ client.commands = new Collection();
 // ===============================
 const CLIENT_ID = process.env.CLIENT_ID_BOT;
 const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
-// Usando a variável de ambiente CALLBACK_URL
 const CALLBACK_URL = process.env.CALLBACK_URL; 
 
 app.use(express.static('public'));
@@ -258,9 +257,8 @@ app.get('/invite/denied', isAuthenticated, (req, res) => {
     res.redirect('/dashboard?invite=denied');
 });
 
-// DASHBOARD DE SERVIDORES (CRÍTICA: Rotas e Variáveis Corrigidas)
+// DASHBOARD DE SERVIDORES
 app.get('/dashboard', isAuthenticated, (req, res) => {
-    // CRÍTICO: Devemos garantir que o bot está pronto para acessar client.user.id
     if (!client.isReady()) {
         return res.status(503).send('Bot está inicializando. Por favor, tente novamente em instantes.');
     }
@@ -294,12 +292,12 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
     res.render('dashboard', { 
         user: req.user, 
         guilds: dashboardGuilds,
-        guild: null, // CRÍTICO: Passa 'null' para evitar erros em includes
+        guild: null, 
         activePage: 'servers',
         showInviteAlert: req.query.invite === 'denied',
         botAvatarUrl: botAvatarUrl,
         
-        // CORREÇÃO FINAL: Variáveis necessárias para o link de convite EJS
+        // Variáveis CRÍTICAS para o dashboard.ejs
         client_id: client.user.id, 
         callback_url: CALLBACK_URL 
     }); 
@@ -314,7 +312,7 @@ app.get('/dashboard/:guildId', isAuthenticated, async (req, res) => {
 
     res.render('guild_settings', { 
         user: req.user,
-        guild: context.guild,
+        guild: context.guild, // CRÍTICO: Passa o objeto guild
         activePage: 'settings',
         botPing: context.botPing,
         commands: BOT_COMMANDS,
@@ -488,16 +486,16 @@ app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
 });
 
 // ROTAS GLOBAIS DE INFORMAÇÃO
-// Rota de Updates 
+// Rota de Updates (CRÍTICA: Passando guild: null)
 app.get('/updates', isAuthenticated, async (req, res) => {
     const ping = client.ws.ping || 'N/A';
     const botAvatarUrl = client.isReady() ? client.user.displayAvatarURL({ size: 128 }) : FALLBACK_ICON_URL;
     
-    res.render('bot_updates', { 
+    res.render('bot_updates', { // Chama bot_updates.ejs
         user: req.user, 
         activePage: 'updates',
         botAvatarUrl: botAvatarUrl,
-        guild: null, // Passado como null
+        guild: null, // CRÍTICO: Passado como null
         ping: ping 
     });
 });

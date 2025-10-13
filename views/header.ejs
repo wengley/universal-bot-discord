@@ -6,6 +6,7 @@
     <title>Universal Bot | <%= (typeof guild !== 'undefined' && guild) ? guild.name : 'Dashboard' %></title>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="icon" href="https://cdn.discordapp.com/icons/1413669247023841342/bf008aa2a004c2d25d1e3e4577e93450.webp?size=128" type="image/webp">
+    <script src="https://kit.fontawesome.com/SEU_KIT_FONT_AWESOME.js" crossorigin="anonymous"></script>
     <script>
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
@@ -25,14 +26,49 @@
 <div id="wrapper">
     ```
 
----
+### B. `views/sidebar.ejs` (Seu Layout Preferido, Corrigido)
 
-### 2. Verificar os Outros Arquivos EJS
+**CRÍTICO:** Corrigi o uso de `div` para `<nav>` e removi um `</div>` que provavelmente estava quebrando o layout.
 
-O problema provavelmente está no `header.ejs`, mas é bom checar que você tem a seguinte estrutura:
+```ejs
+<nav id="sidebar">
+    <div class="sidebar-header-title">
+        <img src="<%= botAvatarUrl %>" alt="Logo" class="bot-logo">
+        <h1>Universal Bot</h1>
+    </div>
 
-* **`views/header.ejs`**: (Abertura do HTML, como acima).
-* **`views/sidebar.ejs`**: (A barra de navegação).
-* **`views/partials/footer.ejs`**: (Fecha `div#content`, `div#wrapper`, `body` e `html`).
+    <ul class="list-unstyled components">
+        
+        <% if (guild) { %>
+            <li class="<%= activePage === 'servers' ? 'active' : '' %>">
+                <a href="/dashboard">Voltar</a>
+            </li>
+            <li class="separator">CONFIG. <%= guild.name.toUpperCase() %></li> 
+            
+            <li class="<%= activePage === 'settings' ? 'active' : '' %>">
+                <a href="/dashboard/<%= guild.id %>">Config. Geral</a> 
+            </li>
+            <li class="<%= activePage === 'welcome' ? 'active' : '' %>">
+                <a href="/dashboard/<%= guild.id %>/welcome">Boas-Vindas</a>
+            </li>
+            <li class="<%= activePage === 'autorole' ? 'active' : '' %>">
+                <a href="/dashboard/<%= guild.id %>/autorole">AutoRole</a>
+            </li>
+            <li class="<%= activePage === 'eventlogs' ? 'active' : '' %>">
+                <a href="/dashboard/<%= guild.id %>/eventlogs">Event Logs</a>
+            </li>
+            
+        <% } else { %>
+            <li class="<%= activePage === 'servers' ? 'active' : '' %>">
+                <a href="/dashboard">Seus Servidores</a>
+            </li>
+            <li class="<%= activePage === 'updates' ? 'active' : '' %>">
+                <a href="/updates">Atualizações</a>
+            </li>
+        <% } %>
 
-Se você garantir que o `header.ejs` está com o código acima, o erro de recursão será quebrado. Tente fazer o deploy com essa correção.
+        <li class="separator">MISCELÂNEA</li>
+        <li><a href="/logout">Sair</a></li>
+    </ul>
+    
+    </nav>
