@@ -137,7 +137,8 @@ client.commands = new Collection();
 // ===============================
 const CLIENT_ID = process.env.CLIENT_ID_BOT;
 const CLIENT_SECRET = process.env.CLIENT_SECRET_BOT;
-const CALLBACK_URL = process.env.CALLBACK_URL; // Usando a variável de ambiente fornecida
+// Usando a variável de ambiente CALLBACK_URL
+const CALLBACK_URL = process.env.CALLBACK_URL; 
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -238,7 +239,7 @@ app.get('/', (req, res) => {
         ping: ping, 
         isAuthenticated: req.isAuthenticated(),
         botAvatarUrl: botAvatarUrl,
-        guild: null
+        guild: null // Passado como null para evitar erros em includes
     }); 
 });
 app.get('/login', (req, res) => {
@@ -257,7 +258,7 @@ app.get('/invite/denied', isAuthenticated, (req, res) => {
     res.redirect('/dashboard?invite=denied');
 });
 
-// DASHBOARD DE SERVIDORES
+// DASHBOARD DE SERVIDORES (CRÍTICA: Rotas e Variáveis Corrigidas)
 app.get('/dashboard', isAuthenticated, (req, res) => {
     // CRÍTICO: Devemos garantir que o bot está pronto para acessar client.user.id
     if (!client.isReady()) {
@@ -293,7 +294,7 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
     res.render('dashboard', { 
         user: req.user, 
         guilds: dashboardGuilds,
-        guild: null, // CRÍTICO: Passa 'null'
+        guild: null, // CRÍTICO: Passa 'null' para evitar erros em includes
         activePage: 'servers',
         showInviteAlert: req.query.invite === 'denied',
         botAvatarUrl: botAvatarUrl,
@@ -331,7 +332,6 @@ app.get('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
     let errorMessage = null;
 
     try {
-        // CORREÇÃO: Usar client.user.id
         textChannels = context.guild.channels.cache
             .filter(c => c.type === ChannelType.GuildText && c.permissionsFor(client.user.id)?.has(PermissionsBitField.Flags.SendMessages))
             .map(c => ({ id: c.id, name: c.name }));
@@ -394,7 +394,6 @@ app.post('/dashboard/:guildId/welcome/test', isAuthenticated, async (req, res) =
 
     const { type, channel_id, message, embed_data } = req.body;
     
-    // CORREÇÃO: Usar client.user.id
     const channel = context.guild.channels.cache.get(channel_id);
     if (!channel || channel.type !== ChannelType.GuildText || !channel.permissionsFor(client.user.id)?.has(PermissionsBitField.Flags.SendMessages)) {
         return res.status(400).json({ success: false, message: 'Canal inválido, ou o Bot não pode enviar mensagens nele.' });
@@ -498,7 +497,7 @@ app.get('/updates', isAuthenticated, async (req, res) => {
         user: req.user, 
         activePage: 'updates',
         botAvatarUrl: botAvatarUrl,
-        guild: null, 
+        guild: null, // Passado como null
         ping: ping 
     });
 });
