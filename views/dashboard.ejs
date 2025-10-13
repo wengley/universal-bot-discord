@@ -9,16 +9,19 @@
 
         <% if (showInviteAlert) { %>
             <div class="alert alert-danger">
-                ❌ O Universal Bot precisa de permissão de Administrador (ou similar) para ser adicionado. Por favor, convide-o novamente com as permissões corretas.
+                ❌ O Universal Bot precisa de permissão de Administrador (ou similar) para ser adicionado.
             </div>
         <% } %>
 
         <div class="guild-grid">
-            <% guilds.forEach(g => { %>
+            <% guilds.forEach(g => { 
+                // Lógica de corte de nome no EJS (para o "...")
+                const serverName = g.name.length > 13 ? g.name.substring(0, 13) + '...' : g.name;
+            %>
                 <div class="guild-card <%= g.isInBot ? 'bot-in' : 'bot-out' %>">
                     <img src="<%= g.icon %>" alt="<%= g.name %> Logo" class="guild-icon">
                     <div class="guild-info">
-                        <h2><%= g.name %></h2>
+                        <h2><%= serverName %></h2>
                         <p class="role-tag">Seu Cargo: <%= g.userRole %></p>
                     </div>
                     
@@ -27,10 +30,9 @@
                             <i class="fas fa-cog"></i> Configurar
                         </a>
                     <% } else { %>
-                        <a href="https://discord.com/oauth2/authorize?client_id=<%= client_id %>&permissions=8&scope=bot%20applications.commands&guild_id=<%= g.id %>&response_type=code&redirect_uri=<%= callback_url %>" 
-                            target="_blank" class="btn btn-secondary">
-                            <i class="fas fa-plus-circle"></i> Adicionar Bot
-                        </a>
+                        <div class="btn btn-danger disabled-btn">
+                            <i class="fas fa-times-circle"></i> BOT Ausente
+                        </div>
                     <% } %>
                 </div>
             <% }); %>
