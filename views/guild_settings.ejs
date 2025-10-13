@@ -1,50 +1,46 @@
-<%- include('partials/header', { user, guild, activePage, botAvatarUrl }) %>
+<%- include('header', { user: user, guild: guild, activePage: 'settings', botAvatarUrl: botAvatarUrl }) %>
+<%- include('sidebar', { user: user, guild: guild, activePage: 'settings', botAvatarUrl: botAvatarUrl }) %>
 
-<div id="wrapper">
-    
-    <%- include('partials/sidebar', { user, guild, activePage, botAvatarUrl }) %>
-
-    <div id="content">
-        <div class="main-content">
-            <h1><i class="fas fa-cog"></i> Configurações Gerais do Servidor</h1>
-            <p>Ajuste as configurações básicas e veja informações sobre o Bot neste servidor.</p>
-            
-            <p style="color: green; font-weight: bold;">[Dashboard v2.1: Alteração de Força de Deploy Aplicada]</p>
-            
-            <div class="settings-section">
-                <h2>Informações do Bot</h2>
-                <p><strong>Latência (Ping):</strong> <%= botPing %> ms</p>
-            </div>
-            
-            <div class="settings-section">
-                <h2>Comandos Disponíveis</h2>
-                <p>Estes são os comandos que o Bot possui atualmente:</p>
-                <table class="command-table">
-                    <thead>
-                        <tr>
-                            <th>Comando</th>
-                            <th>Descrição</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% commands.forEach(cmd => { %>
-                            <tr>
-                                <td><code><%= cmd.name %></code></td>
-                                <td><%= cmd.description %></td>
-                            </tr>
-                        <% }); %>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="settings-section">
-                <h2>Gerenciamento</h2>
-                <a href="/logout" class="btn btn-denied">
-                    <i class="fas fa-sign-out-alt"></i> Sair do Painel
-                </a>
-            </div>
-
+<div id="content">
+    <div class="main-content">
+        <h1><i class="fas fa-cog"></i> Configurações Gerais do Servidor</h1>
+        <p>Ajuste as configurações básicas e veja informações sobre o Bot neste servidor.</p>
+        
+        <p style="color: green; font-weight: bold;">[Dashboard v2.1: Alteração de Força de Deploy Aplicada]</p>
+        
+        <div class="settings-section">
+            <h2>Informações do Bot</h2>
+            <p><strong>Latência (Ping):</strong> <%= botPing %> ms</p> 
         </div>
+        
+        <div class="settings-section">
+            <h2>Comandos Disponíveis</h2>
+            <p>Estes são os comandos que o Bot possui atualmente:</p>
+            <table class="command-table">
+                <thead>
+                    <tr>
+                        <th>Comando</th>
+                        <th>Descrição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% commands.forEach(cmd => { %>
+                        <tr>
+                            <td><code><%= cmd.name %></code></td>
+                            <td><%= cmd.description %></td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="settings-section">
+            <h2>Gerenciamento</h2>
+            <a href="/logout" class="btn btn-denied">
+                <i class="fas fa-sign-out-alt"></i> Sair do Painel
+            </a>
+        </div>
+
     </div>
 </div>
 
