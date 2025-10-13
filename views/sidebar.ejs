@@ -7,36 +7,14 @@
     <ul class="list-unstyled components">
         
         <% if (guild) { %>
-            <li class="<%= activePage === 'servers' ? 'active' : '' %>">
-                <a href="/dashboard">Voltar</a>
-            </li>
-            <li class="separator">CONFIG. <%= guild.name.toUpperCase() %></li> 
-            
-            <li class="<%= activePage === 'settings' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>">Config. Geral</a> 
-            </li>
-            <li class="<%= activePage === 'welcome' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>/welcome">Boas-Vindas</a>
-            </li>
-            <li class="<%= activePage === 'autorole' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>/autorole">AutoRole</a>
-            </li>
-            <li class="<%= activePage === 'eventlogs' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>/eventlogs">Event Logs</a>
-            </li>
-            
-        <% } else { %>
-            <li class="<%= activePage === 'servers' ? 'active' : '' %>">
-                <a href="/dashboard">Seus Servidores</a>
-            </li>
-            <li class="<%= activePage === 'updates' ? 'active' : '' %>">
-                <a href="/updates">Atualizações</a>
-            </li>
-        <% } %>
+            <% } else { %>
+            <% } %>
 
         <li class="separator">MISCELÂNEA</li>
-        <li><a href="/logout">Sair</a></li>
+        <% if (guild) { %>
+            <li><a href="/dashboard"><i class="fas fa-chevron-left"></i> Voltar</a></li>
+        <% } %>
+        <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
     </ul>
     
-    <%- include('user_profile_footer', { user: user }) %>
-</nav>
+    </nav>
