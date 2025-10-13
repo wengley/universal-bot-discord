@@ -3,14 +3,10 @@
 
 <div id="content">
     <div class="main-content">
-        <h1><i class="fas fa-cog"></i> Configurações Gerais do Servidor</h1>
+        <h1><i class="fas fa-cog"></i> Configurações Gerais do Servidor: <%= guild.name %></h1>
         <p>Ajuste as configurações básicas e veja informações sobre o Bot neste servidor.</p>
         
         <p style="color: green; font-weight: bold;">[Dashboard v2.1: Alteração de Força de Deploy Aplicada]</p>
-        
-        <a href="/dashboard" class="btn btn-secondary" style="margin-bottom: 20px;">
-            <i class="fas fa-arrow-left"></i> Voltar para Servidores
-        </a>
         
         <div class="settings-section">
             <h2>Informações do Bot</h2>
@@ -38,7 +34,7 @@
             </table>
         </div>
 
-        <div class="settings-section">
+        <div class="settings-section" id="security-module">
             <h2>Segurança - <%= guild.name %></h2>
             <div class="construction-message">
                 <p>Módulos de Segurança (Anti Nuke, Anti Raid, Whitelist) estão em construção. Fique de olho em "Atualizações" para saber mais!</p>
@@ -48,7 +44,7 @@
             <p><strong>Whitelist:</strong> Em construção</p>
         </div>
 
-        <div class="settings-section">
+        <div class="settings-section" id="ticket-module">
             <h2>Tickets/Suporte - <%= guild.name %></h2>
             <div class="construction-message">
                 <p>Módulo de Tickets (Ticket) está em construção. Fique de olho em "Atualizações" para saber mais!</p>
@@ -56,14 +52,15 @@
             <p><strong>Ticket:</strong> Em construção</p>
         </div>
         
-        <div class="settings-section">
+        <div class="settings-section" id="vip-module">
             <h2>Área VIP - <%= guild.name %></h2>
             <div class="construction-message">
                 <p>Painel VIP e recursos exclusivos estão em construção. Fique de olho em "Atualizações" para saber mais!</p>
             </div>
             <p><strong>Painel VIP:</strong> Em construção</p>
         </div>
-        </div>
+        
+    </div>
 </div>
 
 <%- include('partials/footer') %>
