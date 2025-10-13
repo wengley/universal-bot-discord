@@ -8,9 +8,13 @@
         
         <p style="color: green; font-weight: bold;">[Dashboard v2.1: Alteração de Força de Deploy Aplicada]</p>
         
+        <a href="/dashboard" class="btn btn-secondary" style="margin-bottom: 20px;">
+            <i class="fas fa-arrow-left"></i> Voltar para Servidores
+        </a>
+        
         <div class="settings-section">
             <h2>Informações do Bot</h2>
-            <p><strong>Latência (Ping):</strong> <%= botPing %> ms</p> 
+            <p><strong>Latência (Ping):</strong> <%= botPing %> ms</p>
         </div>
         
         <div class="settings-section">
@@ -35,13 +39,31 @@
         </div>
 
         <div class="settings-section">
-            <h2>Gerenciamento</h2>
-            <a href="/logout" class="btn btn-denied">
-                <i class="fas fa-sign-out-alt"></i> Sair do Painel
-            </a>
+            <h2>Segurança - <%= guild.name %></h2>
+            <div class="construction-message">
+                <p>Módulos de Segurança (Anti Nuke, Anti Raid, Whitelist) estão em construção. Fique de olho em "Atualizações" para saber mais!</p>
+            </div>
+            <p><strong>Anti Nuke:</strong> Em construção</p>
+            <p><strong>Anti Raid:</strong> Em construção</p>
+            <p><strong>Whitelist:</strong> Em construção</p>
         </div>
 
-    </div>
+        <div class="settings-section">
+            <h2>Tickets/Suporte - <%= guild.name %></h2>
+            <div class="construction-message">
+                <p>Módulo de Tickets (Ticket) está em construção. Fique de olho em "Atualizações" para saber mais!</p>
+            </div>
+            <p><strong>Ticket:</strong> Em construção</p>
+        </div>
+        
+        <div class="settings-section">
+            <h2>Área VIP - <%= guild.name %></h2>
+            <div class="construction-message">
+                <p>Painel VIP e recursos exclusivos estão em construção. Fique de olho em "Atualizações" para saber mais!</p>
+            </div>
+            <p><strong>Painel VIP:</strong> Em construção</p>
+        </div>
+        </div>
 </div>
 
 <%- include('partials/footer') %>
