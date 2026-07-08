@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: universal-bot-discord
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: TOKEN_BOT
+        sync: false
+      - key: CLIENT_ID_BOT
+        sync: false
+      - key: CLIENT_SECRET_BOT
+        sync: false
+      - key: CALLBACK_URL
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
