@@ -596,11 +596,39 @@ client.on('guildMemberRemove', async member => {
 // 8. INICIALIZAÇÃO
 // ===============================
 
-client.login(process.env.TOKEN_BOT); 
+client.login(process.env.TOKEN_BOT).catch((err) => {
+    console.error(`❌ Falha ao logar no Discord: ${err.message}`);
+});
+
+// O painel web sobe imediatamente, independente do bot estar conectado
+// no Discord ou não (antes ficava preso dentro do 'ready', então se o bot
+// desconectasse depois, não tinha como saber pelo Render se o app travou).
+app.listen(PORT, () => {
+    console.log(`🌐 Painel rodando na porta ${PORT}`);
+});
 
 client.once('ready', () => {
     console.log(`✅ Bot online como ${client.user.tag}`);
-    app.listen(PORT, () => {
-        console.log(`🌐 Painel rodando na porta ${PORT}`);
-    });
+});
+
+// Logs de diagnóstico: sem isso, uma queda de conexão no Discord era
+// invisível — o painel continuava respondendo normal e escondia o problema.
+client.on('error', (err) => {
+    console.error(`❌ Erro no cliente Discord: ${err.message}`);
+});
+
+client.on('shardError', (error, id) => {
+    console.error(`❌ Erro no shard ${id}: ${error.message}`);
+});
+
+client.on('shardDisconnect', (event, id) => {
+    console.warn(`⚠️ Shard ${id} desconectou (código ${event.code}). Motivo: ${event.reason || 'desconhecido'}`);
+});
+
+client.on('shardReconnecting', (id) => {
+    console.log(`🔄 Shard ${id} tentando reconectar...`);
+});
+
+client.on('shardResume', (id, replayed) => {
+    console.log(`✅ Shard ${id} voltou a conectar (${replayed} eventos reprocessados)`);
 });
