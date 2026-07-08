@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: universal-bot-discord
+    name: universal-bot-web
     runtime: node
     plan: free
     buildCommand: npm install
@@ -17,4 +17,8 @@ services:
       - key: CALLBACK_URL
         sync: false
       - key: SESSION_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        value: https://arzjhpqtwcyabptpiaic.supabase.co
+      - key: SUPABASE_SERVICE_KEY
         sync: false

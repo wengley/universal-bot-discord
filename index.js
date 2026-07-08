@@ -5,7 +5,7 @@ const {
     Client, GatewayIntentBits, Collection, Partials, EmbedBuilder, 
     PermissionsBitField, ChannelType 
 } = require('discord.js');
-const { QuickDB } = require('quick.db');
+const { SupabaseDB } = require('./db/supabaseDb');
 const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
@@ -18,7 +18,7 @@ const dotenv = require('dotenv');
 // 2. CONFIGURAÇÕES INICIAIS
 // ===============================
 dotenv.config();
-const db = new QuickDB();
+const db = new SupabaseDB(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 const prefix = '!';
 
 // Constantes do Servidor Web

@@ -1,7 +1,7 @@
 const { EmbedBuilder } = require('discord.js');
 // CORREÇÃO: Usar a nova forma de importação
-const { QuickDB } = require('quick.db'); 
-const db = new QuickDB();
+const { SupabaseDB } = require('../db/supabaseDb');
+const db = new SupabaseDB(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 module.exports = {
     name: 'warnlist',
