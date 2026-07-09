@@ -12,6 +12,7 @@ const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
 const bodyParser = require('body-parser');
 const path = require('path');
+const fs = require('fs');
 const dotenv = require('dotenv');
 
 // ===============================
@@ -131,6 +132,23 @@ const client = new Client({
 });
 
 client.commands = new Collection();
+
+// Carrega todos os comandos de /commands para dentro de client.commands
+const commandsPath = path.join(__dirname, 'commands');
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+for (const file of commandFiles) {
+    try {
+        const command = require(path.join(commandsPath, file));
+        if (command?.name && typeof command.execute === 'function') {
+            client.commands.set(command.name, command);
+        } else {
+            console.warn(`⚠️ Comando em ${file} não tem 'name' ou 'execute' válidos — ignorado.`);
+        }
+    } catch (e) {
+        console.error(`❌ Erro ao carregar comando ${file}: ${e.message}`);
+    }
+}
+console.log(`📦 ${client.commands.size} comandos carregados.`);
 
 // ===============================
 // 5. SERVIDOR WEB (EXPRESS & PASSPORT)
@@ -567,6 +585,27 @@ app.use((err, req, res, next) => {
 // ===============================
 // 7. EVENTOS DISCORD
 // ===============================
+
+// Comandos por prefixo (!ping, !balance, etc.)
+client.on('messageCreate', async message => {
+    if (message.author.bot || !message.guild) return;
+    if (!message.content.startsWith(prefix)) return;
+
+    const args = message.content.slice(prefix.length).trim().split(/ +/);
+    const commandName = args.shift().toLowerCase();
+    if (!commandName) return;
+
+    const command = client.commands.get(commandName)
+        || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
+    if (!command) return;
+
+    try {
+        await command.execute(message, args, client, db);
+    } catch (e) {
+        console.error(`❌ Erro ao executar comando '${commandName}': ${e.message}`);
+        message.reply('❌ Ocorreu um erro ao executar esse comando.').catch(() => {});
+    }
+});
 
 client.on('guildMemberAdd', async member => {
     if (!member.guild || member.user.bot) return;
