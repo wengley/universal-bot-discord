@@ -7,7 +7,7 @@ services:
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
-        value: 20.18.0
+        value: 24.15.0
       - key: TOKEN_BOT
         sync: false
       - key: CLIENT_ID_BOT
