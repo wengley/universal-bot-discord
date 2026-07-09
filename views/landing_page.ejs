@@ -5,22 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %> - Painel de Controle</title>
     <link href="/css/styles.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         /* Estilos específicos da Landing Page */
         body {
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            background: #f4f7f9; 
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 20%, var(--accent-soft), transparent 45%), var(--bg);
         }
         .landing-container {
             text-align: center;
-            background: white;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
             padding: 50px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
             max-width: 600px;
             width: 90%;
             transition: all 0.3s;
@@ -29,58 +30,40 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 12px;
             margin-bottom: 20px;
         }
-        /* CORREÇÃO DO TAMANHO DA IMAGEM DO BOT */
         .landing-header .bot-icon {
-            width: 48px; /* Tamanho padrão menor */
-            height: 48px;
-            border-radius: 50%;
-            margin-right: 10px;
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            box-shadow: var(--shadow-glow);
         }
         .landing-container h1 {
-            font-size: 2.5em; /* Reduzido levemente */
-            color: #5865F2; 
+            font-size: 2.2em;
+            color: var(--text);
             margin: 0;
-            font-weight: 800;
         }
         .landing-container p {
-            font-size: 1.2em;
-            color: #555;
+            font-size: 1.05em;
+            color: var(--text-muted);
             margin-bottom: 30px;
         }
         .ping-status {
-            font-size: 0.9em;
-            color: #888;
-            margin-top: 20px;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            margin-top: 22px;
         }
+        .ping-status strong { color: var(--success); }
         .copyright {
-            margin-top: 10px;
-            font-size: 0.8em;
-            color: #aaa;
+            margin-top: 8px;
+            font-size: 0.78em;
+            color: var(--text-muted);
+            opacity: .7;
         }
         .landing-container .btn-primary {
             padding: 15px 30px;
-            font-size: 1.1em;
-            background: #5865F2;
-        }
-
-        /* Dark Mode for Landing Page */
-        body.dark-mode {
-            background: #1e1e2d;
-        }
-        body.dark-mode .landing-container {
-            background: #27293d;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-        body.dark-mode .landing-container h1 {
-            color: #7289DA;
-        }
-        body.dark-mode .landing-container p {
-            color: #b9bbbe;
-        }
-        body.dark-mode .ping-status, body.dark-mode .copyright {
-            color: #888;
+            font-size: 1em;
         }
     </style>
 </head>
