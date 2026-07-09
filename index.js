@@ -527,6 +527,43 @@ app.get('/dashboard/:guildId/vip', isAuthenticated, async (req, res) => {
     });
 });
 
+app.get('/dashboard/:guildId/ticket', isAuthenticated, async (req, res) => {
+    const context = await getGuildContext(req);
+    if (context.status !== 200) {
+        return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
+    }
+    res.render('coming_soon', {
+        user: req.user,
+        guild: context.guild,
+        activePage: 'ticket',
+        activePageDisplay: 'Tickets/Suporte',
+        botAvatarUrl: context.botAvatarUrl
+    });
+});
+
+// 404 — rota inexistente
+app.use((req, res) => {
+    res.status(404).send(`<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
+        <title>404 - Página não encontrada</title><link rel="stylesheet" href="/css/styles.css"></head>
+        <body style="display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;font-family:'Inter',sans-serif;">
+        <div><h1 style="font-family:'Space Grotesk',sans-serif;font-size:3em;color:var(--accent);margin-bottom:10px;">404</h1>
+        <p>Essa página não existe.</p>
+        <a href="/dashboard" class="btn btn-primary" style="margin-top:15px;display:inline-block;">Voltar ao Painel</a></div>
+        </body></html>`);
+});
+
+// Handler de erros — evita a tela branca genérica do Express quando algo quebra
+app.use((err, req, res, next) => {
+    console.error(`❌ Erro na rota ${req.method} ${req.originalUrl}:`, err.stack || err.message);
+    res.status(500).send(`<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
+        <title>Erro interno</title><link rel="stylesheet" href="/css/styles.css"></head>
+        <body style="display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;font-family:'Inter',sans-serif;">
+        <div><h1 style="font-family:'Space Grotesk',sans-serif;font-size:3em;color:var(--danger);margin-bottom:10px;">Ops!</h1>
+        <p>Algo deu errado ao carregar essa página. Já registrei o erro no log do servidor.</p>
+        <a href="/dashboard" class="btn btn-primary" style="margin-top:15px;display:inline-block;">Voltar ao Painel</a></div>
+        </body></html>`);
+});
+
 // ===============================
 // 7. EVENTOS DISCORD
 // ===============================

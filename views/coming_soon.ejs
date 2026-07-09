@@ -1,8 +1,5 @@
-<%- include('partials/header', { user, guild, activePage, botAvatarUrl }) %>
-
-<div id="wrapper">
-    
-    <%- include('sidebar', { user, guild, activePage, botAvatarUrl }) %>
+<%- include('header', { user: user, guild: guild, activePage: activePage, botAvatarUrl: botAvatarUrl }) %>
+<%- include('sidebar', { user: user, guild: guild, activePage: activePage, botAvatarUrl: botAvatarUrl }) %>
 
     <div id="content">
         <div class="main-content">
@@ -22,6 +19,5 @@
             </a>
         </div>
     </div>
-</div>
 
 <%- include('partials/footer') %>

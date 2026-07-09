@@ -1,5 +1,5 @@
-<%- include('partials/header', { user, guild, activePage, botAvatarUrl }) %>
-<%- include('partials/sidebar', { user, guild, activePage, botAvatarUrl }) %>
+<%- include('header', { user: user, guild: guild, activePage: activePage, botAvatarUrl: botAvatarUrl }) %>
+<%- include('sidebar', { user: user, guild: guild, activePage: activePage, botAvatarUrl: botAvatarUrl }) %>
 
 <div id="content">
     <div class="main-content">
@@ -11,7 +11,7 @@
         </div>
         
         <div class="settings-section">
-            <h2><%= settings.painel_vip.message %></h2>
+            <h2>Painel VIP</h2>
             <p>Recursos exclusivos do Painel VIP.</p>
         </div>
     </div>

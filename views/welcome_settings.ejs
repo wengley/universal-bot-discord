@@ -48,7 +48,7 @@
                     <label for="join_message">Mensagem de Texto (opcional):</label>
                     <textarea name="join_message" rows="3" placeholder="Ex: Boas-vindas, <[@user]>!"><%= settings.join_message %></textarea>
 
-                    <%- include('partials/embed_options', { prefix: 'join', settings: settings.join_embed }) %>
+                    <%- include('embed_fields', { prefix: 'join', embed: settings.join_embed }) %>
 
                     <button type="button" class="btn btn-test-message" onclick="testMessage('join')">
                         <i class="fas fa-paper-plane"></i> Testar Mensagem de Boas-Vindas
@@ -79,7 +79,7 @@
                     <label for="leave_message">Mensagem de Texto (opcional):</label>
                     <textarea name="leave_message" rows="3" placeholder="Ex: Adeus, <[@user.name]>. Sentiremos sua falta."><%= settings.leave_message %></textarea>
                     
-                    <%- include('partials/embed_options', { prefix: 'leave', settings: settings.leave_embed }) %>
+                    <%- include('embed_fields', { prefix: 'leave', embed: settings.leave_embed }) %>
 
                     <button type="button" class="btn btn-test-message" onclick="testMessage('leave')">
                         <i class="fas fa-paper-plane"></i> Testar Mensagem de Saída
@@ -99,7 +99,7 @@
                     <label for="dm_message">Mensagem de Texto (opcional):</label>
                     <textarea name="dm_message" rows="3" placeholder="Ex: Olá, obrigado por entrar no nosso servidor!"><%= settings.dm_message %></textarea>
                     
-                    <%- include('partials/embed_options', { prefix: 'dm', settings: settings.dm_embed }) %>
+                    <%- include('embed_fields', { prefix: 'dm', embed: settings.dm_embed }) %>
 
                     </div>
             </div>

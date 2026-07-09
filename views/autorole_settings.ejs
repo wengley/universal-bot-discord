@@ -1,8 +1,5 @@
-<%- include('partials/header', { user, guild, activePage, botAvatarUrl }) %>
-
-<div id="wrapper">
-    
-    <%- include('partials/sidebar', { user, guild, activePage, botAvatarUrl }) %>
+<%- include('header', { user: user, guild: guild, activePage: activePage, botAvatarUrl: botAvatarUrl }) %>
+<%- include('sidebar', { user: user, guild: guild, activePage: activePage, botAvatarUrl: botAvatarUrl }) %>
 
     <div id="content">
         <div class="main-content">
@@ -86,7 +83,6 @@
             </form>
         </div>
     </div>
-</div>
 
 <script>
     // Armazena todos os cargos disponíveis (para fins de adicionar/remover)
