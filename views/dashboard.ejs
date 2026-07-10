@@ -5,9 +5,9 @@
 
     <div id="content">
         <div class="main-content">
-            <h1><i class="fas fa-server"></i> Selecione um Servidor para Gerenciar</h1>
-            <p>Selecione um dos servidores onde você é **Dono** ou tem permissões de **Administrador** e onde o bot está presente.</p>
-            
+            <h1><i class="fas fa-server"></i> Selecione um Servidor</h1>
+            <p>Servidores onde você é <strong>Dono</strong> ou tem permissão de <strong>Administrador</strong>.</p>
+
             <% if (showInviteAlert) { %>
                 <div class="alert alert-danger">
                     ❌ Você cancelou a adição do Bot ao servidor ou não tem permissão.
@@ -16,55 +16,27 @@
 
             <div class="guild-list">
                 <% guilds.forEach(guild => { %>
-                    <% 
-                        // CRÍTICO: Simplificado a lógica de status para apenas 'isInBot'
-                        let statusButtonClass = '';
-                        let statusText = 'BOT Ausente';
-                        
-                        if (guild.isInBot) {
-                            // Assumindo que se o bot está na guild, ele está "online" para configurar
-                            statusButtonClass = 'btn-primary'; 
-                            statusText = 'Bot Presente'; 
-                        } else {
-                            // Se o bot NÃO está na guild (bot privado), exibe Ausente/Vermelho
-                            statusButtonClass = 'btn-denied'; 
-                            statusText = 'BOT Ausente'; 
-                        }
-                        
-                        // Aplica a classe denied para servidores que o bot não conseguiu entrar.
+                    <%
                         const itemClass = guild.isInBot ? '' : 'denied';
-                        
-                        // Lógica de corte de nome
-                        const serverName = guild.name.length > 13 ? guild.name.substring(0, 13) + '...' : guild.name;
+                        const statusButtonClass = guild.isInBot ? 'btn-primary' : 'btn-denied';
+                        const statusText = guild.isInBot ? 'Bot Presente' : 'BOT Ausente';
                     %>
-                    
                     <div class="guild-item <%= itemClass %>">
-                        
-                        <img src="<%= guild.icon %>" alt="<%= guild.name %> icon" class="guild-icon">
-                        
-                        <div class="guild-details">
-                            <div class="guild-name"><%= serverName %></div>
-                            <div class="guild-role-tag">Seu Cargo: <%= guild.userRole %></div>
+                        <div class="guild-item-main">
+                            <img src="<%= guild.icon %>" alt="" class="guild-icon">
+                            <div class="guild-details">
+                                <div class="guild-name" title="<%= guild.name %>"><%= guild.name %></div>
+                                <div class="guild-role-tag">Seu Cargo: <%= guild.userRole %></div>
+                            </div>
                         </div>
-
-                        <% if (guild.isInBot) { %>
-                            
-                            <span class="btn status-btn <%= statusButtonClass %>">
-                                <%= statusText %>
-                            </span>
-                            
-                            <a href="/dashboard/<%= guild.id %>" class="btn btn-primary btn-configure">
-                                <i class="fas fa-cog"></i> Configurar
-                            </a>
-
-                        <% } else { %>
-                            <span class="btn <%= statusButtonClass %> status-btn">
-                                <%= statusText %>
-                            </span>
-                            <a href="#" class="btn btn-denied btn-configure disabled-link">
-                                Não Disponível
-                            </a>
-                        <% } %>
+                        <div class="guild-item-footer">
+                            <span class="btn status-btn <%= statusButtonClass %>"><%= statusText %></span>
+                            <% if (guild.isInBot) { %>
+                                <a href="/dashboard/<%= guild.id %>" class="btn btn-primary btn-configure"><i class="fas fa-cog"></i> Configurar</a>
+                            <% } else { %>
+                                <a href="#" class="btn btn-denied btn-configure disabled-link">Indisponível</a>
+                            <% } %>
+                        </div>
                     </div>
                 <% }); %>
             </div>

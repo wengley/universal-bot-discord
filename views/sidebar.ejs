@@ -1,47 +1,40 @@
 <nav id="sidebar">
-    <div class="sidebar-header-title">
+    <div class="sidebar-header">
         <img src="<%= botAvatarUrl %>" alt="Logo" class="bot-logo">
-        <h1>Universal Bot</h1>
+        <span>Universal<em>Bot</em></span>
     </div>
 
-    <ul class="list-unstyled components">
+    <% if (guild) { %>
+        <div class="nav-separator">CONFIG. <%= guild.name.toUpperCase() %></div>
 
-        <% if (guild) { %>
-            <li class="separator">CONFIG. <%= guild.name.toUpperCase() %></li>
+        <a class="nav-link <%= activePage === 'settings' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>"><i class="fas fa-cog"></i> Config. Geral</a>
+        <a class="nav-link <%= activePage === 'welcome' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/welcome"><i class="fas fa-sign-in-alt"></i> Boas-Vindas</a>
+        <a class="nav-link <%= activePage === 'autorole' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/autorole"><i class="fas fa-user-plus"></i> AutoRole</a>
 
-            <li class="<%= activePage === 'settings' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>"><i class="fas fa-cog"></i> Config. Geral</a>
-            </li>
-            <li class="<%= activePage === 'welcome' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>/welcome"><i class="fas fa-sign-in-alt"></i> Boas-Vindas</a>
-            </li>
-            <li class="<%= activePage === 'autorole' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>/autorole"><i class="fas fa-user-plus"></i> AutoRole</a>
-            </li>
-            <li class="separator">MÓDULOS</li>
-            <li class="<%= activePage === 'security' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>/security"><i class="fas fa-shield-alt"></i> Segurança</a>
-            </li>
-            <li class="<%= activePage === 'ticket' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>/ticket"><i class="fas fa-headset"></i> Tickets/Suporte</a>
-            </li>
-            <li class="<%= activePage === 'vip' ? 'active' : '' %>">
-                <a href="/dashboard/<%= guild.id %>/vip"><i class="fas fa-star"></i> Área VIP</a>
-            </li>
-        <% } else { %>
-            <li class="<%= activePage === 'servers' ? 'active' : '' %>">
-                <a href="/dashboard"><i class="fas fa-server"></i> Seus Servidores</a>
-            </li>
-            <li class="<%= activePage === 'updates' ? 'active' : '' %>">
-                <a href="/updates"><i class="fas fa-bell"></i> Atualizações</a>
-            </li>
-        <% } %>
+        <div class="nav-separator">MÓDULOS</div>
+        <a class="nav-link <%= activePage === 'security' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/security"><i class="fas fa-shield-alt"></i> Segurança</a>
+        <a class="nav-link <%= activePage === 'ticket' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/ticket"><i class="fas fa-headset"></i> Tickets/Suporte</a>
+        <a class="nav-link <%= activePage === 'vip' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/vip"><i class="fas fa-star"></i> Área VIP</a>
 
-        <li class="separator">MISCELÂNEA</li>
-        <% if (guild) { %>
-            <li><a href="/dashboard"><i class="fas fa-chevron-left"></i> Voltar</a></li>
-        <% } %>
-        <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
-    </ul>
-    
-    </nav>
+        <div class="nav-separator">MISCELÂNEA</div>
+        <a class="nav-link" href="/dashboard"><i class="fas fa-chevron-left"></i> Voltar</a>
+    <% } else { %>
+        <div class="nav-separator">GERAL</div>
+        <a class="nav-link <%= activePage === 'servers' ? 'active' : '' %>" href="/dashboard"><i class="fas fa-server"></i> Seus Servidores</a>
+        <a class="nav-link <%= activePage === 'updates' ? 'active' : '' %>" href="/updates"><i class="fas fa-bell"></i> Atualizações</a>
+
+        <div class="nav-separator">MISCELÂNEA</div>
+    <% } %>
+
+    <a class="nav-link" href="/logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
+
+    <% if (typeof user !== 'undefined' && user) { %>
+    <div class="sidebar-footer-profile">
+        <img src="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png' %>" class="user-avatar-large" alt="avatar">
+        <div style="min-width:0;">
+            <div class="user-tag-large"><%= user.displayName || user.username %></div>
+            <div class="user-id">#<%= user.discriminator || '0000' %></div>
+        </div>
+    </div>
+    <% } %>
+</nav>
