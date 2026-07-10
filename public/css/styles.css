@@ -233,10 +233,56 @@ select { cursor: pointer; }
 .command-table th { color: var(--text3); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
 .command-table code { background: var(--surface2); padding: 2px 7px; border-radius: 6px; color: var(--accent); font-size: 12.5px; }
 
+/* ── LANDING PAGE (HERO) ── */
+@keyframes gradientMove { 0%,100% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+body.landing { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+
+.hero {
+    text-align: center; padding: 70px 36px; max-width: 560px;
+    background: radial-gradient(ellipse 80% 50% at 50% -10%, var(--accent-glow), transparent 65%);
+    border: 1px solid var(--border2); border-radius: 22px;
+    position: relative; overflow: hidden;
+}
+.hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(129,140,248,.05) 0%, transparent 50%, rgba(99,102,241,.05) 100%);
+    background-size: 200% 200%; animation: gradientMove 8s ease infinite; pointer-events: none;
+}
+.hero-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 20px;
+    padding: 5px 14px; font-size: 12px; color: var(--accent); margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite; position: relative;
+}
+.hero-avatar { width: 64px; height: 64px; border-radius: 18px; margin-bottom: 18px; box-shadow: 0 8px 30px var(--accent-glow); position: relative; }
+.hero h1 { font-size: 32px; font-weight: 700; margin-bottom: 12px; letter-spacing: -.5px; line-height: 1.25; position: relative; }
+.hero-name { color: var(--accent); }
+.hero p { font-size: 14.5px; color: var(--text2); max-width: 400px; margin: 0 auto 28px; line-height: 1.7; position: relative; }
+.btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; position: relative; }
+.btn-discord { background: #5865f2; color: #fff; }
+.btn-discord:hover { background: #4752c4; transform: translateY(-2px); }
+
+.hero-stats {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 12px;
+    max-width: 320px; margin: 28px auto 0; padding: 16px 0; position: relative;
+}
+.hstat { text-align: center; flex: 1; }
+.hstat-num { font-size: 19px; font-weight: 700; color: var(--accent); }
+.hstat-label { font-size: 10.5px; color: var(--text3); margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+.hstat-div { width: 1px; height: 28px; background: var(--border2); }
+.landing-footer { text-align: center; font-size: 12px; color: var(--text3); margin-top: 18px; position: relative; }
+
 /* ── RESPONSIVO ── */
 @media (max-width: 880px) {
     #wrapper { flex-direction: column; }
     #sidebar { width: 100%; height: auto; position: relative; }
     #content { padding: 24px 18px; }
     .guild-list { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+    .hero { padding: 48px 22px; }
+    .hero h1 { font-size: 26px; }
 }

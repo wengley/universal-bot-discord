@@ -36,7 +36,7 @@
 
                 <div id="join-collapse" class="collapse-content" style="<%= settings.join_enabled ? '' : 'display: none;' %>">
                     <label for="join_channel_id">Canal de Boas-Vindas:</label>
-                    <select name="join_channel_id" required>
+                    <select name="join_channel_id" id="join_channel_id" required>
                         <option value="">-- Selecione um Canal --</option>
                         <% textChannels.forEach(channel => { %>
                             <option value="<%= channel.id %>" <%= settings.join_channel_id === channel.id ? 'selected' : '' %>>
@@ -46,7 +46,7 @@
                     </select>
                     
                     <label for="join_message">Mensagem de Texto (opcional):</label>
-                    <textarea name="join_message" rows="3" placeholder="Ex: Boas-vindas, <[@user]>!"><%= settings.join_message %></textarea>
+                    <textarea name="join_message" id="join_message" rows="3" placeholder="Ex: Boas-vindas, <[@user]>!"><%= settings.join_message %></textarea>
 
                     <%- include('embed_fields', { prefix: 'join', embed: settings.join_embed }) %>
 
@@ -67,7 +67,7 @@
                 
                 <div id="leave-collapse" class="collapse-content" style="<%= settings.leave_enabled ? '' : 'display: none;' %>">
                     <label for="leave_channel_id">Canal de Saída:</label>
-                    <select name="leave_channel_id" required>
+                    <select name="leave_channel_id" id="leave_channel_id" required>
                         <option value="">-- Selecione um Canal --</option>
                         <% textChannels.forEach(channel => { %>
                             <option value="<%= channel.id %>" <%= settings.leave_channel_id === channel.id ? 'selected' : '' %>>
@@ -77,7 +77,7 @@
                     </select>
                     
                     <label for="leave_message">Mensagem de Texto (opcional):</label>
-                    <textarea name="leave_message" rows="3" placeholder="Ex: Adeus, <[@user.name]>. Sentiremos sua falta."><%= settings.leave_message %></textarea>
+                    <textarea name="leave_message" id="leave_message" rows="3" placeholder="Ex: Adeus, <[@user.name]>. Sentiremos sua falta."><%= settings.leave_message %></textarea>
                     
                     <%- include('embed_fields', { prefix: 'leave', embed: settings.leave_embed }) %>
 
@@ -97,7 +97,7 @@
                 
                 <div id="dm-collapse" class="collapse-content" style="<%= settings.dm_enabled ? '' : 'display: none;' %>">
                     <label for="dm_message">Mensagem de Texto (opcional):</label>
-                    <textarea name="dm_message" rows="3" placeholder="Ex: Olá, obrigado por entrar no nosso servidor!"><%= settings.dm_message %></textarea>
+                    <textarea name="dm_message" id="dm_message" rows="3" placeholder="Ex: Olá, obrigado por entrar no nosso servidor!"><%= settings.dm_message %></textarea>
                     
                     <%- include('embed_fields', { prefix: 'dm', embed: settings.dm_embed }) %>
 

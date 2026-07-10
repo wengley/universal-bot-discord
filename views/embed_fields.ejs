@@ -1,4 +1,9 @@
 <div class="embed-options-group">
+    <label class="checkbox-container">
+        <input type="checkbox" name="<%= prefix %>_embed_enabled" id="<%= prefix %>_embed_enabled" value="true" <%= embed.enabled ? 'checked' : '' %>>
+        Ativar Embed (mostrado junto com a mensagem de texto)
+    </label>
+
     <label for="<%= prefix %>_embed_color">Cor (Hexadecimal):</label>
     <input type="color" name="<%= prefix %>_embed_color" id="<%= prefix %>_embed_color" 
            value="<%= embed.color || '#5865F2' %>">
