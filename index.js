@@ -72,7 +72,7 @@ function processPlaceholders(text, member, guild, isLeave = false) {
 
     processedText = processedText.replace(/<\[@user\]>/g, `<@${user.id}>`);
     processedText = processedText.replace(/<\[@user\.name\]>/g, user.displayName || user.user.username);
-    processedText = processedText.replace(/<\[user\]>/g, user.user.username || user.tag);
+    processedText = processedText.replace(/<\[user\]>/g, (user.user?.username) || user.username || user.tag);
     processedText = processedText.replace(/<\[user\.id\]>/g, user.id);
     const avatarUrl = user.avatarURL ? user.avatarURL() : (user.user ? user.user.displayAvatarURL() : '');
     processedText = processedText.replace(/<\[user\.avatar\]>/g, avatarUrl);
