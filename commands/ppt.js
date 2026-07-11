@@ -1,6 +1,14 @@
+const { SlashCommandBuilder } = require('discord.js');
+
 module.exports = {
     name: 'ppt',
     description: 'Jogue Pedra, Papel ou Tesoura contra o bot!',
+    category: 'Diversão',
+    data: new SlashCommandBuilder()
+        .setName('ppt')
+        .setDescription('Jogue Pedra, Papel ou Tesoura contra o bot!')
+        .addStringOption(opt => opt.setName('escolha').setDescription('Sua jogada').setRequired(true)
+            .addChoices({ name: 'Pedra', value: 'pedra' }, { name: 'Papel', value: 'papel' }, { name: 'Tesoura', value: 'tesoura' })),
     
     async execute(message, args) {
         // 1. CHECAGEM DO ARGUMENTO DO USUÁRIO

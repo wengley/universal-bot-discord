@@ -1,9 +1,14 @@
-const { PermissionsBitField, EmbedBuilder } = require('discord.js');
+const { PermissionsBitField, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'lock',
     description: 'Bloqueia um canal para impedir que membros enviem mensagens (apenas leitura).',
     aliases: ['bloquear'],
+    category: 'Moderação',
+    data: new SlashCommandBuilder()
+        .setName('lock')
+        .setDescription('Bloqueia o canal atual para envio de mensagens.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
 
     async execute(message, args) {
         // 1. CHECAGEM DE PERMISSÃO DO USUÁRIO

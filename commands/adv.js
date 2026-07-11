@@ -1,8 +1,17 @@
-const { PermissionsBitField } = require('discord.js');
+const { PermissionsBitField, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'adv',
     description: 'Aplica uma advertência numerada e atribui o cargo correspondente.',
+    category: 'Moderação',
+    data: new SlashCommandBuilder()
+        .setName('adv')
+        .setDescription('Aplica uma advertência numerada e atribui o cargo correspondente.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
+        .addUserOption(opt => opt.setName('usuario').setDescription('Membro a advertir').setRequired(true))
+        .addIntegerOption(opt => opt.setName('numero').setDescription('Número da advertência').setRequired(true)
+            .addChoices({ name: '1', value: 1 }, { name: '2', value: 2 }, { name: '3', value: 3 }))
+        .addStringOption(opt => opt.setName('motivo').setDescription('Motivo da advertência').setRequired(false)),
     
     async execute(message, args) {
         // ID do Canal de Logs. **SUBSTITUA ESTE VALOR COM O ID DO SEU CANAL DE LOGS.**

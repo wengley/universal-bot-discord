@@ -1,11 +1,16 @@
 // commands/cargoinfo.js
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'cargoinfo',
     description: 'Mostra informações detalhadas sobre um cargo mencionado ou pelo ID.',
     aliases: ['roleinfo', 'rinfo'],
     usage: '<@cargo | ID>',
+    category: 'Informação',
+    data: new SlashCommandBuilder()
+        .setName('cargoinfo')
+        .setDescription('Mostra informações detalhadas sobre um cargo.')
+        .addRoleOption(opt => opt.setName('cargo').setDescription('Cargo a consultar').setRequired(true)),
     
     async execute(message, args, client, db) {
         

@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 // CORREÇÃO: Usar a nova forma de importação
 const { SupabaseDB } = require('../db/supabaseDb');
 const db = new SupabaseDB(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
@@ -7,6 +7,11 @@ module.exports = {
     name: 'afk',
     description: 'Define seu status como AFK (Away From Keyboard) com um motivo.',
     aliases: ['ausente'],
+    category: 'Utilidade',
+    data: new SlashCommandBuilder()
+        .setName('afk')
+        .setDescription('Define seu status como AFK.')
+        .addStringOption(opt => opt.setName('motivo').setDescription('Motivo do AFK').setRequired(false)),
 
     async execute(message, args) {
         // O motivo é o resto da mensagem após o !afk

@@ -1,8 +1,14 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'ship',
     description: 'Calcula a porcentagem de compatibilidade entre 1 ou 2 membros.',
+    category: 'Diversão',
+    data: new SlashCommandBuilder()
+        .setName('ship')
+        .setDescription('Calcula a compatibilidade entre você e outra pessoa (ou entre duas pessoas).')
+        .addUserOption(opt => opt.setName('usuario').setDescription('Primeira pessoa').setRequired(false))
+        .addUserOption(opt => opt.setName('usuario2').setDescription('Segunda pessoa (opcional)').setRequired(false)),
     
     async execute(message, args) {
         let user1, user2;

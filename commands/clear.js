@@ -1,9 +1,15 @@
-const { PermissionsBitField } = require('discord.js');
+const { PermissionsBitField, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'clear',
     aliases: ['limpar'], // Adiciona um alias para o comando, se quiser
     description: 'Apaga um número específico de mensagens no canal (máx 100).',
+    category: 'Moderação',
+    data: new SlashCommandBuilder()
+        .setName('clear')
+        .setDescription('Apaga um número de mensagens no canal (máx 100).')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+        .addIntegerOption(opt => opt.setName('quantidade').setDescription('Quantas mensagens apagar (1-100)').setRequired(true).setMinValue(1).setMaxValue(100)),
     
     async execute(message, args) {
         // 1. CHECAGEM DE PERMISSÕES DO AUTOR

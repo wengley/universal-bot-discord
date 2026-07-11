@@ -1,6 +1,10 @@
+const { SlashCommandBuilder } = require('discord.js');
+
 module.exports = {
     name: 'ping',
     description: 'Mostra a latência do bot e da API.',
+    category: 'Informação',
+    data: new SlashCommandBuilder().setName('ping').setDescription('Mostra a latência do bot e da API.'),
     
     async execute(message, args) {
         // Latência do Bot (medida ao editar a mensagem)

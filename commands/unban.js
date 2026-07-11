@@ -1,8 +1,14 @@
-const { PermissionsBitField } = require('discord.js');
+const { PermissionsBitField, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'unban',
     description: 'Desbane um usuário do servidor usando seu ID.',
+    category: 'Moderação',
+    data: new SlashCommandBuilder()
+        .setName('unban')
+        .setDescription('Desbane um usuário do servidor.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+        .addUserOption(opt => opt.setName('usuario').setDescription('Usuário a desbanir (ID)').setRequired(true)),
     
     async execute(message, args) {
         // 1. CHECAGEM DE PERMISSÕES DO AUTOR

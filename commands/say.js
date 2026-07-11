@@ -1,8 +1,14 @@
-const { PermissionsBitField } = require('discord.js');
+const { PermissionsBitField, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'say',
     description: 'Faz o bot enviar uma mensagem de texto (Apenas Administradores).',
+    category: 'Utilidade',
+    data: new SlashCommandBuilder()
+        .setName('say')
+        .setDescription('Faz o bot enviar uma mensagem de texto.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .addStringOption(opt => opt.setName('mensagem').setDescription('Texto que o bot vai enviar').setRequired(true)),
     
     async execute(message, args) {
         // 1. CHECAGEM DE PERMISSÕES DO AUTOR

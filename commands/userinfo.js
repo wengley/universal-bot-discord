@@ -1,7 +1,14 @@
+const { SlashCommandBuilder } = require('discord.js');
+
 module.exports = {
     // Define o nome do comando (o que vem depois do !)
     name: 'userinfo', 
     description: 'Mostra informações detalhadas de um usuário no servidor.',
+    category: 'Informação',
+    data: new SlashCommandBuilder()
+        .setName('userinfo')
+        .setDescription('Mostra informações detalhadas de um usuário no servidor.')
+        .addUserOption(opt => opt.setName('usuario').setDescription('Usuário (padrão: você)').setRequired(false)),
     
     // O método 'execute' é o que será rodado quando o usuário digitar !userinfo
     async execute(message, args) {

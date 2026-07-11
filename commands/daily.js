@@ -5,10 +5,14 @@
 // Define o tempo de espera (cooldown) para 24 horas em milissegundos
 const tempoEspera = 86400000; // (24 horas * 60 min * 60 seg * 1000 ms)
 
+const { SlashCommandBuilder } = require('discord.js');
+
 module.exports = {
     name: "daily",
     description: "Reivindica sua recompensa diária em moedas.",
     aliases: ["diario"],
+    category: 'Economia',
+    data: new SlashCommandBuilder().setName('daily').setDescription('Reivindica sua recompensa diária em moedas.'),
     
     // ATENÇÃO: Adiciona 'db' como o quarto argumento
     async execute(message, args, client, db) { 

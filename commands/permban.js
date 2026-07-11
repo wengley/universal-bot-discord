@@ -1,10 +1,16 @@
-// commands/permban.js
-const { EmbedBuilder, PermissionsBitField } = require('discord.js');
+const { EmbedBuilder, PermissionsBitField, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'permban',
     description: 'Bane um usuário permanentemente (requer permissão de Banir Membros).',
     usage: '@usuario [motivo]',
+    category: 'Moderação',
+    data: new SlashCommandBuilder()
+        .setName('permban')
+        .setDescription('Bane um usuário permanentemente.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+        .addUserOption(opt => opt.setName('usuario').setDescription('Membro a banir').setRequired(true))
+        .addStringOption(opt => opt.setName('motivo').setDescription('Motivo do banimento').setRequired(false)),
     
     async execute(message, args, client, db) {
         

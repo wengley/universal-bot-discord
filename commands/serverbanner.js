@@ -1,10 +1,12 @@
 // commands/serverbanner.js
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'serverbanner',
     description: 'Mostra o banner do servidor em alta qualidade (requer Boost Nível 2).',
     aliases: ['banner'],
+    category: 'Informação',
+    data: new SlashCommandBuilder().setName('serverbanner').setDescription('Mostra o banner do servidor em alta qualidade.'),
     
     async execute(message, args, client, db) {
         

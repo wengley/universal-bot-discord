@@ -1,4 +1,4 @@
-const { PermissionsBitField, EmbedBuilder } = require('discord.js');
+const { PermissionsBitField, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 // ⚠️ Mude o nome se o seu cargo de Castigo for diferente de 'Castigo' ou 'Mutado'
 const MUTE_ROLE_NAMES = ['Castigo', 'Mutado']; 
@@ -7,6 +7,12 @@ module.exports = {
     name: 'unmute',
     description: 'Tira um usuário do Castigo (Unmute).',
     aliases: ['tirarcastigo'],
+    category: 'Moderação',
+    data: new SlashCommandBuilder()
+        .setName('unmute')
+        .setDescription('Tira um usuário do Castigo (Unmute).')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
+        .addUserOption(opt => opt.setName('usuario').setDescription('Membro a des-silenciar').setRequired(true)),
 
     async execute(message, args) {
         // 1. CHECAGEM DE PERMISSÃO DO USUÁRIO

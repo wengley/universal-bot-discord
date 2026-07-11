@@ -1,7 +1,11 @@
+const { SlashCommandBuilder } = require('discord.js');
+
 module.exports = {
     name: "uptime",
     description: "Mostra há quanto tempo o bot está online.",
     aliases: ["tempoativo"],
+    category: 'Informação',
+    data: new SlashCommandBuilder().setName('uptime').setDescription('Mostra há quanto tempo o bot está online.'),
     async execute(message, args, client) {
         
         // Converte milissegundos para dias, horas, minutos e segundos

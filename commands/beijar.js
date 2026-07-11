@@ -1,17 +1,21 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'beijar',
     description: 'Beija um usuário com um GIF divertido e permite retribuir.',
-    
+    category: 'Diversão',
+    data: new SlashCommandBuilder()
+        .setName('beijar')
+        .setDescription('Beija um usuário com um GIF divertido.')
+        .addUserOption(opt => opt.setName('usuario').setDescription('Quem você quer beijar').setRequired(true)),
+
     async execute(message, args) {
-        // 1. LISTA DE GIFS DE BEIJO (Substitua pelos seus próprios links!)
+        // Links diretos de mídia (media.tenor.com) — os links de página do
+        // Tenor não funcionam em embeds, precisam ser o arquivo .gif direto.
         const kissGifs = [
-            'https://tenor.com/view/yosuga-no-sora-anime-kiss-couple-kiss-gif-17646642948001779483', // Exemplo 1
-            'https://tenor.com/view/yuki-yuki-and-itsuomi-kiss-itsuomi-gif-8959322022735711966', // Exemplo 2
-            'https://tenor.com/view/kiss-me-gif-13265134655129066209', // Exemplo 3
-            'https://tenor.com/view/ichigo-hiro-anime-kiss-anime-gif-8146116001988818857', // Exemplo 4
-            'https://tenor.com/view/megumi-kato-kiss-saekano-aki-tomoya-gif-26277378'
+            'https://media1.tenor.com/m/yjs5F1dPcLkAAAAC/anime-kiss.gif',
+            'https://media1.tenor.com/m/KbXEleDty0IAAAAC/cheek-kiss.gif',
+            'https://media1.tenor.com/m/mxB3FaghrOUAAAAC/anime-kiss-anime-kiss-cheek.gif',
         ];
 
         const memberToKiss = message.mentions.members.first();

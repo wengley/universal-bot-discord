@@ -1,8 +1,15 @@
-const { PermissionsBitField } = require('discord.js');
+const { PermissionsBitField, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'kick',
     description: 'Expulsa um membro do servidor.',
+    category: 'Moderação',
+    data: new SlashCommandBuilder()
+        .setName('kick')
+        .setDescription('Expulsa um membro do servidor.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
+        .addUserOption(opt => opt.setName('usuario').setDescription('Membro a expulsar').setRequired(true))
+        .addStringOption(opt => opt.setName('motivo').setDescription('Motivo da expulsão').setRequired(false)),
     
     async execute(message, args) {
         // 1. CHECAGEM DE PERMISSÕES DO AUTOR

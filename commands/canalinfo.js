@@ -1,11 +1,16 @@
 // commands/canalinfo.js
-const { EmbedBuilder, ChannelType } = require('discord.js');
+const { EmbedBuilder, ChannelType, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'canalinfo',
     description: 'Mostra informações detalhadas sobre o canal atual ou um canal mencionado.',
     aliases: ['channelinfo', 'cinfo'],
     usage: '[#canal]',
+    category: 'Informação',
+    data: new SlashCommandBuilder()
+        .setName('canalinfo')
+        .setDescription('Mostra informações detalhadas sobre um canal.')
+        .addChannelOption(opt => opt.setName('canal').setDescription('Canal a consultar (padrão: canal atual)').setRequired(false)),
     
     async execute(message, args, client, db) {
         

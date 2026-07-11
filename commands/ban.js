@@ -1,8 +1,15 @@
-const { PermissionsBitField } = require('discord.js');
+const { PermissionsBitField, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'ban',
     description: 'Bane um membro permanentemente do servidor.',
+    category: 'Moderação',
+    data: new SlashCommandBuilder()
+        .setName('ban')
+        .setDescription('Bane um membro permanentemente do servidor.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+        .addUserOption(opt => opt.setName('usuario').setDescription('Membro a banir').setRequired(true))
+        .addStringOption(opt => opt.setName('motivo').setDescription('Motivo do banimento').setRequired(false)),
     
     async execute(message, args) {
         // 1. CHECAGEM DE PERMISSÕES DO AUTOR

@@ -1,9 +1,15 @@
 // balance.js
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: "balance",
     description: "Verifica o saldo de moedas do usuário.",
     aliases: ["bal", "saldo"],
+    category: 'Economia',
+    data: new SlashCommandBuilder()
+        .setName('balance')
+        .setDescription('Verifica o saldo de moedas do usuário.')
+        .addUserOption(opt => opt.setName('usuario').setDescription('Usuário a consultar (padrão: você)').setRequired(false)),
     
     // ATENÇÃO: Recebe o objeto 'db' (QuickDB) do index.js
     async execute(message, args, client, db) {

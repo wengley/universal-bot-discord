@@ -6,6 +6,7 @@ const {
     PermissionsBitField, ChannelType 
 } = require('discord.js');
 const { SupabaseDB } = require('./db/supabaseDb');
+const { adaptInteraction, buildArgs } = require('./utils/interactionAdapter');
 const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
@@ -685,6 +686,64 @@ app.listen(PORT, () => {
 
 client.once('ready', () => {
     console.log(`✅ Bot online como ${client.user.tag}`);
+    registerSlashCommands();
+});
+
+// Registra os Slash Commands (/) em todos os servidores onde o bot já está.
+// Registro por servidor = aparece na hora (registro global pode levar até 1h).
+async function registerSlashCommands() {
+    const slashData = [...client.commands.values()]
+        .filter(cmd => cmd.data)
+        .map(cmd => cmd.data.toJSON());
+
+    let ok = 0, fail = 0;
+    for (const guild of client.guilds.cache.values()) {
+        try {
+            await guild.commands.set(slashData);
+            ok++;
+        } catch (e) {
+            fail++;
+            console.error(`❌ Falha ao registrar slash commands em ${guild.name}: ${e.message}`);
+        }
+    }
+    console.log(`⚡ ${slashData.length} slash commands registrados em ${ok} servidor(es)${fail ? ` (${fail} falharam)` : ''}.`);
+}
+
+// Registra os slash commands automaticamente em qualquer novo servidor
+client.on('guildCreate', async guild => {
+    const slashData = [...client.commands.values()]
+        .filter(cmd => cmd.data)
+        .map(cmd => cmd.data.toJSON());
+    try {
+        await guild.commands.set(slashData);
+        console.log(`⚡ Slash commands registrados no novo servidor: ${guild.name}`);
+    } catch (e) {
+        console.error(`❌ Falha ao registrar slash commands em ${guild.name}: ${e.message}`);
+    }
+});
+
+// Slash Commands (/) — reusa a MESMA lógica dos comandos de prefixo (!)
+// através do adaptador, sem duplicar código nenhum.
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isChatInputCommand()) return;
+
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+
+    try {
+        await interaction.deferReply();
+        const fakeMessage = adaptInteraction(interaction);
+        const args = buildArgs(interaction);
+        await command.execute(fakeMessage, args, client, db);
+    } catch (e) {
+        console.error(`❌ Erro ao executar /${interaction.commandName}: ${e.message}`);
+        const errorPayload = { content: '❌ Ocorreu um erro ao executar esse comando.' };
+        if (interaction.deferred || interaction.replied) {
+            await interaction.editReply(errorPayload).catch(() => {});
+        } else {
+            await interaction.reply({ ...errorPayload, ephemeral: true }).catch(() => {});
+        }
+    }
 });
 
 // Logs de diagnóstico: sem isso, uma queda de conexão no Discord era

@@ -1,9 +1,11 @@
-const { EmbedBuilder, ChannelType } = require('discord.js');
+const { EmbedBuilder, ChannelType, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'serverinfo',
     description: 'Mostra informações detalhadas sobre o servidor atual.',
     aliases: ['si', 'server'],
+    category: 'Informação',
+    data: new SlashCommandBuilder().setName('serverinfo').setDescription('Mostra informações detalhadas sobre o servidor atual.'),
     
     async execute(message, args) {
         // Pega o objeto Guild (Servidor)

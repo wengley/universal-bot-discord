@@ -1,4 +1,4 @@
-const { PermissionsBitField, EmbedBuilder } = require('discord.js');
+const { PermissionsBitField, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 // CORREÇÃO: Usar a nova forma de importação
 const { SupabaseDB } = require('../db/supabaseDb');
 const db = new SupabaseDB(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
@@ -7,6 +7,15 @@ module.exports = {
     name: 'warn',
     description: 'Adiciona um aviso (warn) a um usuário e notifica ele.',
     aliases: ['aviso'],
+    category: 'Moderação',
+    data: new SlashCommandBuilder()
+        .setName('warn')
+        .setDescription('Adiciona um aviso a um usuário e notifica ele.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
+        .addUserOption(opt => opt.setName('usuario').setDescription('Membro a avisar').setRequired(true))
+        .addIntegerOption(opt => opt.setName('quantidade').setDescription('Quantos avisos dar').setRequired(true)
+            .addChoices({ name: '1', value: 1 }, { name: '2', value: 2 }, { name: '3', value: 3 }))
+        .addStringOption(opt => opt.setName('motivo').setDescription('Motivo do aviso').setRequired(false)),
 
     async execute(message, args) {
         // 1. CHECAGEM DE PERMISSÃO DO USUÁRIO

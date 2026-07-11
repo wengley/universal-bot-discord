@@ -1,9 +1,14 @@
-const { PermissionsBitField, EmbedBuilder } = require('discord.js');
+const { PermissionsBitField, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'unlock',
     description: 'Desbloqueia um canal para que membros possam enviar mensagens novamente.',
     aliases: ['desbloquear'],
+    category: 'Moderação',
+    data: new SlashCommandBuilder()
+        .setName('unlock')
+        .setDescription('Desbloqueia o canal atual para envio de mensagens.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
 
     async execute(message, args) {
         // 1. CHECAGEM DE PERMISSÃO DO USUÁRIO

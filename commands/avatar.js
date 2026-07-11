@@ -1,9 +1,14 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'avatar',
     description: 'Mostra o avatar seu ou de um usuário mencionado.',
     aliases: ['pfp', 'foto'],
+    category: 'Informação',
+    data: new SlashCommandBuilder()
+        .setName('avatar')
+        .setDescription('Mostra o avatar seu ou de um usuário mencionado.')
+        .addUserOption(opt => opt.setName('usuario').setDescription('Usuário (padrão: você)').setRequired(false)),
     
     async execute(message, args) {
         // Prioriza o usuário mencionado, caso contrário, usa o autor da mensagem

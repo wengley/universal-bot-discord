@@ -1,10 +1,12 @@
 // commands/servericon.js
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'servericon',
     description: 'Mostra o ícone (avatar) do servidor em alta qualidade.',
     aliases: ['icon', 'serveravatar'],
+    category: 'Informação',
+    data: new SlashCommandBuilder().setName('servericon').setDescription('Mostra o ícone (avatar) do servidor em alta qualidade.'),
     
     async execute(message, args, client, db) {
         

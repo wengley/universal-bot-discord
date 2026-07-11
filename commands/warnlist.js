@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 // CORREÇÃO: Usar a nova forma de importação
 const { SupabaseDB } = require('../db/supabaseDb');
 const db = new SupabaseDB(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
@@ -7,6 +7,11 @@ module.exports = {
     name: 'warnlist',
     description: 'Mostra o total de avisos de um usuário.',
     aliases: ['listawarn', 'avisos'],
+    category: 'Moderação',
+    data: new SlashCommandBuilder()
+        .setName('warnlist')
+        .setDescription('Mostra o total de avisos de um usuário.')
+        .addUserOption(opt => opt.setName('usuario').setDescription('Usuário (padrão: você)').setRequired(false)),
 
     async execute(message, args) {
         // 1. PEGAR MEMBRO
