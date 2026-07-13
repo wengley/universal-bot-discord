@@ -128,6 +128,7 @@ const client = new Client({
         
         GatewayIntentBits.GuildMembers,     
         GatewayIntentBits.GuildPresences,   
+        GatewayIntentBits.GuildVoiceStates,
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
@@ -280,6 +281,12 @@ app.get('/invite/denied', isAuthenticated, (req, res) => {
 app.get('/dashboard', isAuthenticated, (req, res) => {
     if (!client.isReady()) {
         return res.status(503).send('Bot está inicializando. Por favor, tente novamente em instantes.');
+    }
+
+    // Se veio direto do fluxo "Adicionar Bot" do site (redirect_uri com guild_id),
+    // manda a pessoa direto pra configuração daquele servidor.
+    if (req.query.guild_id) {
+        return res.redirect(`/dashboard/${req.query.guild_id}`);
     }
 
     const userGuilds = req.user.guilds.filter(g => {
@@ -560,6 +567,140 @@ app.get('/dashboard/:guildId/ticket', isAuthenticated, async (req, res) => {
     });
 });
 
+// ===== REGISTRO DE EVENTOS =====
+const EVENT_LOG_TYPES = [
+    { key: 'ban', label: 'Alguém for banido', desc: 'Anuncia sempre que um membro é banido do servidor.' },
+    { key: 'unban', label: 'Alguém for desbanido', desc: 'Anuncia sempre que um usuário é desbanido.' },
+    { key: 'message_edit', label: 'Uma mensagem for editada', desc: 'Mostra o texto antes e depois da edição.' },
+    { key: 'message_delete', label: 'Uma mensagem for deletada', desc: 'Mostra quem enviou e o conteúdo apagado.' },
+    { key: 'bulk_delete', label: 'Alguém usar o /clear em massa', desc: 'Mostra quem limpou e quantas mensagens.' },
+    { key: 'nickname_change', label: 'Alguém alterar o nickname', desc: 'Mostra o apelido antigo e o novo.' },
+    { key: 'avatar_change', label: 'Alguém alterar o avatar', desc: 'Mostra o avatar antigo e o novo.' },
+    { key: 'voice_join', label: 'Alguém entrar em um canal de voz', desc: 'Anuncia entradas em canais de voz.' },
+    { key: 'voice_leave', label: 'Alguém sair de um canal de voz', desc: 'Anuncia saídas de canais de voz.' },
+];
+
+function defaultEventLogSettings() {
+    const events = {};
+    for (const t of EVENT_LOG_TYPES) events[t.key] = { enabled: false, channel_id: '' };
+    return { enabled: false, default_channel_id: '', events };
+}
+
+app.get('/dashboard/:guildId/event-log', isAuthenticated, async (req, res) => {
+    const context = await getGuildContext(req);
+    if (context.status !== 200) {
+        return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
+    }
+    const saved = await db.get(`guild_${context.guild.id}.event_log`) || {};
+    const settings = { ...defaultEventLogSettings(), ...saved, events: { ...defaultEventLogSettings().events, ...(saved.events || {}) } };
+
+    const textChannels = context.guild.channels.cache
+        .filter(c => c.type === ChannelType.GuildText)
+        .map(c => ({ id: c.id, name: c.name }));
+
+    res.render('event_log', {
+        user: req.user,
+        guild: context.guild,
+        activePage: 'event-log',
+        botAvatarUrl: context.botAvatarUrl,
+        textChannels,
+        settings,
+        eventTypes: EVENT_LOG_TYPES,
+        message: req.query.message,
+    });
+});
+
+app.post('/dashboard/:guildId/event-log', isAuthenticated, async (req, res) => {
+    const context = await getGuildContext(req);
+    if (context.status !== 200) {
+        return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
+    }
+    const events = {};
+    for (const t of EVENT_LOG_TYPES) {
+        events[t.key] = {
+            enabled: req.body[`event_${t.key}_enabled`] === 'on',
+            channel_id: req.body[`event_${t.key}_channel`] || '',
+        };
+    }
+    await db.set(`guild_${context.guild.id}.event_log`, {
+        enabled: req.body.event_log_enabled === 'on',
+        default_channel_id: req.body.default_channel_id || '',
+        events,
+    });
+    res.redirect(`/dashboard/${context.guild.id}/event-log?message=success`);
+});
+
+// ===== Abas novas "Em construção" (mesma página reaproveitada) =====
+const EM_CONSTRUCAO = [
+    { path: 'command-channels', activePage: 'command-channels', label: 'Canais de Comandos' },
+    { path: 'custom-commands', activePage: 'custom-commands', label: 'Comandos Personalizados' },
+    { path: 'member-counter', activePage: 'member-counter', label: 'Contador de Membros' },
+    { path: 'permissions', activePage: 'permissions', label: 'Permissões' },
+    { path: 'invite-blocker', activePage: 'invite-blocker', label: 'Bloqueador de Convites' },
+    { path: 'punishment-log', activePage: 'punishment-log', label: 'Registro de Punições' },
+    { path: 'warn-actions', activePage: 'warn-actions', label: 'Punições de Avisos' },
+];
+for (const page of EM_CONSTRUCAO) {
+    app.get(`/dashboard/:guildId/${page.path}`, isAuthenticated, async (req, res) => {
+        const context = await getGuildContext(req);
+        if (context.status !== 200) {
+            return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
+        }
+        res.render('coming_soon', {
+            user: req.user,
+            guild: context.guild,
+            activePage: page.activePage,
+            activePageDisplay: page.label,
+            botAvatarUrl: context.botAvatarUrl
+        });
+    });
+}
+
+// ===== Comandos do Universal BOT / Comandos por Prefixo =====
+function buildCommandGroups() {
+    const categories = {};
+    const seen = new Set();
+    for (const command of client.commands.values()) {
+        if (seen.has(command.name)) continue;
+        seen.add(command.name);
+        const cat = command.category || 'Outros';
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(command);
+    }
+    for (const cat in categories) categories[cat].sort((a, b) => a.name.localeCompare(b.name));
+    return categories;
+}
+
+app.get('/dashboard/:guildId/commands', isAuthenticated, async (req, res) => {
+    const context = await getGuildContext(req);
+    if (context.status !== 200) {
+        return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
+    }
+    res.render('commands_list', {
+        user: req.user,
+        guild: context.guild,
+        activePage: 'commands',
+        botAvatarUrl: context.botAvatarUrl,
+        mode: 'slash',
+        categories: buildCommandGroups(),
+    });
+});
+
+app.get('/dashboard/:guildId/prefixed-commands', isAuthenticated, async (req, res) => {
+    const context = await getGuildContext(req);
+    if (context.status !== 200) {
+        return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
+    }
+    res.render('commands_list', {
+        user: req.user,
+        guild: context.guild,
+        activePage: 'prefixed-commands',
+        botAvatarUrl: context.botAvatarUrl,
+        mode: 'prefix',
+        categories: buildCommandGroups(),
+    });
+});
+
 // 404 — rota inexistente
 app.use((req, res) => {
     res.status(404).send(`<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
@@ -586,6 +727,117 @@ app.use((err, req, res, next) => {
 // ===============================
 // 7. EVENTOS DISCORD
 // ===============================
+
+// Envia um embed no canal configurado do Registro de Eventos, se ativado
+// pra esse tipo de evento. Disponível pros comandos via client.logEvent(...)
+async function logEvent(guild, eventKey, embed) {
+    try {
+        const settings = await db.get(`guild_${guild.id}.event_log`);
+        if (!settings || !settings.enabled) return;
+        const eventSettings = settings.events?.[eventKey];
+        if (!eventSettings || !eventSettings.enabled) return;
+        const channelId = eventSettings.channel_id || settings.default_channel_id;
+        if (!channelId) return;
+        const channel = guild.channels.cache.get(channelId);
+        if (!channel) return;
+        await channel.send({ embeds: [embed] });
+    } catch (e) {
+        console.error(`❌ Erro ao registrar evento '${eventKey}' em ${guild.name}: ${e.message}`);
+    }
+}
+client.logEvent = logEvent;
+
+client.on('guildBanAdd', async ban => {
+    const embed = new EmbedBuilder().setColor(0xEF4444)
+        .setAuthor({ name: ban.user.tag, iconURL: ban.user.displayAvatarURL() })
+        .setTitle('🔨 Membro Banido')
+        .addFields(
+            { name: 'Usuário', value: `<@${ban.user.id}> (${ban.user.id})` },
+            { name: 'Motivo', value: ban.reason || 'Nenhum motivo fornecido.' }
+        ).setTimestamp();
+    await logEvent(ban.guild, 'ban', embed);
+});
+
+client.on('guildBanRemove', async ban => {
+    const embed = new EmbedBuilder().setColor(0x10B981)
+        .setAuthor({ name: ban.user.tag, iconURL: ban.user.displayAvatarURL() })
+        .setTitle('🔓 Membro Desbanido')
+        .addFields({ name: 'Usuário', value: `<@${ban.user.id}> (${ban.user.id})` })
+        .setTimestamp();
+    await logEvent(ban.guild, 'unban', embed);
+});
+
+client.on('messageUpdate', async (oldMessage, newMessage) => {
+    if (!newMessage.guild || newMessage.author?.bot) return;
+    if (oldMessage.content === newMessage.content) return;
+    const oldContent = oldMessage.partial ? '*(conteúdo original indisponível)*' : (oldMessage.content || '*vazio*');
+    const embed = new EmbedBuilder().setColor(0xF59E0B)
+        .setAuthor({ name: newMessage.author?.tag || 'Desconhecido', iconURL: newMessage.author?.displayAvatarURL() })
+        .setTitle('✏️ Mensagem Editada')
+        .addFields(
+            { name: 'Canal', value: `<#${newMessage.channelId}>` },
+            { name: 'Antes', value: oldContent.slice(0, 1000) },
+            { name: 'Depois', value: (newMessage.content || '*vazio*').slice(0, 1000) }
+        ).setTimestamp();
+    await logEvent(newMessage.guild, 'message_edit', embed);
+});
+
+client.on('messageDelete', async message => {
+    if (!message.guild || message.author?.bot) return;
+    const content = message.partial ? '*(conteúdo indisponível)*' : (message.content || '*vazio/anexo*');
+    const embed = new EmbedBuilder().setColor(0xEF4444)
+        .setAuthor({ name: message.author?.tag || 'Desconhecido', iconURL: message.author?.displayAvatarURL() })
+        .setTitle('🗑️ Mensagem Deletada')
+        .addFields(
+            { name: 'Canal', value: `<#${message.channelId}>` },
+            { name: 'Conteúdo', value: content.slice(0, 1000) }
+        ).setTimestamp();
+    await logEvent(message.guild, 'message_delete', embed);
+});
+
+client.on('guildMemberUpdate', async (oldMember, newMember) => {
+    if (oldMember.nickname === newMember.nickname) return;
+    const embed = new EmbedBuilder().setColor(0x818CF8)
+        .setAuthor({ name: newMember.user.tag, iconURL: newMember.displayAvatarURL() })
+        .setTitle('📝 Apelido Alterado')
+        .addFields(
+            { name: 'Usuário', value: `<@${newMember.id}>` },
+            { name: 'Antes', value: oldMember.nickname || '*(nenhum)*' },
+            { name: 'Depois', value: newMember.nickname || '*(nenhum)*' }
+        ).setTimestamp();
+    await logEvent(newMember.guild, 'nickname_change', embed);
+});
+
+client.on('userUpdate', async (oldUser, newUser) => {
+    if (oldUser.avatar === newUser.avatar) return;
+    const embed = new EmbedBuilder().setColor(0x818CF8)
+        .setAuthor({ name: newUser.tag, iconURL: newUser.displayAvatarURL() })
+        .setTitle('🖼️ Avatar Alterado')
+        .setThumbnail(newUser.displayAvatarURL({ size: 256 }))
+        .addFields({ name: 'Usuário', value: `<@${newUser.id}>` })
+        .setTimestamp();
+    for (const guild of client.guilds.cache.values()) {
+        if (guild.members.cache.has(newUser.id)) await logEvent(guild, 'avatar_change', embed);
+    }
+});
+
+client.on('voiceStateUpdate', async (oldState, newState) => {
+    if (!oldState.channelId && newState.channelId) {
+        const embed = new EmbedBuilder().setColor(0x10B981)
+            .setAuthor({ name: newState.member.user.tag, iconURL: newState.member.displayAvatarURL() })
+            .setTitle('🔊 Entrou em um Canal de Voz')
+            .addFields({ name: 'Canal', value: `<#${newState.channelId}>` })
+            .setTimestamp();
+        await logEvent(newState.guild, 'voice_join', embed);
+    } else if (oldState.channelId && !newState.channelId) {
+        const embed = new EmbedBuilder().setColor(0xEF4444)
+            .setAuthor({ name: oldState.member.user.tag, iconURL: oldState.member.displayAvatarURL() })
+            .setTitle('🔇 Saiu de um Canal de Voz')
+            .addFields({ name: 'Canal', value: `<#${oldState.channelId}>` })
+            .setTimestamp();
+        await logEvent(oldState.guild, 'voice_leave', embed);
+    }
+});
 
 // Comandos por prefixo (!ping, !balance, etc.)
 client.on('messageCreate', async message => {

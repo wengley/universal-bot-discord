@@ -1,4 +1,4 @@
-const { PermissionsBitField, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
+const { PermissionsBitField, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'clear',
@@ -11,7 +11,7 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
         .addIntegerOption(opt => opt.setName('quantidade').setDescription('Quantas mensagens apagar (1-100)').setRequired(true).setMinValue(1).setMaxValue(100)),
     
-    async execute(message, args) {
+    async execute(message, args, client) {
         // 1. CHECAGEM DE PERMISSÕES DO AUTOR
         if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
             return message.reply({ content: '❌ Você não tem permissão para usar este comando. Permissão necessária: **Gerenciar Mensagens**.', ephemeral: true });
@@ -42,6 +42,18 @@ module.exports = {
             
             // Apaga a mensagem de confirmação após 5 segundos
             setTimeout(() => replyMessage.delete().catch(err => console.log("Erro ao apagar mensagem de confirmação:", err)), 5000);
+
+            // Registro de Eventos: avisa no canal configurado (se ativado)
+            if (client?.logEvent) {
+                const embed = new EmbedBuilder().setColor(0xF59E0B)
+                    .setAuthor({ name: message.author.tag, iconURL: message.author.displayAvatarURL() })
+                    .setTitle('🧹 Mensagens Limpas em Massa')
+                    .addFields(
+                        { name: 'Canal', value: `<#${message.channel.id}>` },
+                        { name: 'Quantidade', value: `${fetched.size} mensagens` }
+                    ).setTimestamp();
+                await client.logEvent(message.guild, 'bulk_delete', embed);
+            }
 
         } catch (error) {
             console.error(error);

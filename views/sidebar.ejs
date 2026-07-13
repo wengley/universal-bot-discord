@@ -6,13 +6,27 @@
 
     <% if (guild) { %>
         <div class="nav-separator">CONFIG. <%= guild.name.toUpperCase() %></div>
-
         <a class="nav-link <%= activePage === 'settings' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>"><i class="fas fa-cog"></i> Config. Geral</a>
+
+        <div class="nav-separator">COMANDOS</div>
+        <a class="nav-link <%= activePage === 'commands' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/commands"><i class="fas fa-terminal"></i> Comandos do Universal BOT</a>
+        <a class="nav-link <%= activePage === 'prefixed-commands' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/prefixed-commands"><i class="fas fa-keyboard"></i> Comandos por Prefixo</a>
+        <a class="nav-link <%= activePage === 'command-channels' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/command-channels"><i class="fas fa-hashtag"></i> Canais de Comandos</a>
+        <a class="nav-link <%= activePage === 'custom-commands' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/custom-commands"><i class="fas fa-magic"></i> Comandos Personalizados</a>
+
+        <div class="nav-separator">COMUNIDADE</div>
         <a class="nav-link <%= activePage === 'welcome' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/welcome"><i class="fas fa-sign-in-alt"></i> Boas-Vindas</a>
         <a class="nav-link <%= activePage === 'autorole' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/autorole"><i class="fas fa-user-plus"></i> AutoRole</a>
+        <a class="nav-link <%= activePage === 'member-counter' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/member-counter"><i class="fas fa-users"></i> Contador de Membros</a>
+        <a class="nav-link <%= activePage === 'permissions' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/permissions"><i class="fas fa-user-shield"></i> Permissões</a>
+
+        <div class="nav-separator">MODERAÇÃO</div>
+        <a class="nav-link <%= activePage === 'invite-blocker' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/invite-blocker"><i class="fas fa-ban"></i> Bloqueador de Convites</a>
+        <a class="nav-link <%= activePage === 'punishment-log' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/punishment-log"><i class="fas fa-gavel"></i> Registro de Punições</a>
+        <a class="nav-link <%= activePage === 'warn-actions' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/warn-actions"><i class="fas fa-exclamation-triangle"></i> Punições de Avisos</a>
+        <a class="nav-link <%= activePage === 'event-log' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/event-log"><i class="fas fa-scroll"></i> Registro de Eventos</a>
 
         <div class="nav-separator">MÓDULOS</div>
-        <a class="nav-link <%= activePage === 'security' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/security"><i class="fas fa-shield-alt"></i> Segurança</a>
         <a class="nav-link <%= activePage === 'ticket' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/ticket"><i class="fas fa-headset"></i> Tickets/Suporte</a>
         <a class="nav-link <%= activePage === 'vip' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/vip"><i class="fas fa-star"></i> Área VIP</a>
 

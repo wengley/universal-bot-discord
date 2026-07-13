@@ -1,0 +1,59 @@
+<%- include('header', { user: user, guild: guild, activePage: activePage, botAvatarUrl: botAvatarUrl }) %>
+<%- include('sidebar', { user: user, guild: guild, activePage: activePage, botAvatarUrl: botAvatarUrl }) %>
+
+<div id="content">
+    <div class="main-content">
+        <h1><i class="fas fa-scroll"></i> Registro de Eventos (<%= guild.name %>)</h1>
+        <p>Anuncie automaticamente ações importantes em um canal do servidor.</p>
+
+        <% if (message === 'success') { %>
+            <div class="alert alert-success">✅ Configurações do Registro de Eventos salvas com sucesso!</div>
+        <% } %>
+
+        <form action="/dashboard/<%= guild.id %>/event-log" method="POST">
+            <div class="settings-section">
+                <h2><i class="fas fa-toggle-on"></i> Configuração Geral</h2>
+
+                <label class="checkbox-container">
+                    <input type="checkbox" name="event_log_enabled" <%= settings.enabled ? 'checked' : '' %>>
+                    Ativar o Registro de Eventos
+                </label>
+
+                <label for="default_channel_id">Canal Padrão</label>
+                <select name="default_channel_id" id="default_channel_id">
+                    <option value="">— Selecione um canal —</option>
+                    <% textChannels.forEach(c => { %>
+                        <option value="<%= c.id %>" <%= settings.default_channel_id === c.id ? 'selected' : '' %>>#<%= c.name %></option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="settings-section">
+                <h2><i class="fas fa-list-check"></i> Avisos</h2>
+                <p style="color:var(--text3);font-size:13px;margin-bottom:14px;">Cada aviso pode usar o canal padrão acima, ou um canal específico só pra ele.</p>
+
+                <% eventTypes.forEach(t => { const ev = settings.events[t.key]; %>
+                    <div class="collapse-content" style="margin-bottom:12px;">
+                        <label class="checkbox-container" style="margin-top:0;">
+                            <input type="checkbox" name="event_<%= t.key %>_enabled" <%= ev.enabled ? 'checked' : '' %>>
+                            Avisar quando <%= t.label %>
+                        </label>
+                        <p style="color:var(--text3);font-size:12.5px;margin:2px 0 10px 28px;"><%= t.desc %></p>
+                        <div style="margin-left:28px;">
+                            <select name="event_<%= t.key %>_channel">
+                                <option value="">Usar canal padrão</option>
+                                <% textChannels.forEach(c => { %>
+                                    <option value="<%= c.id %>" <%= ev.channel_id === c.id ? 'selected' : '' %>>#<%= c.name %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-save-large"><i class="fas fa-save"></i> Salvar Configurações</button>
+        </form>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

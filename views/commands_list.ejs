@@ -1,0 +1,40 @@
+<%- include('header', { user: user, guild: guild, activePage: activePage, botAvatarUrl: botAvatarUrl }) %>
+<%- include('sidebar', { user: user, guild: guild, activePage: activePage, botAvatarUrl: botAvatarUrl }) %>
+
+<div id="content">
+    <div class="main-content">
+        <% if (mode === 'slash') { %>
+            <h1><i class="fas fa-terminal"></i> Comandos do Universal BOT</h1>
+            <p>Todos os comandos disponíveis via Slash Command — digite <code>/</code> no Discord pra ver.</p>
+        <% } else { %>
+            <h1><i class="fas fa-keyboard"></i> Comandos por Prefixo</h1>
+            <p>Os mesmos comandos, só que usando <code>!</code> na frente ao invés de <code>/</code>.</p>
+        <% } %>
+
+        <div class="info-box">
+            <i class="fas fa-circle-info"></i> Todo comando funciona nos dois formatos (<code>!</code> e <code>/</code>) — use o que preferir.
+        </div>
+
+        <% const order = ['Moderação', 'Economia', 'Diversão', 'Informação', 'Utilidade', 'Outros'];
+           const icons = { 'Moderação': 'fa-shield-halved', 'Economia': 'fa-coins', 'Diversão': 'fa-face-laugh', 'Informação': 'fa-circle-info', 'Utilidade': 'fa-wrench', 'Outros': 'fa-box' }; %>
+
+        <% order.forEach(cat => { if (!categories[cat]) return; %>
+            <div class="settings-section">
+                <h2><i class="fas <%= icons[cat] || 'fa-box' %>"></i> <%= cat %></h2>
+                <table class="command-table">
+                    <thead><tr><th>Comando</th><th>Descrição</th></tr></thead>
+                    <tbody>
+                        <% categories[cat].forEach(cmd => { %>
+                            <tr>
+                                <td><code><%= mode === 'slash' ? '/' : '!' %><%= cmd.name %></code></td>
+                                <td><%= cmd.description || 'Sem descrição.' %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% }) %>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
