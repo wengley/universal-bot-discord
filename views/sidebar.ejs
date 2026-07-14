@@ -1,12 +1,14 @@
 <nav id="sidebar">
-    <div class="sidebar-header">
-        <img src="<%= botAvatarUrl %>" alt="Logo" class="bot-logo">
-        <span>Universal<em>Bot</em></span>
-    </div>
-
     <% if (guild) { %>
-        <div class="nav-separator">CONFIG. <%= guild.name.toUpperCase() %></div>
+        <div class="sidebar-header">
+            <img src="<%= guild.iconURL({ size: 128 }) || botAvatarUrl %>" alt="<%= guild.name %>" class="bot-logo">
+            <span><%= guild.name %></span>
+        </div>
+
+        <a class="nav-link" href="/dashboard"><i class="fas fa-chevron-left"></i> Voltar</a>
+        <div class="nav-divider"></div>
         <a class="nav-link <%= activePage === 'settings' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>"><i class="fas fa-cog"></i> Config. Geral</a>
+        <a class="nav-link <%= activePage === 'audit-log' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/audit-log"><i class="fas fa-clipboard-list"></i> Registro de Auditoria</a>
 
         <div class="nav-separator">COMANDOS</div>
         <a class="nav-link <%= activePage === 'commands' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/commands"><i class="fas fa-terminal"></i> Comandos do Universal BOT</a>
@@ -31,8 +33,12 @@
         <a class="nav-link <%= activePage === 'vip' ? 'active' : '' %>" href="/dashboard/<%= guild.id %>/vip"><i class="fas fa-star"></i> Área VIP</a>
 
         <div class="nav-separator">MISCELÂNEA</div>
-        <a class="nav-link" href="/dashboard"><i class="fas fa-chevron-left"></i> Voltar</a>
     <% } else { %>
+        <div class="sidebar-header">
+            <img src="<%= botAvatarUrl %>" alt="Logo" class="bot-logo">
+            <span>Universal<em>Bot</em></span>
+        </div>
+
         <div class="nav-separator">GERAL</div>
         <a class="nav-link <%= activePage === 'servers' ? 'active' : '' %>" href="/dashboard"><i class="fas fa-server"></i> Seus Servidores</a>
         <a class="nav-link <%= activePage === 'updates' ? 'active' : '' %>" href="/updates"><i class="fas fa-bell"></i> Atualizações</a>
@@ -48,8 +54,26 @@
         <img src="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png' %>" class="user-avatar-large" alt="avatar">
         <div style="min-width:0;">
             <div class="user-tag-large"><%= user.displayName || user.username %></div>
-            <div class="user-id">#<%= user.discriminator || '0000' %></div>
+            <% if (user.discriminator && user.discriminator !== '0') { %>
+                <div class="user-id">#<%= user.discriminator %></div>
+            <% } else { %>
+                <div class="user-id">@<%= user.username %></div>
+            <% } %>
         </div>
     </div>
     <% } %>
 </nav>
+
+<script>
+    // Mantém a posição do scroll do menu entre navegações (páginas normais
+    // recarregam por completo, então sem isso o menu sempre voltava pro topo)
+    (function() {
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+        const saved = sessionStorage.getItem('sidebarScroll');
+        if (saved) sidebar.scrollTop = parseInt(saved, 10);
+        sidebar.addEventListener('scroll', () => {
+            sessionStorage.setItem('sidebarScroll', sidebar.scrollTop);
+        });
+    })();
+</script>

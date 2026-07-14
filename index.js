@@ -129,6 +129,7 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,     
         GatewayIntentBits.GuildPresences,   
         GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildModeration,
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
@@ -632,6 +633,7 @@ app.post('/dashboard/:guildId/event-log', isAuthenticated, async (req, res) => {
 
 // ===== Abas novas "Em construção" (mesma página reaproveitada) =====
 const EM_CONSTRUCAO = [
+    { path: 'audit-log', activePage: 'audit-log', label: 'Registro de Auditoria' },
     { path: 'command-channels', activePage: 'command-channels', label: 'Canais de Comandos' },
     { path: 'custom-commands', activePage: 'custom-commands', label: 'Comandos Personalizados' },
     { path: 'member-counter', activePage: 'member-counter', label: 'Contador de Membros' },
@@ -771,6 +773,13 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
     if (!newMessage.guild || newMessage.author?.bot) return;
     if (oldMessage.content === newMessage.content) return;
     const oldContent = oldMessage.partial ? '*(conteúdo original indisponível)*' : (oldMessage.content || '*vazio*');
+    await db.set(`guild_${newMessage.guild.id}.last_events.message_edited`, {
+        author_tag: newMessage.author?.tag || 'Desconhecido',
+        old_content: oldContent.slice(0, 500),
+        new_content: (newMessage.content || '*vazio*').slice(0, 500),
+        channel_id: newMessage.channelId,
+        timestamp: Date.now(),
+    });
     const embed = new EmbedBuilder().setColor(0xF59E0B)
         .setAuthor({ name: newMessage.author?.tag || 'Desconhecido', iconURL: newMessage.author?.displayAvatarURL() })
         .setTitle('✏️ Mensagem Editada')
@@ -785,6 +794,12 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 client.on('messageDelete', async message => {
     if (!message.guild || message.author?.bot) return;
     const content = message.partial ? '*(conteúdo indisponível)*' : (message.content || '*vazio/anexo*');
+    await db.set(`guild_${message.guild.id}.last_events.message_deleted`, {
+        author_tag: message.author?.tag || 'Desconhecido',
+        content: content.slice(0, 500),
+        channel_id: message.channelId,
+        timestamp: Date.now(),
+    });
     const embed = new EmbedBuilder().setColor(0xEF4444)
         .setAuthor({ name: message.author?.tag || 'Desconhecido', iconURL: message.author?.displayAvatarURL() })
         .setTitle('🗑️ Mensagem Deletada')
@@ -823,6 +838,11 @@ client.on('userUpdate', async (oldUser, newUser) => {
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
     if (!oldState.channelId && newState.channelId) {
+        await db.set(`guild_${newState.guild.id}.last_events.voice_join`, {
+            user_tag: newState.member.user.tag,
+            channel_id: newState.channelId,
+            timestamp: Date.now(),
+        });
         const embed = new EmbedBuilder().setColor(0x10B981)
             .setAuthor({ name: newState.member.user.tag, iconURL: newState.member.displayAvatarURL() })
             .setTitle('🔊 Entrou em um Canal de Voz')
@@ -830,6 +850,11 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
             .setTimestamp();
         await logEvent(newState.guild, 'voice_join', embed);
     } else if (oldState.channelId && !newState.channelId) {
+        await db.set(`guild_${oldState.guild.id}.last_events.voice_leave`, {
+            user_tag: oldState.member.user.tag,
+            channel_id: oldState.channelId,
+            timestamp: Date.now(),
+        });
         const embed = new EmbedBuilder().setColor(0xEF4444)
             .setAuthor({ name: oldState.member.user.tag, iconURL: oldState.member.displayAvatarURL() })
             .setTitle('🔇 Saiu de um Canal de Voz')
@@ -983,7 +1008,7 @@ client.on('interactionCreate', async interaction => {
     if (!command) return;
 
     try {
-        await interaction.deferReply();
+        await interaction.deferReply({ ephemeral: !!command.ephemeral });
         const fakeMessage = adaptInteraction(interaction);
         const args = buildArgs(interaction);
         await command.execute(fakeMessage, args, client, db);
