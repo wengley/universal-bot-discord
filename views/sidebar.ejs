@@ -1,4 +1,5 @@
 <nav id="sidebar">
+    <div class="sidebar-scroll">
     <% if (guild) { %>
         <div class="sidebar-header">
             <img src="<%= guild.iconURL({ size: 128 }) || botAvatarUrl %>" alt="<%= guild.name %>" class="bot-logo">
@@ -48,6 +49,7 @@
 
     <a class="nav-link" href="/logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
     <a class="nav-link" onclick="toggleTheme()"><i class="fas fa-moon"></i> Alternar Tema</a>
+    </div>
 
     <% if (typeof user !== 'undefined' && user) { %>
     <div class="sidebar-footer-profile">
@@ -68,12 +70,12 @@
     // Mantém a posição do scroll do menu entre navegações (páginas normais
     // recarregam por completo, então sem isso o menu sempre voltava pro topo)
     (function() {
-        const sidebar = document.getElementById('sidebar');
-        if (!sidebar) return;
+        const scroller = document.querySelector('#sidebar .sidebar-scroll');
+        if (!scroller) return;
         const saved = sessionStorage.getItem('sidebarScroll');
-        if (saved) sidebar.scrollTop = parseInt(saved, 10);
-        sidebar.addEventListener('scroll', () => {
-            sessionStorage.setItem('sidebarScroll', sidebar.scrollTop);
+        if (saved) scroller.scrollTop = parseInt(saved, 10);
+        scroller.addEventListener('scroll', () => {
+            sessionStorage.setItem('sidebarScroll', scroller.scrollTop);
         });
     })();
 </script>

@@ -2,56 +2,46 @@ const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'log',
-    description: 'Mostra a última mensagem editada/apagada e a última entrada/saída de canal de voz no servidor.',
+    description: 'Mostra a última mensagem editada/apagada de um usuário específico (útil pra moderação).',
     category: 'Moderação',
     data: new SlashCommandBuilder()
         .setName('log')
-        .setDescription('Mostra a última mensagem editada/apagada e a última entrada/saída de canal de voz no servidor.'),
+        .setDescription('Mostra a última mensagem editada/apagada de um usuário.')
+        .addUserOption(opt => opt.setName('usuario').setDescription('Usuário a consultar').setRequired(true)),
 
-    // ATENÇÃO: Recebe o objeto 'db' (SupabaseDB) do index.js
     async execute(message, args, client, db) {
+        const target = message.mentions.members?.first() || message.guild.members.cache.get(args[0]);
+        if (!target) {
+            return message.reply('⚠️ Usuário não encontrado. Mencione alguém ou use o ID.');
+        }
+
         const guildId = message.guild.id;
-        const [deleted, edited, voiceJoin, voiceLeave] = await Promise.all([
-            db.get(`guild_${guildId}.last_events.message_deleted`),
-            db.get(`guild_${guildId}.last_events.message_edited`),
-            db.get(`guild_${guildId}.last_events.voice_join`),
-            db.get(`guild_${guildId}.last_events.voice_leave`),
+        const [deleted, edited] = await Promise.all([
+            db.get(`guild_${guildId}.user_last_events.${target.id}.message_deleted`),
+            db.get(`guild_${guildId}.user_last_events.${target.id}.message_edited`),
         ]);
 
         const when = (ts) => ts ? `<t:${Math.floor(ts / 1000)}:R>` : null;
+        const cb = client.codeBlock;
 
         const embed = new EmbedBuilder()
             .setColor(0x818CF8)
-            .setTitle('📋 Log de Atividade Recente')
-            .setFooter({ text: message.guild.name, iconURL: message.guild.iconURL() || undefined })
+            .setAuthor({ name: target.user.tag, iconURL: target.displayAvatarURL() })
+            .setTitle('📋 Log de Mensagens do Usuário')
             .setTimestamp();
 
         embed.addFields(
             {
                 name: '🗑️ Última mensagem apagada',
                 value: deleted
-                    ? `**Autor:** ${deleted.author_tag}\n**Canal:** <#${deleted.channel_id}>\n**Conteúdo:** ${deleted.content}\n**Quando:** ${when(deleted.timestamp)}`
+                    ? `**Canal:** <#${deleted.channel_id}>  •  **Quando:** ${when(deleted.timestamp)}\n${cb(deleted.content)}`
                     : '*Nenhum registro ainda.*',
             },
             {
                 name: '✏️ Última mensagem editada',
                 value: edited
-                    ? `**Autor:** ${edited.author_tag}\n**Canal:** <#${edited.channel_id}>\n**Antes:** ${edited.old_content}\n**Depois:** ${edited.new_content}\n**Quando:** ${when(edited.timestamp)}`
+                    ? `**Canal:** <#${edited.channel_id}>  •  **Quando:** ${when(edited.timestamp)}\n**Antes:**${cb(edited.old_content)}**Depois:**${cb(edited.new_content)}`
                     : '*Nenhum registro ainda.*',
-            },
-            {
-                name: '🔊 Última entrada em canal de voz',
-                value: voiceJoin
-                    ? `**Usuário:** ${voiceJoin.user_tag}\n**Canal:** <#${voiceJoin.channel_id}>\n**Quando:** ${when(voiceJoin.timestamp)}`
-                    : '*Nenhum registro ainda.*',
-                inline: true,
-            },
-            {
-                name: '🔇 Última saída de canal de voz',
-                value: voiceLeave
-                    ? `**Usuário:** ${voiceLeave.user_tag}\n**Canal:** <#${voiceLeave.channel_id}>\n**Quando:** ${when(voiceLeave.timestamp)}`
-                    : '*Nenhum registro ainda.*',
-                inline: true,
             },
         );
 

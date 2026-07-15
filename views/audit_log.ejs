@@ -1,0 +1,30 @@
+<%- include('header', { user: user, guild: guild, activePage: 'audit-log', botAvatarUrl: botAvatarUrl }) %>
+
+<%- include('sidebar', { user: user, guild: guild, activePage: 'audit-log', botAvatarUrl: botAvatarUrl }) %>
+
+<div id="content">
+    <div class="main-content">
+        <h1><i class="fas fa-clipboard-list"></i> Registro de Auditoria</h1>
+        <p>Histórico das últimas alterações feitas neste servidor através do painel — quem mudou, o quê e quando.</p>
+
+        <% if (!entries || entries.length === 0) { %>
+            <div class="info-box text-center">
+                <p>Nenhuma alteração registrada ainda. Assim que alguém mudar uma configuração por aqui (Boas-Vindas, AutoRole, Registro de Eventos, etc.), vai aparecer nessa lista.</p>
+            </div>
+        <% } else { %>
+            <div class="settings-section audit-list">
+                <% entries.forEach(entry => { %>
+                    <div class="audit-entry">
+                        <div class="audit-entry-icon"><i class="fas fa-pen"></i></div>
+                        <div class="audit-entry-body">
+                            <div class="audit-entry-desc"><%= entry.description %></div>
+                            <div class="audit-entry-meta"><strong><%= entry.actor_tag %></strong> · <%= new Date(entry.timestamp).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) %></div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

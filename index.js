@@ -243,6 +243,25 @@ async function getGuildContext(req) {
     return { guild, member, status: 200, botAvatarUrl, botPing: client.ws.ping };
 }
 
+// Registro de Auditoria — guarda as últimas alterações feitas no painel
+// (quem mudou o quê e quando), pra moderação acompanhar sem precisar
+// perguntar "quem mexeu nisso?".
+async function logAudit(guildId, actor, description) {
+    try {
+        const current = (await db.get(`guild_${guildId}.audit_log`)) || [];
+        const entry = {
+            actor_tag: actor.displayName || actor.username || actor.tag || 'Desconhecido',
+            actor_id: actor.id,
+            description,
+            timestamp: Date.now(),
+        };
+        const updated = [entry, ...current].slice(0, 50);
+        await db.set(`guild_${guildId}.audit_log`, updated);
+    } catch (e) {
+        console.error(`❌ Erro ao registrar auditoria em ${guildId}: ${e.message}`);
+    }
+}
+
 // ===============================
 // 6. ROTAS WEB 
 // ===============================
@@ -410,6 +429,11 @@ app.post('/dashboard/:guildId/welcome', isAuthenticated, async (req, res) => {
     };
 
     await db.set(`guild_${context.guild.id}.welcome`, newSettings);
+
+    const joinChName = newSettings.join_channel_id ? context.guild.channels.cache.get(newSettings.join_channel_id)?.name : null;
+    const leaveChName = newSettings.leave_channel_id ? context.guild.channels.cache.get(newSettings.leave_channel_id)?.name : null;
+    await logAudit(context.guild.id, req.user, `Atualizou Boas-Vindas — Entrada: ${newSettings.join_enabled ? `ativada${joinChName ? ` (#${joinChName})` : ''}` : 'desativada'}, Saída: ${newSettings.leave_enabled ? `ativada${leaveChName ? ` (#${leaveChName})` : ''}` : 'desativada'}, DM: ${newSettings.dm_enabled ? 'ativada' : 'desativada'}`);
+
     res.redirect(`/dashboard/${context.guild.id}/welcome?message=success`);
 });
 
@@ -509,6 +533,7 @@ app.post('/dashboard/:guildId/autorole', isAuthenticated, async (req, res) => {
     };
 
     await db.set(`guild_${context.guild.id}.autorole`, newSettings);
+    await logAudit(context.guild.id, req.user, `Atualizou AutoRole — ${newSettings.enabled ? `ativado (${roleIds.length} cargo(s))` : 'desativado'}`);
     res.redirect(`/dashboard/${context.guild.id}/autorole?message=success`);
 });
 
@@ -628,12 +653,32 @@ app.post('/dashboard/:guildId/event-log', isAuthenticated, async (req, res) => {
         default_channel_id: req.body.default_channel_id || '',
         events,
     });
+
+    const activeCount = Object.values(events).filter(e => e.enabled).length;
+    const defChName = req.body.default_channel_id ? context.guild.channels.cache.get(req.body.default_channel_id)?.name : null;
+    await logAudit(context.guild.id, req.user, `Atualizou Registro de Eventos — ${req.body.event_log_enabled === 'on' ? `ativado (canal padrão: ${defChName ? '#' + defChName : 'nenhum'}, ${activeCount}/${EVENT_LOG_TYPES.length} avisos ativos)` : 'desativado'}`);
+
     res.redirect(`/dashboard/${context.guild.id}/event-log?message=success`);
+});
+
+// ===== REGISTRO DE AUDITORIA (mudanças feitas no painel) =====
+app.get('/dashboard/:guildId/audit-log', isAuthenticated, async (req, res) => {
+    const context = await getGuildContext(req);
+    if (context.status !== 200) {
+        return res.status(context.status).send(`<h1>Erro ${context.status}</h1><p>${context.message}</p>`);
+    }
+    const entries = (await db.get(`guild_${context.guild.id}.audit_log`)) || [];
+    res.render('audit_log', {
+        user: req.user,
+        guild: context.guild,
+        activePage: 'audit-log',
+        botAvatarUrl: context.botAvatarUrl,
+        entries,
+    });
 });
 
 // ===== Abas novas "Em construção" (mesma página reaproveitada) =====
 const EM_CONSTRUCAO = [
-    { path: 'audit-log', activePage: 'audit-log', label: 'Registro de Auditoria' },
     { path: 'command-channels', activePage: 'command-channels', label: 'Canais de Comandos' },
     { path: 'custom-commands', activePage: 'custom-commands', label: 'Comandos Personalizados' },
     { path: 'member-counter', activePage: 'member-counter', label: 'Contador de Membros' },
@@ -720,7 +765,7 @@ app.use((err, req, res, next) => {
     res.status(500).send(`<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
         <title>Erro interno</title><link rel="stylesheet" href="/css/styles.css"></head>
         <body style="display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;font-family:'Inter',sans-serif;">
-        <div><h1 style="font-family:'Space Grotesk',sans-serif;font-size:3em;color:var(--danger);margin-bottom:10px;">Ops!</h1>
+        <div><h1 style="font-family:'Space Grotesk',sans-serif;font-size:3em;color:var(--red);margin-bottom:10px;">Ops!</h1>
         <p>Algo deu errado ao carregar essa página. Já registrei o erro no log do servidor.</p>
         <a href="/dashboard" class="btn btn-primary" style="margin-top:15px;display:inline-block;">Voltar ao Painel</a></div>
         </body></html>`);
@@ -749,6 +794,14 @@ async function logEvent(guild, eventKey, embed) {
 }
 client.logEvent = logEvent;
 
+// Bloco de código pra mensagens citadas — mais fácil de ler no celular,
+// e evita que ``` dentro do próprio conteúdo quebre a formatação.
+function codeBlock(text, maxLen = 950) {
+    const safe = (text || '*vazio*').replace(/```/g, '\u200b`\u200b`\u200b`').slice(0, maxLen);
+    return '```\n' + safe + '\n```';
+}
+client.codeBlock = codeBlock;
+
 client.on('guildBanAdd', async ban => {
     const embed = new EmbedBuilder().setColor(0xEF4444)
         .setAuthor({ name: ban.user.tag, iconURL: ban.user.displayAvatarURL() })
@@ -773,20 +826,24 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
     if (!newMessage.guild || newMessage.author?.bot) return;
     if (oldMessage.content === newMessage.content) return;
     const oldContent = oldMessage.partial ? '*(conteúdo original indisponível)*' : (oldMessage.content || '*vazio*');
-    await db.set(`guild_${newMessage.guild.id}.last_events.message_edited`, {
+    const entry = {
         author_tag: newMessage.author?.tag || 'Desconhecido',
-        old_content: oldContent.slice(0, 500),
-        new_content: (newMessage.content || '*vazio*').slice(0, 500),
+        author_id: newMessage.author?.id || null,
+        old_content: oldContent.slice(0, 900),
+        new_content: (newMessage.content || '*vazio*').slice(0, 900),
         channel_id: newMessage.channelId,
         timestamp: Date.now(),
-    });
+    };
+    if (newMessage.author?.id) await db.set(`guild_${newMessage.guild.id}.user_last_events.${newMessage.author.id}.message_edited`, entry);
+    await db.set(`guild_${newMessage.guild.id}.channel_last_events.${newMessage.channelId}.message_edited`, entry);
+
     const embed = new EmbedBuilder().setColor(0xF59E0B)
         .setAuthor({ name: newMessage.author?.tag || 'Desconhecido', iconURL: newMessage.author?.displayAvatarURL() })
         .setTitle('✏️ Mensagem Editada')
         .addFields(
             { name: 'Canal', value: `<#${newMessage.channelId}>` },
-            { name: 'Antes', value: oldContent.slice(0, 1000) },
-            { name: 'Depois', value: (newMessage.content || '*vazio*').slice(0, 1000) }
+            { name: 'Antes', value: codeBlock(oldContent) },
+            { name: 'Depois', value: codeBlock(newMessage.content) }
         ).setTimestamp();
     await logEvent(newMessage.guild, 'message_edit', embed);
 });
@@ -794,18 +851,22 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 client.on('messageDelete', async message => {
     if (!message.guild || message.author?.bot) return;
     const content = message.partial ? '*(conteúdo indisponível)*' : (message.content || '*vazio/anexo*');
-    await db.set(`guild_${message.guild.id}.last_events.message_deleted`, {
+    const entry = {
         author_tag: message.author?.tag || 'Desconhecido',
-        content: content.slice(0, 500),
+        author_id: message.author?.id || null,
+        content: content.slice(0, 900),
         channel_id: message.channelId,
         timestamp: Date.now(),
-    });
+    };
+    if (message.author?.id) await db.set(`guild_${message.guild.id}.user_last_events.${message.author.id}.message_deleted`, entry);
+    await db.set(`guild_${message.guild.id}.channel_last_events.${message.channelId}.message_deleted`, entry);
+
     const embed = new EmbedBuilder().setColor(0xEF4444)
         .setAuthor({ name: message.author?.tag || 'Desconhecido', iconURL: message.author?.displayAvatarURL() })
         .setTitle('🗑️ Mensagem Deletada')
         .addFields(
             { name: 'Canal', value: `<#${message.channelId}>` },
-            { name: 'Conteúdo', value: content.slice(0, 1000) }
+            { name: 'Conteúdo', value: codeBlock(content) }
         ).setTimestamp();
     await logEvent(message.guild, 'message_delete', embed);
 });
