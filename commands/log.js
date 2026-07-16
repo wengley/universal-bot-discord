@@ -22,28 +22,31 @@ module.exports = {
         ]);
 
         const when = (ts) => ts ? `<t:${Math.floor(ts / 1000)}:R>` : null;
-        const cb = client.codeBlock;
+        const cb = (text) => '```\n' + (text || '(vazio)').slice(0, 1000) + '\n```';
 
-        const embed = new EmbedBuilder()
-            .setColor(0x818CF8)
-            .setAuthor({ name: target.user.tag, iconURL: target.displayAvatarURL() })
-            .setTitle('📋 Log de Mensagens do Usuário')
-            .setTimestamp();
-
-        embed.addFields(
+        const fields = [
             {
                 name: '🗑️ Última mensagem apagada',
                 value: deleted
                     ? `**Canal:** <#${deleted.channel_id}>  •  **Quando:** ${when(deleted.timestamp)}\n${cb(deleted.content)}`
                     : '*Nenhum registro ainda.*',
             },
-            {
-                name: '✏️ Última mensagem editada',
-                value: edited
-                    ? `**Canal:** <#${edited.channel_id}>  •  **Quando:** ${when(edited.timestamp)}\n**Antes:**${cb(edited.old_content)}**Depois:**${cb(edited.new_content)}`
-                    : '*Nenhum registro ainda.*',
-            },
-        );
+        ];
+        if (edited) {
+            fields.push(
+                { name: '✏️ Última mensagem editada (antes)', value: `**Canal:** <#${edited.channel_id}>  •  **Quando:** ${when(edited.timestamp)}\n${cb(edited.old_content)}` },
+                { name: '✏️ Última mensagem editada (depois)', value: cb(edited.new_content) },
+            );
+        } else {
+            fields.push({ name: '✏️ Última mensagem editada', value: '*Nenhum registro ainda.*' });
+        }
+
+        const embed = new EmbedBuilder()
+            .setColor(0x818CF8)
+            .setAuthor({ name: target.user.tag, iconURL: target.displayAvatarURL() })
+            .setTitle('📋 Log de Mensagens do Usuário')
+            .setTimestamp()
+            .addFields(fields);
 
         await message.reply({ embeds: [embed] });
     },

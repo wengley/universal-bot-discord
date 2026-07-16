@@ -3,7 +3,7 @@
 // ===============================
 const { 
     Client, GatewayIntentBits, Collection, Partials, EmbedBuilder, 
-    PermissionsBitField, ChannelType 
+    PermissionsBitField, ChannelType, MessageFlags 
 } = require('discord.js');
 const { SupabaseDB } = require('./db/supabaseDb');
 const { adaptInteraction, buildArgs } = require('./utils/interactionAdapter');
@@ -27,8 +27,9 @@ const prefix = '!';
 const PORT = process.env.PORT || 3000;
 const app = express();
 
-// URL do Ícone de Fallback (Global)
-const FALLBACK_ICON_URL = 'https://cdn.discordapp.com/attachments/1414043107867234467/1426614319499706401/captura-de-tela-2018-09-24-as-20.png?ex=68ebdd9e&is=68ea8c1e&hm=50e13cf484f649f0de0daaa6f54d0021a59a136265a01e5531b1008bd0f38a5';
+// URL do Ícone de Fallback (Global) — link permanente do Discord (o anterior
+// era um anexo com assinatura temporária, que ia expirar e quebrar sozinho)
+const FALLBACK_ICON_URL = 'https://cdn.discordapp.com/embed/avatars/0.png';
 
 // Lista de Comandos para Config. Geral
 const BOT_COMMANDS = [
@@ -1069,7 +1070,7 @@ client.on('interactionCreate', async interaction => {
     if (!command) return;
 
     try {
-        await interaction.deferReply({ ephemeral: !!command.ephemeral });
+        await interaction.deferReply(command.ephemeral ? { flags: MessageFlags.Ephemeral } : {});
         const fakeMessage = adaptInteraction(interaction);
         const args = buildArgs(interaction);
         await command.execute(fakeMessage, args, client, db);
@@ -1079,7 +1080,7 @@ client.on('interactionCreate', async interaction => {
         if (interaction.deferred || interaction.replied) {
             await interaction.editReply(errorPayload).catch(() => {});
         } else {
-            await interaction.reply({ ...errorPayload, ephemeral: true }).catch(() => {});
+            await interaction.reply({ ...errorPayload, flags: MessageFlags.Ephemeral }).catch(() => {});
         }
     }
 });

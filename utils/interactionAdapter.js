@@ -7,6 +7,8 @@
 // interaction viram um array "args" na mesma ordem que o parser de prefixo
 // já produzia.
 
+const { MessageFlags } = require('discord.js');
+
 function adaptInteraction(interaction) {
     let firstResponseSent = false;
 
@@ -18,6 +20,15 @@ function adaptInteraction(interaction) {
         const data = typeof payload === 'string' ? { content: payload } : { ...payload };
         if (!firstResponseSent) {
             firstResponseSent = true;
+            // discord.js depreciou a opção booleana `ephemeral` (usa
+            // `flags: MessageFlags.Ephemeral` agora). Os comandos continuam
+            // escrevendo `ephemeral: true` normalmente — só aqui, no único
+            // lugar por onde toda resposta de slash passa, é que traduzimos
+            // pro formato atual antes de enviar de verdade.
+            if (data.ephemeral) {
+                data.flags = (data.flags || 0) | MessageFlags.Ephemeral;
+                delete data.ephemeral;
+            }
             if (interaction.deferred) await interaction.editReply(data);
             else if (interaction.replied) await interaction.followUp(data);
             else await interaction.reply(data);
