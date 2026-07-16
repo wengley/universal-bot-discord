@@ -19,8 +19,24 @@
             const saved = localStorage.getItem('theme') || 'dark';
             document.body.className = saved;
         });
+        function toggleSidebar(force) {
+            const wrapper = document.getElementById('wrapper');
+            if (typeof force === 'boolean') wrapper.classList.toggle('sidebar-open', force);
+            else wrapper.classList.toggle('sidebar-open');
+        }
     </script>
 </head>
 <body>
 
 <div id="wrapper">
+    <div class="mobile-topbar">
+        <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Abrir menu"><i class="fas fa-bars"></i></button>
+        <% if (typeof guild !== 'undefined' && guild) { %>
+            <img src="<%= guild.iconURL({ size: 64 }) || botAvatarUrl %>" alt="">
+            <span><%= guild.name %></span>
+        <% } else { %>
+            <img src="<%= botAvatarUrl %>" alt="">
+            <span>Universal Bot</span>
+        <% } %>
+    </div>
+    <div class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>

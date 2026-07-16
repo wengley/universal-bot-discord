@@ -327,12 +327,45 @@ body.landing { display: flex; align-items: center; justify-content: center; min-
 .landing-footer { text-align: center; font-size: 12px; color: var(--text3); margin-top: 18px; position: relative; }
 
 /* ── RESPONSIVO ── */
+.mobile-topbar { display: none; }
+.sidebar-backdrop { display: none; }
+
 @media (max-width: 880px) {
+    .mobile-topbar {
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 18px; background: var(--surface);
+        border-bottom: 1px solid var(--border2);
+        position: sticky; top: 0; z-index: 1001;
+    }
+    .mobile-topbar img { width: 30px; height: 30px; border-radius: 8px; }
+    .mobile-topbar span { font-size: 15px; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hamburger-btn {
+        width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
+        background: var(--surface2); border: 1px solid var(--border2); color: var(--text);
+        display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer;
+    }
+
     #wrapper { flex-direction: column; }
-    #sidebar { width: 100%; height: auto; position: relative; overflow: visible; }
-    .sidebar-scroll { overflow-y: visible; max-height: none; }
-    #content { padding: 24px 18px; }
+
+    /* No mobile o menu vira um painel que desliza por cima, em vez de
+       empurrar o conteúdo pra baixo (com ~17 itens de menu hoje, empilhar
+       tudo em cima da página ficaria ruim de usar). */
+    #sidebar {
+        position: fixed; top: 0; left: 0; height: 100dvh; width: 300px; max-width: 84vw;
+        z-index: 1002; transform: translateX(-100%); transition: transform .25s ease;
+        box-shadow: 12px 0 40px rgba(0,0,0,.35);
+    }
+    #wrapper.sidebar-open #sidebar { transform: translateX(0); }
+
+    .sidebar-backdrop {
+        display: block; position: fixed; inset: 0; background: rgba(0,0,0,.5);
+        z-index: 1001; opacity: 0; pointer-events: none; transition: opacity .25s ease;
+    }
+    #wrapper.sidebar-open .sidebar-backdrop { opacity: 1; pointer-events: auto; }
+
+    #content { padding: 22px 16px; width: 100%; }
     .guild-list { grid-template-columns: 1fr; }
+    .main-content h1 { font-size: 20px; }
 }
 @media (max-width: 600px) {
     .hero { padding: 48px 22px; }
