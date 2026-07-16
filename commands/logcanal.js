@@ -2,12 +2,12 @@ const { EmbedBuilder, SlashCommandBuilder, ChannelType } = require('discord.js')
 
 module.exports = {
     name: 'logcanal',
-    description: 'Mostra a última mensagem editada/apagada em um canal específico (útil pra moderação).',
+    description: 'Mostra a última mensagem editada/apagada de um canal de texto, ou entrada/saída de call de um canal de voz (útil pra moderação).',
     category: 'Moderação',
     data: new SlashCommandBuilder()
         .setName('logcanal')
-        .setDescription('Mostra a última mensagem editada/apagada de um canal (padrão: este canal).')
-        .addChannelOption(opt => opt.setName('canal').setDescription('Canal a consultar (padrão: este canal)').addChannelTypes(ChannelType.GuildText).setRequired(false)),
+        .setDescription('Mostra o último registro de um canal de texto ou de voz (padrão: este canal).')
+        .addChannelOption(opt => opt.setName('canal').setDescription('Canal a consultar (padrão: este canal)').addChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice).setRequired(false)),
 
     async execute(message, args, client, db) {
         const target = message.mentions.channels?.first()
@@ -15,9 +15,13 @@ module.exports = {
             || message.channel;
 
         const guildId = message.guild.id;
-        const [deleted, edited] = await Promise.all([
+        const isVoice = target.type === ChannelType.GuildVoice;
+
+        const [deleted, edited, voiceJoin, voiceLeave] = await Promise.all([
             db.get(`guild_${guildId}.channel_last_events.${target.id}.message_deleted`),
             db.get(`guild_${guildId}.channel_last_events.${target.id}.message_edited`),
+            isVoice ? db.get(`guild_${guildId}.channel_last_events.${target.id}.voice_join`) : null,
+            isVoice ? db.get(`guild_${guildId}.channel_last_events.${target.id}.voice_leave`) : null,
         ]);
 
         const when = (ts) => ts ? `<t:${Math.floor(ts / 1000)}:R>` : null;
@@ -40,9 +44,16 @@ module.exports = {
             fields.push({ name: '✏️ Última mensagem editada', value: '*Nenhum registro ainda.*' });
         }
 
+        if (isVoice) {
+            fields.push(
+                { name: '🔊 Última entrada na call', value: voiceJoin ? `**Usuário:** ${voiceJoin.user_tag}  •  **Quando:** ${when(voiceJoin.timestamp)}` : '*Nenhum registro ainda.*' },
+                { name: '🔇 Última saída da call', value: voiceLeave ? `**Usuário:** ${voiceLeave.user_tag}  •  **Quando:** ${when(voiceLeave.timestamp)}` : '*Nenhum registro ainda.*' },
+            );
+        }
+
         const embed = new EmbedBuilder()
             .setColor(0x818CF8)
-            .setTitle(`📋 Log de Mensagens — #${target.name}`)
+            .setTitle(`📋 Log ${isVoice ? 'de Voz' : 'de Mensagens'} — #${target.name}`)
             .setTimestamp()
             .addFields(fields);
 

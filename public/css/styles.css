@@ -318,7 +318,7 @@ select {
 @keyframes gradientMove { 0%,100% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } }
 @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
-body.landing { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+body.landing { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
 
 .hero {
     text-align: center; padding: 70px 36px; max-width: 560px;

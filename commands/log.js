@@ -2,11 +2,11 @@ const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'log',
-    description: 'Mostra a última mensagem editada/apagada de um usuário específico (útil pra moderação).',
+    description: 'Mostra a última mensagem editada/apagada e entrada/saída de call de um usuário (útil pra moderação).',
     category: 'Moderação',
     data: new SlashCommandBuilder()
         .setName('log')
-        .setDescription('Mostra a última mensagem editada/apagada de um usuário.')
+        .setDescription('Mostra o último registro de um usuário (mensagens e chamadas de voz).')
         .addUserOption(opt => opt.setName('usuario').setDescription('Usuário a consultar').setRequired(true)),
 
     async execute(message, args, client, db) {
@@ -16,9 +16,11 @@ module.exports = {
         }
 
         const guildId = message.guild.id;
-        const [deleted, edited] = await Promise.all([
+        const [deleted, edited, voiceJoin, voiceLeave] = await Promise.all([
             db.get(`guild_${guildId}.user_last_events.${target.id}.message_deleted`),
             db.get(`guild_${guildId}.user_last_events.${target.id}.message_edited`),
+            db.get(`guild_${guildId}.user_last_events.${target.id}.voice_join`),
+            db.get(`guild_${guildId}.user_last_events.${target.id}.voice_leave`),
         ]);
 
         const when = (ts) => ts ? `<t:${Math.floor(ts / 1000)}:R>` : null;
@@ -41,10 +43,15 @@ module.exports = {
             fields.push({ name: '✏️ Última mensagem editada', value: '*Nenhum registro ainda.*' });
         }
 
+        fields.push(
+            { name: '🔊 Última entrada em call', value: voiceJoin ? `**Canal:** <#${voiceJoin.channel_id}>  •  **Quando:** ${when(voiceJoin.timestamp)}` : '*Nenhum registro ainda.*' },
+            { name: '🔇 Última saída de call', value: voiceLeave ? `**Canal:** <#${voiceLeave.channel_id}>  •  **Quando:** ${when(voiceLeave.timestamp)}` : '*Nenhum registro ainda.*' },
+        );
+
         const embed = new EmbedBuilder()
             .setColor(0x818CF8)
             .setAuthor({ name: target.user.tag, iconURL: target.displayAvatarURL() })
-            .setTitle('📋 Log de Mensagens do Usuário')
+            .setTitle('📋 Log do Usuário')
             .setTimestamp()
             .addFields(fields);
 

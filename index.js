@@ -900,11 +900,14 @@ client.on('userUpdate', async (oldUser, newUser) => {
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
     if (!oldState.channelId && newState.channelId) {
-        await db.set(`guild_${newState.guild.id}.last_events.voice_join`, {
+        const entry = {
             user_tag: newState.member.user.tag,
             channel_id: newState.channelId,
             timestamp: Date.now(),
-        });
+        };
+        await db.set(`guild_${newState.guild.id}.last_events.voice_join`, entry);
+        await db.set(`guild_${newState.guild.id}.user_last_events.${newState.member.id}.voice_join`, entry);
+        await db.set(`guild_${newState.guild.id}.channel_last_events.${newState.channelId}.voice_join`, entry);
         const embed = new EmbedBuilder().setColor(0x10B981)
             .setAuthor({ name: newState.member.user.tag, iconURL: newState.member.displayAvatarURL() })
             .setTitle('🔊 Entrou em um Canal de Voz')
@@ -912,11 +915,14 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
             .setTimestamp();
         await logEvent(newState.guild, 'voice_join', embed);
     } else if (oldState.channelId && !newState.channelId) {
-        await db.set(`guild_${oldState.guild.id}.last_events.voice_leave`, {
+        const entry = {
             user_tag: oldState.member.user.tag,
             channel_id: oldState.channelId,
             timestamp: Date.now(),
-        });
+        };
+        await db.set(`guild_${oldState.guild.id}.last_events.voice_leave`, entry);
+        await db.set(`guild_${oldState.guild.id}.user_last_events.${oldState.member.id}.voice_leave`, entry);
+        await db.set(`guild_${oldState.guild.id}.channel_last_events.${oldState.channelId}.voice_leave`, entry);
         const embed = new EmbedBuilder().setColor(0xEF4444)
             .setAuthor({ name: oldState.member.user.tag, iconURL: oldState.member.displayAvatarURL() })
             .setTitle('🔇 Saiu de um Canal de Voz')
