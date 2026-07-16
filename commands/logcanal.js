@@ -21,7 +21,7 @@ module.exports = {
         ]);
 
         const when = (ts) => ts ? `<t:${Math.floor(ts / 1000)}:R>` : null;
-        const cb = (text) => '```\n' + (text || '(vazio)').slice(0, 1000) + '\n```';
+        const cb = (text) => client.codeBlock(text, 1000);
 
         const fields = [
             {

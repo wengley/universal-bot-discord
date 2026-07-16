@@ -1023,7 +1023,7 @@ app.listen(PORT, () => {
     console.log(`🌐 Painel rodando na porta ${PORT}`);
 });
 
-client.once('ready', () => {
+client.once('clientReady', () => {
     console.log(`✅ Bot online como ${client.user.tag}`);
     registerSlashCommands();
 });
@@ -1069,8 +1069,20 @@ client.on('interactionCreate', async interaction => {
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
 
+    // Evita "Unknown interaction" se o comando demorar mais que uns
+    // segundos pra responder. Só entra em ação se REALMENTE precisar —
+    // assim comandos rápidos (a maioria) continuam podendo responder de
+    // forma efêmera: o Discord só deixa marcar como efêmero na PRIMEIRA
+    // resposta, então se a gente desse defer sem saber antes (não-efêmero
+    // por padrão), qualquer aviso que devia ser privado sempre saía
+    // público no canal.
+    const safetyDefer = setTimeout(() => {
+        if (!interaction.deferred && !interaction.replied) {
+            interaction.deferReply().catch(() => {});
+        }
+    }, 2000);
+
     try {
-        await interaction.deferReply(command.ephemeral ? { flags: MessageFlags.Ephemeral } : {});
         const fakeMessage = adaptInteraction(interaction);
         const args = buildArgs(interaction);
         await command.execute(fakeMessage, args, client, db);
@@ -1082,6 +1094,8 @@ client.on('interactionCreate', async interaction => {
         } else {
             await interaction.reply({ ...errorPayload, flags: MessageFlags.Ephemeral }).catch(() => {});
         }
+    } finally {
+        clearTimeout(safetyDefer);
     }
 });
 

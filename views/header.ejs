@@ -24,6 +24,29 @@
             if (typeof force === 'boolean') wrapper.classList.toggle('sidebar-open', force);
             else wrapper.classList.toggle('sidebar-open');
         }
+
+        // Tela de carregamento — aparece ao clicar numa aba, dar F5 ou
+        // enviar um formulário, sem precisar mexer em cada link manualmente
+        // (qualquer navegação de página dispara o beforeunload).
+        (function () {
+            function showPageLoader() {
+                let el = document.getElementById('page-loader');
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = 'page-loader';
+                    el.innerHTML = '<div class="page-loader-spinner"></div>';
+                    document.body.appendChild(el);
+                }
+                requestAnimationFrame(() => el.classList.add('visible'));
+            }
+            window.addEventListener('beforeunload', showPageLoader);
+            window.addEventListener('pageshow', () => {
+                // Ao voltar pelo cache do navegador (botão Voltar), evita
+                // que a tela de carregamento fique grudada na tela.
+                const el = document.getElementById('page-loader');
+                if (el) el.classList.remove('visible');
+            });
+        })();
     </script>
 </head>
 <body>

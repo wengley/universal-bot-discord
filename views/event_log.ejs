@@ -11,6 +11,11 @@
         <% } %>
 
         <form action="/dashboard/<%= guild.id %>/event-log" method="POST">
+            <div class="form-save-bar">
+                <span><i class="fas fa-info-circle"></i> Não esqueça de salvar depois de ativar ou alterar algo.</span>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Salvar</button>
+            </div>
+
             <div class="settings-section">
                 <h2><i class="fas fa-toggle-on"></i> Configuração Geral</h2>
 
